@@ -26,7 +26,7 @@ To use a domain such as `schoolsaathi.pk`, open **Settings → Pages → Custom 
 
 ## Common edits
 
-- **Price:** search `index.html` for `Rs 5,000`.
+- **Price:** search `index.html` for `Rs 10,000`.
 - **Phone / WhatsApp:** search for `923158327536` (WhatsApp links) and `0315-8327536` (shown text).
 - **Email and portfolio:** search for `mohammadhunain83@gmail.com` and `hunain.online`.
 - **WhatsApp QR code:** replace `assets/whatsapp-qr.png` with a new image of the same name.
