@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SchoolSaathi Mobile App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: a phone-sized app column centred on the page, demo bar above it, bottom tab bar per role */
+:root{
+  --bg:#eef2f0; --surface:#ffffff; --surface-2:#f5f8f6; --ink:#0b1220; --muted:#4a5a55; --line:#dbe3df;
+  --brand:#0f7a43; --brand-ink:#ffffff; --brand-soft:#e3f4ea; --night:#0b1220; --night-ink:#e6edf0;
+  --ok:#166534; --ok-bg:#dcfce7; --warn:#9a3412; --warn-bg:#ffedd5; --bad:#991b1b; --bad-bg:#fee2e2; --info:#1e40af; --info-bg:#dbeafe;
+  --chat:#ece5dd; --bubble:#ffffff; --bubble-me:#d9fdd3;
+  --display:'Space Grotesk', Inter, system-ui, sans-serif; --body:Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#070b12; --surface:#111826; --surface-2:#0c1320; --ink:#e8eef2; --muted:#9fb0aa; --line:#243041;
+  --brand:#34c27a; --brand-ink:#04140b; --brand-soft:#123222; --night:#020409; --night-ink:#e6edf0;
+  --ok:#86efac; --ok-bg:#14361f; --warn:#fdba74; --warn-bg:#3b2410; --bad:#fca5a5; --bad-bg:#3f1515; --info:#93c5fd; --info-bg:#172a4a;
+  --chat:#0f1a17; --bubble:#1c2a33; --bubble-me:#11402b; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#070b12; --surface:#111826; --surface-2:#0c1320; --ink:#e8eef2; --muted:#9fb0aa; --line:#243041;
+  --brand:#34c27a; --brand-ink:#04140b; --brand-soft:#123222; --night:#020409; --night-ink:#e6edf0;
+  --ok:#86efac; --ok-bg:#14361f; --warn:#fdba74; --warn-bg:#3b2410; --bad:#fca5a5; --bad-bg:#3f1515; --info:#93c5fd; --info-bg:#172a4a;
+  --chat:#0f1a17; --bubble:#1c2a33; --bubble-me:#11402b; color-scheme:dark }
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+*{box-sizing:border-box}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.wrap{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.demobar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.demobar b{color:var(--ink)}
+.app{background:var(--surface);border:1px solid var(--line);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;min-height:720px;position:relative}
+.top{background:var(--night);color:var(--night-ink);padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:17px}
+.logo i{width:26px;height:26px;border-radius:8px;background:var(--brand);display:inline-flex;align-items:center;justify-content:center}
+.role-chip{font-size:12px;font-weight:600;border:1px solid #2a3a52;border-radius:999px;padding:5px 10px;background:transparent;color:var(--night-ink)}
+.top h1{margin:0;font-family:var(--display);font-size:24px;letter-spacing:-.4px;text-wrap:balance}
+.top p{margin:0;font-size:13px;color:#a9b7c2}
+.body{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.tabs{display:flex;border-top:1px solid var(--line);background:var(--surface)}
+.tabs button{flex:1;border:0;background:none;padding:12px 4px 14px;font-size:12.5px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;min-height:56px}
+.tabs button[aria-current="page"]{color:var(--brand)}
+.tabs svg{width:20px;height:20px}
+.card{background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kpi{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{font-size:12px;color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar>span{display:block;height:100%;background:var(--brand)}
+.h{font-family:var(--display);font-weight:700;font-size:17px;margin:0}
+.sub{font-size:12.5px;color:var(--muted);margin:0}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:1px solid var(--line);min-height:52px}
+.item:first-child{border-top:0}
+.item .grow{flex:1;min-width:0}
+.item .name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .meta{font-size:12px;color:var(--muted)}
+.pill{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.p-ok{color:var(--ok);background:var(--ok-bg)} .p-warn{color:var(--warn);background:var(--warn-bg)} .p-bad{color:var(--bad);background:var(--bad-bg)} .p-info{color:var(--info);background:var(--info-bg)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-weight:600;font-size:14px;min-height:44px}
+.btn-sm{min-height:36px;padding:6px 11px;font-size:13px;border-radius:10px}
+.btn-primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn-block{width:100%}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;border-radius:9px;padding:8px;font-size:13px;font-weight:600;color:var(--muted);min-height:38px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);flex:1;min-width:0}
+.field select,.field input{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:9px 10px;min-height:42px;font-size:14px;color:var(--ink)}
+.fields{display:flex;gap:10px}
+.banner{border-radius:12px;padding:10px 12px;font-size:13px;display:flex;gap:8px;align-items:flex-start}
+.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:end;height:130px}
+.chart .c{display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.chart .b{width:100%;border-radius:6px 6px 2px 2px;background:var(--brand-soft);border:1px solid var(--brand)}
+.chart .c:last-child .b{background:var(--brand)}
+.chart2{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:end;height:150px}
+.chart2 .c{display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.chart2 .pair{display:flex;gap:3px;align-items:flex-end;width:100%;height:100%}
+.chart2 .bi{flex:1;background:var(--brand);border-radius:4px 4px 1px 1px}
+.chart2 .be{flex:1;background:var(--warn);opacity:.75;border-radius:4px 4px 1px 1px}
+.chart2 small{font-size:11px;color:var(--muted)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.catbar{display:flex;flex-direction:column;gap:4px}
+.chart small{font-size:11px;color:var(--muted)}
+.chart em{font-style:normal;font-size:10.5px;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{padding:8px 6px;border-top:1px solid var(--line);text-align:left}
+.tbl th{font-size:12px;color:var(--muted);font-weight:600;border-top:0}
+.tbl td.r,.tbl th.r{text-align:right}
+.toggle{border:0;border-radius:999px;padding:6px 12px;font-weight:700;font-size:12.5px;min-height:36px;min-width:84px}
+.t-p{background:var(--ok-bg);color:var(--ok)} .t-a{background:var(--bad-bg);color:var(--bad)}
+.net{display:flex;align-items:center;gap:8px;font-size:12.5px;border:1px solid #2a3a52;border-radius:999px;padding:4px 4px 4px 10px;background:transparent;color:var(--night-ink)}
+.net span{border-radius:999px;padding:4px 9px;font-weight:700}
+.on{background:#14532d;color:#bbf7d0} .off{background:#7c2d12;color:#fed7aa}
+.pal{display:flex;gap:4px;flex-shrink:0}
+.pal button{width:40px;min-height:38px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-weight:700;font-size:13px;color:var(--muted)}
+.pal .sel-P{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.pal .sel-A{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.pal .sel-L{background:var(--info-bg);color:var(--info);border-color:var(--info)}
+.mark{width:72px;text-align:right;border:1px solid var(--line);border-radius:10px;padding:8px;min-height:40px;background:var(--surface);color:var(--ink)}
+.roles{display:flex;flex-direction:column;gap:10px}
+.rolebtn{display:flex;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:16px;padding:14px;min-height:72px}
+.rolebtn .ic{width:42px;height:42px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rolebtn b{display:block;font-size:15px}
+.rolebtn span{font-size:12.5px;color:var(--muted)}
+.overlay{position:absolute;inset:0;background:rgba(5,10,18,.55);display:flex;align-items:flex-end;z-index:5}
+.sheet{background:var(--surface);width:100%;border-radius:22px 22px 0 0;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:88%;overflow-y:auto}
+.chat{background:var(--chat);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.45}
+.bub{background:var(--bubble);border-radius:4px 12px 12px 12px;padding:8px 10px;max-width:92%;align-self:flex-start}
+.chat-h{font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.pdf{display:flex;gap:8px;align-items:center;background:var(--surface-2);border-radius:8px;padding:7px 8px;margin-top:6px}
+.pdf i{width:22px;height:26px;border-radius:3px;background:#dc2626;color:#fff;font-size:8px;font-weight:700;font-style:normal;display:flex;align-items:center;justify-content:center}
+.rc{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:6px;font-size:13px}
+.toast{position:absolute;left:16px;right:16px;bottom:72px;background:var(--night);color:var(--night-ink);border-radius:12px;padding:11px 14px;font-size:13.5px;z-index:6}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn:disabled{opacity:.45;cursor:default}
+.empty{font-size:13px;color:var(--muted);text-align:center;padding:18px}
+@media (prefers-reduced-motion: no-preference){ .sheet{animation:up .18s ease-out} @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}} }
+</style>
+
+<div class="wrap">
+  <div class="demobar">
+    <div><b>Teacher app demo</b> · Android app for teachers · same sample data as the web dashboard · resets on reload</div>
+  </div>
+  <div class="app" id="app" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+  // ================= sample data =================
+  var seed = 7;
+  function rnd(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  function hsh(n, salt){ return ((n * 9301 + salt * 49297 + 7) % 233280) / 233280; }
+  var boys = ['Ahmed','Bilal','Hamza','Usman','Ali','Saad','Zain','Faizan','Rayyan','Hassan','Arham','Talha','Abdullah','Ibrahim','Owais'];
+  var girls = ['Ayesha','Sara','Fatima','Hira','Maryam','Zoya','Aleena','Mahnoor','Iqra','Hafsa','Areeba','Anaya','Eman','Laiba','Noor'];
+  var lasts = ['Khan','Raza','Ahmed','Siddiqui','Qureshi','Sheikh','Ansari','Baig','Malik','Hussain','Javed','Iqbal'];
+  var fathers = ['Imran','Kamran','Asif','Nadeem','Shahid','Tahir','Waseem','Junaid','Rizwan','Farhan','Adnan','Naveed'];
+  var classes = ['Montessori','KG-1','KG-2','1','2','3','4','5','6','7','8','9','10'];
+  function cn(c){ return /^\d/.test(c) ? 'Class ' + c : c; }
+  // sections: a big class is split into A, B... Subjects belong to the class; teachers, attendance and results go by section
+  var SECTIONS = {}; classes.forEach(function(c){ SECTIONS[c] = (c === '1' || c === '5' || c === '9') ? ['A','B'] : ['A']; });
+  function gOf(k){ return k.split('|')[0]; }
+  function secOf(k){ return k.split('|')[1]; }
+  function units(){ var o = []; classes.forEach(function(c){ SECTIONS[c].forEach(function(x){ o.push(c + '|' + x); }); }); return o; }
+  function uName(k){ var c = gOf(k), x = secOf(k); return SECTIONS[c] && SECTIONS[c].length > 1 ? cn(c) + (/^\d/.test(c) ? '-' : ' ') + x : cn(c); }
+  function uOf(s){ return s.cls + '|' + s.sec; }
+  function sName(s){ return uName(uOf(s)); }
+  function stuIn(k){ return students.filter(function(s){ return uOf(s) === k; }); }
+  function inCls(s, val){ return !val || val === 'all' || s.cls === val || uOf(s) === val; }
+  function p2(n){ return ('0' + n).slice(-2); }
+  var SUBJ = {}, SUBT = {};
+  classes.forEach(function(c){
+    SUBJ[c] = /^(Montessori|KG)/.test(c) ? ['English','Urdu','Maths','General Knowledge']
+      : +c <= 5 ? ['English','Urdu','Maths','Science','Islamiat','Social Studies']
+      : +c <= 8 ? ['English','Urdu','Maths','Science','Islamiat','Social Studies','Computer']
+      : ['English','Urdu','Maths','Physics','Chemistry','Biology','Islamiat','Pak Studies'];
+  });
+  units().forEach(function(k){ SUBT[k] = {}; });
+  function subjectsOf(c){ return SUBJ[c] || []; }
+  var EXAMS = [['Monthly test',25],['Mid-term',100],['Final',100]];
+  var FEE_TYPES = [['tuition','Monthly tuition'],['fine','Late fine'],['exam','Examination fee'],['admission','Admission / enrolment fee'],['board','Board exam fee'],['annual','Annual charges'],['other','Other']];
+  var EXP_CATS = [['salaries','Salaries'],['rent','Building rent'],['utilities','Utilities'],['maintenance','Maintenance & repairs'],['supplies','Stationery & supplies'],['transport','Transport'],['events','Events & functions'],['other','Other']];
+  var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var MNL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var CUR = 10, NOW_YM = '2026-11';
+  var students = [], sid = 1, cid = 1;
+  classes.forEach(function(c, ci){
+    var n = SECTIONS[c].length > 1 ? 26 + Math.floor(rnd()*6) : 12 + Math.floor(rnd()*6);
+    for (var i=0;i<n;i++){
+      var g = rnd() < .5, f = g ? girls[Math.floor(rnd()*girls.length)] : boys[Math.floor(rnd()*boys.length)], ln = lasts[Math.floor(rnd()*lasts.length)];
+      var paid = rnd() < .8, marks = { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} };
+      subjectsOf(c).forEach(function(x){ marks['Mid-term'][x] = 55 + Math.floor(rnd()*44); marks['Monthly test'][x] = 12 + Math.floor(rnd()*14); });
+      students.push({ id: sid++, name: f + ' ' + ln, father: fathers[Math.floor(rnd()*fathers.length)] + ' ' + ln, cls: c, sec: SECTIONS[c][i % SECTIONS[c].length], fee: 3000 + ci*400, paid: paid,
+        monthsDue: paid ? 0 : 1 + Math.floor(rnd()*3), parent: '03' + (10 + Math.floor(rnd()*40)) + '-' + (1000000 + Math.floor(rnd()*8999999)),
+        girl: g, admitted: (2019 + Math.floor(rnd()*8)) + '-' + ('0' + (1 + Math.floor(rnd()*12))).slice(-2), marks: marks, charges: [] });
+    }
+  });
+  students.forEach(function(s){
+    s.tu = s.paid ? [{ m: CUR, paid: true }] : [];
+    for (var k = s.monthsDue - 1; k >= 0 && !s.paid; k--) s.tu.push({ m: CUR - k, paid: false, late: true });
+    s.charges.push({ cid: cid++, type:'exam', label:'Mid-term exam fee', amount:800, paid: hsh(s.id, 31) < .7 });
+    if (s.cls === '9' || s.cls === '10') s.charges.push({ cid: cid++, type:'board', label:'Matric board exam registration', amount:3500, paid: hsh(s.id, 37) < .5 });
+    if (hsh(s.id, 41) < .07) s.charges.push({ cid: cid++, type:'admission', label:'New admission fee', amount:5000, paid: hsh(s.id, 43) < .6 });
+    s.charges.push({ cid: cid++, type:'annual', label:'Annual charges 2026–27', amount:2000, paid: hsh(s.id, 47) < .75 });
+    if (['7','8','9','10'].indexOf(s.cls) >= 0) s.charges.push({ cid: cid++, type:'other', label:'Study trip fee', amount:1500, paid: hsh(s.id, 53) < .45 });
+  });
+  var AREAS = ['Malir', 'Malir Cantt', 'Saudabad', 'Model Colony', 'Shah Faisal Colony', 'Gulistan-e-Jauhar', 'Jaffar-e-Tayyar'];
+  function idNum(s, salt, gender){ return '42201-' + (1000000 + Math.floor(hsh(s.id, salt) * 8999999)) + '-' + (gender === 'g' ? 2 + 2 * Math.floor(hsh(s.id, salt + 1) * 4) : 1 + 2 * Math.floor(hsh(s.id, salt + 1) * 4)); }
+  students.forEach(function(s){
+    var age = classes.indexOf(s.cls) + 4 + (hsh(s.id, 5) < .25 ? 1 : 0);
+    s.dob = (2026 - age) + '-' + p2(1 + Math.floor(hsh(s.id, 7) * 12)) + '-' + p2(1 + Math.floor(hsh(s.id, 11) * 28));
+    s.bform = idNum(s, 13, s.girl ? 'g' : 'b'); s.fcnic = idNum(s, 19, 'b');
+    s.emerg = '03' + (10 + Math.floor(hsh(s.id, 29) * 40)) + '-' + (1000000 + Math.floor(hsh(s.id, 31) * 8999999));
+    s.address = (hsh(s.id, 37) < .6 ? 'House ' : 'Flat ') + (1 + Math.floor(hsh(s.id, 41) * 480)) + ', ' + AREAS[Math.floor(hsh(s.id, 43) * AREAS.length)] + ', Karachi';
+    s.conc = { type:'auto' };
+  });
+  // brothers and sisters: same father and WhatsApp number
+  students.forEach(function(s, i){
+    if (i < 30 || hsh(s.id, 59) >= .16) return;
+    var j = students[Math.floor(hsh(s.id, 61) * i)]; if (j.cls === s.cls || j.sib) return;
+    s.parent = j.parent; s.father = j.father; s.fcnic = j.fcnic; s.address = j.address; s.emerg = j.emerg; s.sib = 1;
+    s.name = s.name.split(' ')[0] + ' ' + j.name.split(' ').slice(1).join(' ');
+  });
+  [[7,{ type:'staff' }],[52,{ type:'staff' }],[15,{ type:'sch', pct:50 }],[88,{ type:'fixed', amt:1000 }],[131,{ type:'sch', pct:25 }]].forEach(function(x){ var s = students.filter(function(y){ return y.id === x[0]; })[0]; if (s) s.conc = x[1]; });
+  var alumni = [];
+  [[40,'2026-04-15','Shifted to another city','Very good'],[120,'2026-06-30','Joined another school','Good'],[200,'2026-09-05','Family moved abroad','Excellent']].forEach(function(x, n){
+    var s = students.filter(function(y){ return y.id === x[0]; })[0]; if (!s) return;
+    students = students.filter(function(y){ return y !== s; });
+    s.status = 'left'; s.leftOn = x[1]; s.reason = x[2]; s.conduct = x[3]; s.lastClass = cn(s.cls); s.slcNo = 'SLC-2026-0' + (28 + n); s.writeOff = 0; alumni.push(s);
+  });
+  var slcSeq = 31;
+  var FEESET = { fine:200, due:10, sib:10, staff:50 };
+  var CONC_TYPES = [['auto','Automatic (sibling discount if any)'],['none','No concession'],['staff','Staff child'],['sch','Scholarship (%)'],['fixed','Fixed amount off (Rs)']];
+  var STAFF = [
+    { id:1, role:'accountant', name:'Kashif Mehmood', phone:'03002222222', pin:'2222', classes:[], salary0:37000, joined:'2022-03', incs:[{ month:'2026-01', from:37000, to:40000 }] },
+    { id:2, role:'teacher', name:'Sana Javed', phone:'03003333333', pin:'3333', classes:['5','6','3'], salary0:32000, joined:'2023-04', incs:[{ month:'2024-07', from:32000, to:35000 },{ month:'2026-07', from:35000, to:38000 }] },
+    { id:3, role:'teacher', name:'Imran Ali', phone:'03004444444', pin:'4444', classes:['9','10'], salary0:33000, joined:'2021-08', incs:[{ month:'2025-07', from:33000, to:36000 }] },
+    { id:4, role:'teacher', name:'Rabia Noor', phone:'03005555555', pin:'5555', classes:['Montessori','KG-1','KG-2'], salary0:35000, joined:'2026-02', incs:[] },
+    { id:5, role:'teacher', name:'Nadia Parveen', phone:'03006666666', pin:'6666', classes:['1','2'], salary0:30000, joined:'2024-01', incs:[{ month:'2025-01', from:30000, to:34000 }] },
+    { id:6, role:'teacher', name:'Faisal Rehman', phone:'03007777777', pin:'7777', classes:['7','8'], salary0:33000, joined:'2025-08', incs:[] },
+    { id:7, role:'teacher', name:'Hina Aslam', phone:'03008888888', pin:'8888', classes:['3','4'], salary0:32000, joined:'2026-03', incs:[] },
+    { id:8, role:'support', job:'Security guard', name:'Aslam Khan', phone:'03111234567', classes:[], salary0:23000, joined:'2019-05', incs:[{ month:'2026-01', from:23000, to:25000 }] },
+    { id:9, role:'support', job:'Peon', name:'Shabbir Ahmed', phone:'03127654321', classes:[], salary0:22000, joined:'2024-06', incs:[] },
+    { id:10, role:'support', job:'Van driver', name:'Akram Ali', phone:'03139876543', classes:[], salary0:26000, joined:'2023-02', incs:[{ month:'2025-12', from:26000, to:28000 }] },
+    { id:11, role:'teacher', name:'Ayesha Siddiqui', phone:'03009999999', pin:'9999', classes:['1','5'], salary0:31000, joined:'2025-03', incs:[] },
+    { id:12, role:'teacher', name:'Zubair Ahmed', phone:'03001112223', pin:'1212', classes:['9','10'], salary0:36000, joined:'2024-08', incs:[{ month:'2025-08', from:36000, to:39000 }] }
+  ];
+  var staffId = 13;
+  units().forEach(function(k){ var c = gOf(k), si = SECTIONS[c].indexOf(secOf(k)), ts = STAFF.filter(function(u){ return u.role === 'teacher' && u.classes.indexOf(c) >= 0; });
+    if (ts.length) subjectsOf(c).forEach(function(x, i){ SUBT[k][x] = ts[(i + si) % ts.length].id; }); });
+  var CT = {};
+  units().forEach(function(k){
+    var cnt = function(u){ return Object.keys(CT).filter(function(x){ return CT[x] === u.id; }).length; };
+    var t = STAFF.filter(function(u){ return u.role === 'teacher' && u.classes.indexOf(gOf(k)) >= 0; }).sort(function(a, b){ return cnt(a) - cnt(b) || a.classes.length - b.classes.length; })[0];
+    if (t) CT[k] = t.id; });
+  function ctOf(u){ return units().filter(function(k){ return CT[k] === u.id; }); }
+  function ctName(k){ var u = CT[k] ? staffById(CT[k]) : null; return u && !u.left ? u.name : null; }
+  function teachesOf(u){ var out = []; units().forEach(function(k){ var l = subjectsOf(gOf(k)).filter(function(x){ return SUBT[k][x] === u.id; }); if (l.length) out.push({ c:k, subs:l }); }); return out; }
+  // attendance: November school days (Mon–Fri) up to 20 Nov
+  // school months: Jan–May and Aug–Nov 2026 (June–July summer vacation); Nov up to the 20th
+  var ATT_MONTHS = [0,1,2,3,4,7,8,9,10];
+  function schoolDays(m){ var out = [], last = m === CUR ? 20 : new Date(2026, m+1, 0).getDate();
+    for (var d = 1; d <= last; d++){ var wd = new Date(2026, m, d).getDay(); if (wd > 0 && wd < 6) out.push('2026-' + ('0'+(m+1)).slice(-2) + '-' + ('0'+d).slice(-2)); } return out; }
+  var DAYS = schoolDays(CUR);
+  var attOverride = {};
+  function attOf(s, day){ var k = day + ':' + s.id; if (attOverride[k]) return attOverride[k];
+    var x = hsh(s.id * 31 + +day.slice(8) + +day.slice(5,7) * 37, 89), weak = hsh(s.id, 97) < .12 ? .14 : 0;
+    return x < .05 + weak ? 'A' : x < .07 + weak ? 'L' : 'P'; }
+  // ================= teacher app =================
+  function staffById(id){ return STAFF.filter(function(u){ return u.id === +id; })[0]; }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function fmtPhone(p){ return p.slice(0,4) + ' ' + p.slice(4); }
+  function dayLabel(d){ var dt = new Date(+d.slice(0,4), +d.slice(5,7)-1, +d.slice(8)); return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dt.getDay()] + ', ' + (+d.slice(8)) + ' ' + MNL[dt.getMonth()]; }
+  function OUT(e){ return EXAMS.filter(function(x){ return x[0] === e; })[0][1]; }
+  function mk(s, e, x){ var v = s.marks[e] && s.marks[e][x]; return typeof v === 'number' ? v : null; }
+  function nowTime(){ var d = new Date(); return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2); }
+  function first(n){ return n.split(' ')[0]; }
+  var TODAY = DAYS[DAYS.length-1];
+  var WEB_ONLY = [{ phone:'03001111111', name:'Tariq Hussain', title:'owner' }].concat(STAFF.filter(function(u){ return u.role === 'accountant'; }).map(function(u){ return { phone:u.phone, name:u.name, title:'accountant' }; }));
+  function teachers(){ return STAFF.filter(function(u){ return u.role === 'teacher' && !u.left; }); }
+  function myCT(){ return ctOf(S.user); }
+  function myTeach(){ return teachesOf(S.user); }
+  function myUnits(){ var o = myCT().slice(); myTeach().forEach(function(t){ if (o.indexOf(t.c) < 0) o.push(t.c); }); return units().filter(function(k){ return o.indexOf(k) >= 0; }); }
+
+  var S = { user:null, tab:'home', online:true, queue:[], att:{}, attDraft:{}, attU:null, attView:'today', mkExam:'Mid-term', mkKey:null, mkErr:'', stuU:'all', q:'', sheet:null, lgPhone:'', lgPin:'', lgErr:'', pinErr:'', lastSync:'08:02', toast:'' };
+
+  var icons = {
+    home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+    check:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
+    doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/>',
+    users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/>',
+    user:'<circle cx="12" cy="7" r="4"/><path d="M4 21c1-4 4.2-6 8-6s7 2 8 6"/>'
+  };
+  function ico(k){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icons[k] + '</svg>'; }
+  function header(title, sub){
+    return '<div class="top"><div class="top-row"><div class="logo"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i>SchoolSaathi</div>' +
+      (S.user ? '<button class="net" data-a="net" aria-label="Network: ' + (S.online ? 'online' : 'offline') + '. Tap to switch for the demo.">' + (S.online ? 'Online' : 'Offline') + (S.queue.length ? ' · ' + S.queue.length + ' to sync' : '') + '<span class="' + (S.online ? 'on' : 'off') + '">' + (S.online ? 'ON' : 'OFF') + '</span></button>' : '') +
+      '</div><h1>' + title + '</h1><p>' + sub + '</p></div>';
+  }
+  function tabs(){
+    return '<nav class="tabs" aria-label="Sections">' + [['home','Home','home'],['att','Attendance','check'],['marks','Marks','doc'],['stu','Students','users'],['me','Me','user']].map(function(t){ return '<button data-a="tab" data-v="' + t[0] + '"' + (S.tab === t[0] ? ' aria-current="page"' : '') + '>' + ico(t[2]) + t[1] + '</button>'; }).join('') + '</nav>';
+  }
+  function pill(t, c){ return '<span class="pill ' + c + '">' + t + '</span>'; }
+  function banner(t, c){ return '<div class="banner ' + c + '" role="' + (c === 'p-bad' ? 'alert' : 'status') + '">' + t + '</div>'; }
+
+  // ---------- login ----------
+  function viewLogin(){
+    return header('Teacher sign in', 'XYZ School · staff app') + '<div class="body">' +
+      '<form class="card" id="login-form" novalidate><label class="field" for="lg-phone">Mobile number<input id="lg-phone" type="tel" inputmode="numeric" autocomplete="username" value="' + esc(S.lgPhone) + '" placeholder="03XX XXXXXXX"></label>' +
+      '<label class="field" for="lg-pin">4-digit PIN<input id="lg-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" value="' + esc(S.lgPin) + '" placeholder="••••"></label>' +
+      (S.lgErr ? banner(S.lgErr, 'p-bad') : '') + '<button class="btn btn-primary btn-block" type="submit">Sign in</button><p class="sub">Forgot your PIN? The school office can reset it from the web dashboard.</p></form>' +
+      banner('<span><b>Owner or accounts office?</b> Please sign in on the web dashboard. This app is only for teachers.</span>', 'p-info') +
+      '<div class="card"><p class="h" style="font-size:15px">Demo teachers</p><p class="sub">Tap one to fill it in. Each teacher only sees their own sections and subjects.</p><div class="roles">' +
+      teachers().map(function(u){ var ct = ctOf(u), t = teachesOf(u), n = t.reduce(function(a,x){ return a + x.subs.length; }, 0);
+        return '<button class="rolebtn" type="button" data-a="fill" data-v="' + u.id + '"><span class="ic">' + ico('user') + '</span><span><b>' + esc(u.name) + '</b><span class="num">' + fmtPhone(u.phone) + ' · PIN ' + u.pin + '</span><br><span>' + (ct.length ? 'Class teacher: ' + ct.map(uName).join(', ') + ' · ' : '') + n + ' subjects</span></span></button>'; }).join('') + '</div></div></div>';
+  }
+
+  // ---------- home ----------
+  function attSummary(k){ var a = S.att[k]; if (!a) return null; var c = { P:0, A:0, L:0 }; Object.keys(a.marks).forEach(function(id){ c[a.marks[id]]++; }); return c; }
+  function mkCount(k, x, e){ var l = stuIn(k); return { done: l.filter(function(s){ return mk(s, e, x) !== null; }).length, n: l.length }; }
+  function viewHome(){
+    var ct = myCT(), t = myTeach();
+    var att = ct.length ? '<div class="list">' + ct.map(function(k){ var c = attSummary(k), a = S.att[k];
+        return '<div class="item"><div class="grow"><div class="name">' + uName(k) + '</div><div class="meta num">' + (c ? c.P + ' present · ' + c.A + ' absent · ' + c.L + ' leave · ' + (a.synced ? 'saved ' + a.time : 'saved on phone, waiting to sync') : stuIn(k).length + ' students · not taken yet') + '</div></div>' +
+          (c ? pill(a.synced ? 'Done' : 'To sync', a.synced ? 'p-ok' : 'p-warn') : '<button class="btn btn-sm btn-primary" data-a="goatt" data-v="' + esc(k) + '">Take</button>') + '</div>'; }).join('') + '</div>'
+      : '<p class="sub">You are not a class teacher, so you don’t take attendance. You enter marks for your subjects.</p>';
+    var subs = t.length ? '<div class="list">' + t.map(function(x){ var left = x.subs.filter(function(y){ var m = mkCount(x.c, y, S.mkExam); return m.done < m.n; });
+        return '<div class="item"><div class="grow"><div class="name">' + uName(x.c) + '</div><div class="meta">' + esc(x.subs.join(', ')) + '</div><div class="meta">' + S.mkExam + ': ' + (left.length ? left.length + ' subject' + (left.length > 1 ? 's' : '') + ' still missing marks' : 'all marks entered') + '</div></div>' +
+          '<button class="btn btn-sm' + (left.length ? ' btn-primary' : '') + '" data-a="gomk" data-v="' + esc(x.c + '::' + (left[0] || x.subs[0])) + '">' + (left.length ? 'Enter' : 'View') + '</button></div>'; }).join('') + '</div>'
+      : '<p class="sub">No subjects are assigned to you yet. The owner assigns them on the web dashboard.</p>';
+    return header('Assalam o Alaikum, ' + esc(first(S.user.name)), dayLabel(TODAY) + ' 2026') + '<div class="body">' +
+      (S.queue.length ? banner('<span><b>' + S.queue.length + ' change' + (S.queue.length > 1 ? 's' : '') + ' saved on this phone.</b> They sync on their own when the internet is back.</span>', 'p-warn') : '') +
+      '<div class="kpis"><div class="kpi"><div class="l">Class teacher of</div><div class="v">' + (ct.length ? ct.map(uName).join(', ').replace(/Class /g, '') : '—') + '</div><div class="s">' + ct.reduce(function(a,k){ return a + stuIn(k).length; }, 0) + ' students</div></div>' +
+      '<div class="kpi"><div class="l">Subjects you teach</div><div class="v num">' + t.reduce(function(a,x){ return a + x.subs.length; }, 0) + '</div><div class="s">in ' + t.length + ' section' + (t.length === 1 ? '' : 's') + '</div></div></div>' +
+      '<div class="card"><div class="row"><p class="h">Attendance today</p></div>' + att + '</div>' +
+      '<div class="card"><div class="row"><p class="h">Your subjects</p><span class="sub">' + S.mkExam + '</span></div>' + subs + '</div></div>';
+  }
+
+  // ---------- attendance ----------
+  function draftFor(k){ if (!S.attDraft[k]){ var d = {}, a = S.att[k]; stuIn(k).forEach(function(s){ d[s.id] = a ? a.marks[s.id] || 'P' : 'P'; }); S.attDraft[k] = d; } return S.attDraft[k]; }
+  function viewAtt(){
+    var ct = myCT();
+    if (!ct.length) return header('Attendance', 'Only class teachers take attendance') + '<div class="body"><div class="empty">You are not the class teacher of any section. The owner sets class teachers on the web dashboard.</div></div>';
+    var k = ct.indexOf(S.attU) >= 0 ? S.attU : ct[0]; S.attU = k;
+    var list = stuIn(k), d = draftFor(k), saved = S.att[k];
+    var segU = ct.length > 1 ? '<div class="seg" role="group" aria-label="Section">' + ct.map(function(x){ return '<button data-a="attu" data-v="' + esc(x) + '" aria-pressed="' + (x === k) + '">' + uName(x) + '</button>'; }).join('') + '</div>' : '';
+    var segV = '<div class="seg" role="group" aria-label="View">' + [['today','Today'],['month','This month']].map(function(x){ return '<button data-a="attv" data-v="' + x[0] + '" aria-pressed="' + (S.attView === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    var head = header('Attendance · ' + uName(k), dayLabel(TODAY) + (saved ? ' · saved at ' + saved.time : ' · not saved yet'));
+    if (S.attView === 'month'){
+      var past = DAYS.slice(0, -1);
+      var rows = list.map(function(s, i){ var c = { P:0, A:0, L:0 }; past.forEach(function(dd){ c[attOf(s, dd)]++; }); var n = past.length; if (saved){ c[saved.marks[s.id]]++; n++; } var p = c.P / n;
+        return '<tr><td>' + (i + 1) + '</td><td>' + esc(s.name) + '</td><td class="r num">' + c.P + '</td><td class="r num"' + (c.A ? ' style="color:var(--bad);font-weight:700"' : '') + '>' + c.A + '</td><td class="r num">' + c.L + '</td><td class="r">' + pill(Math.round(p * 100) + '%', p < .75 ? 'p-bad' : p < .9 ? 'p-warn' : 'p-ok') + '</td></tr>'; }).join('');
+      return head + '<div class="body">' + segU + segV + '<p class="sub">November 2026 · ' + (past.length + (saved ? 1 : 0)) + ' school days' + (saved ? '' : ' (today not saved yet)') + '</p>' +
+        '<div class="card" style="padding:8px"><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>#</th><th>Student</th><th class="r">P</th><th class="r">A</th><th class="r">L</th><th class="r">%</th></tr></thead><tbody>' + rows + '</tbody></table></div></div></div>';
+    }
+    var c = { P:0, A:0, L:0 }; list.forEach(function(s){ c[d[s.id]]++; });
+    return head + '<div class="body">' + segU + segV +
+      '<div class="row"><span style="display:flex;gap:6px;flex-wrap:wrap">' + pill(c.P + ' present', 'p-ok') + pill(c.A + ' absent', 'p-bad') + pill(c.L + ' leave', 'p-info') + '</span><button class="btn btn-sm" data-a="allp">All present</button></div>' +
+      '<div class="list">' + list.map(function(s, i){ var st = d[s.id];
+        return '<div class="item"><span class="sub num" style="width:20px">' + (i + 1) + '</span><div class="grow"><div class="name">' + esc(s.name) + '</div><div class="meta">' + esc(s.father) + '</div></div><span class="pal" role="group" aria-label="' + esc(s.name) + '">' +
+          [['P','Present'],['A','Absent'],['L','Leave']].map(function(o){ return '<button class="' + (st === o[0] ? 'sel-' + o[0] : '') + '" data-a="mark" data-v="' + s.id + '" data-s="' + o[0] + '" aria-pressed="' + (st === o[0]) + '" aria-label="' + o[1] + '">' + o[0] + '</button>'; }).join('') + '</span></div>'; }).join('') + '</div>' +
+      '<p class="sub">Parents of absent students get a WhatsApp alert when you save. Leave sends no alert.' + (S.online ? '' : ' <b style="color:var(--warn)">You are offline:</b> it saves on this phone and the alerts go out once you’re back online.') + '</p>' +
+      '<button class="btn btn-primary btn-block" data-a="attsave">' + (saved ? 'Update attendance' : 'Save attendance') + '</button></div>';
+  }
+
+  // ---------- marks ----------
+  function mkOpts(){ var o = []; myTeach().forEach(function(t){ t.subs.forEach(function(x){ o.push([t.c + '::' + x, uName(t.c) + ' · ' + x]); }); }); return o; }
+  function viewMarks(){
+    var opts = mkOpts();
+    if (!opts.length) return header('Marks', 'Exam marks for your subjects') + '<div class="body"><div class="empty">No subjects are assigned to you yet. The owner assigns them on the web dashboard.</div></div>';
+    if (!opts.some(function(o){ return o[0] === S.mkKey; })) S.mkKey = opts[0][0];
+    var k = S.mkKey.split('::')[0], x = S.mkKey.split('::')[1], e = S.mkExam, o = OUT(e), list = stuIn(k);
+    var done = list.filter(function(s){ return mk(s, e, x) !== null; }), avg = done.length ? done.reduce(function(a,s){ return a + mk(s, e, x); }, 0) / done.length : null;
+    return header('Marks · ' + esc(x), uName(k) + ' · ' + e + ' (out of ' + o + ')') + '<div class="body">' +
+      '<div class="fields"><label class="field" for="mk-exam">Exam<select id="mk-exam" data-a="mkexam">' + EXAMS.map(function(ex){ return '<option value="' + ex[0] + '"' + (ex[0] === e ? ' selected' : '') + '>' + ex[0] + ' /' + ex[1] + '</option>'; }).join('') + '</select></label>' +
+      '<label class="field" for="mk-key">Class and subject<select id="mk-key" data-a="mkkey">' + opts.map(function(p){ return '<option value="' + esc(p[0]) + '"' + (p[0] === S.mkKey ? ' selected' : '') + '>' + esc(p[1]) + '</option>'; }).join('') + '</select></label></div>' +
+      '<div class="kpis"><div class="kpi"><div class="l">Entered</div><div class="v num">' + done.length + ' / ' + list.length + '</div><div class="s">Blank means not entered</div></div><div class="kpi"><div class="l">Class average</div><div class="v num">' + (avg === null ? '—' : (Math.round(avg * 10) / 10) + ' / ' + o) + '</div><div class="s">' + (avg === null ? 'No marks yet' : Math.round(avg / o * 100) + '%') + '</div></div></div>' +
+      '<form id="mk-form" novalidate><div class="list">' + list.map(function(s, i){ var v = mk(s, e, x);
+        return '<div class="item"><span class="sub num" style="width:20px">' + (i + 1) + '</span><div class="grow"><div class="name">' + esc(s.name) + '</div></div><label class="sub" for="mk-' + s.id + '" style="display:flex;align-items:center;gap:6px"><input class="mark num" id="mk-' + s.id + '" data-sid="' + s.id + '" type="number" inputmode="numeric" min="0" max="' + o + '" value="' + (v === null ? '' : v) + '" placeholder="—" aria-label="' + esc(s.name) + ' marks out of ' + o + '">/ ' + o + '</label></div>'; }).join('') + '</div>' +
+      (S.mkErr ? banner(S.mkErr, 'p-bad') : '') +
+      '<p class="sub" style="margin-top:12px">You only see the subjects assigned to you. The owner sends result cards to parents from the web dashboard.</p>' +
+      '<button class="btn btn-primary btn-block" type="submit" style="margin-top:12px">Save marks</button></form></div>';
+  }
+
+  // ---------- students ----------
+  function viewStu(){
+    var U = myUnits(); if (S.stuU !== 'all' && U.indexOf(S.stuU) < 0) S.stuU = 'all';
+    var list = students.filter(function(s){ return (S.stuU === 'all' ? U.indexOf(uOf(s)) >= 0 : uOf(s) === S.stuU) && (!S.q || (s.name + ' ' + s.father).toLowerCase().indexOf(S.q.toLowerCase()) >= 0); });
+    return header('My students', U.length + ' section' + (U.length === 1 ? '' : 's') + ' you teach') + '<div class="body">' +
+      '<div class="fields"><label class="field" for="stu-u">Section<select id="stu-u" data-a="stuu"><option value="all">All my sections</option>' + U.map(function(k){ return '<option value="' + esc(k) + '"' + (S.stuU === k ? ' selected' : '') + '>' + uName(k) + (myCT().indexOf(k) >= 0 ? ' (class teacher)' : '') + '</option>'; }).join('') + '</select></label></div>' +
+      '<label class="field" for="stu-q">Search<input id="stu-q" type="search" data-a="q" value="' + esc(S.q) + '" placeholder="Student or father name"></label>' +
+      '<p class="sub num">' + list.length + ' students</p>' +
+      (list.length ? '<div class="list">' + list.map(function(s){ return '<div class="item"><div class="grow"><div class="name">' + esc(s.name) + '</div><div class="meta">' + uName(uOf(s)) + ' · ' + esc(s.father) + '</div></div><button class="btn btn-sm" data-a="stu" data-v="' + s.id + '">Details</button></div>'; }).join('') + '</div>' : '<div class="empty">No students match.</div>') + '</div>';
+  }
+  function stuSheet(s){
+    var k = uOf(s), past = DAYS.slice(0, -1), p = past.filter(function(d){ return attOf(s, d) === 'P'; }).length / past.length;
+    var mine = myTeach().filter(function(t){ return t.c === k; })[0], wa = '92' + s.parent.replace(/\D/g, '').slice(1);
+    return '<div class="rc"><div class="row"><b>' + esc(s.name) + '</b>' + pill(uName(k), 'p-info') + '</div>' +
+      [['Father', esc(s.father)], ['Date of birth', s.dob ? (+s.dob.slice(8)) + ' ' + MN[+s.dob.slice(5,7)-1] + ' ' + s.dob.slice(0,4) : '—'], ['Parent WhatsApp', esc(s.parent)], ['Emergency', esc(s.emerg || '—')], ['Address', esc(s.address || '—')], ['Attendance (Nov)', Math.round(p * 100) + '%']].map(function(r){ return '<div class="row"><span class="sub">' + r[0] + '</span><b style="text-align:right">' + r[1] + '</b></div>'; }).join('') + '</div>' +
+      (mine ? '<div class="rc"><b>Your subjects · Mid-term</b>' + mine.subs.map(function(x){ var v = mk(s, 'Mid-term', x); return '<div class="row"><span>' + esc(x) + '</span><b class="num">' + (v === null ? '—' : v + ' / 100') + '</b></div>'; }).join('') + '</div>' : '') +
+      '<div class="fields"><a class="btn btn-block" style="text-align:center;text-decoration:none;color:var(--ink)" href="tel:' + s.parent.replace(/\D/g, '') + '">Call parent</a><a class="btn btn-primary btn-block" style="text-align:center;text-decoration:none" href="https://wa.me/' + wa + '" target="_blank" rel="noopener">WhatsApp parent</a></div>' +
+      '<p class="sub">Fees are not shown in the teacher app. Parents with fee questions should contact the accounts office.</p>';
+  }
+
+  // ---------- me ----------
+  function viewMe(){
+    var u = S.user, ct = myCT(), t = myTeach();
+    return header('My account', esc(u.name) + ' · Teacher') + '<div class="body">' +
+      '<div class="rc"><div class="row"><span class="sub">Mobile</span><b class="num">' + fmtPhone(u.phone) + '</b></div><div class="row"><span class="sub">Class teacher of</span><b>' + (ct.length ? ct.map(uName).join(', ') : 'None') + '</b></div>' +
+        t.map(function(x){ return '<div class="row" style="align-items:flex-start"><span class="sub">' + uName(x.c) + '</span><b style="text-align:right">' + esc(x.subs.join(', ')) + '</b></div>'; }).join('') + '</div>' +
+      '<div class="card"><div class="row"><p class="h" style="font-size:15px">Sync</p>' + pill(S.online ? 'Online' : 'Offline', S.online ? 'p-ok' : 'p-warn') + '</div><p class="sub">' + (S.queue.length ? S.queue.length + ' change' + (S.queue.length > 1 ? 's' : '') + ' waiting on this phone. ' : 'Everything is synced. ') + 'Last synced at ' + S.lastSync + '.</p>' +
+        '<p class="sub">The app works without internet. Attendance and marks are saved on the phone and sent when the connection is back.</p></div>' +
+      '<form class="card" id="pin-form" novalidate><p class="h" style="font-size:15px">Change PIN</p><div class="fields"><label class="field" for="pn-old">Current PIN<input id="pn-old" type="password" inputmode="numeric" maxlength="4"></label><label class="field" for="pn-new">New PIN<input id="pn-new" type="password" inputmode="numeric" maxlength="4"></label></div>' +
+        '<label class="field" for="pn-new2">New PIN again<input id="pn-new2" type="password" inputmode="numeric" maxlength="4"></label>' + (S.pinErr ? banner(S.pinErr, 'p-bad') : '') + '<button class="btn btn-block" type="submit">Change PIN</button></form>' +
+      '<button class="btn btn-block" data-a="logout">Log out</button></div>';
+  }
+
+  // ---------- render ----------
+  var tt;
+  function toast(m){ S.toast = m; clearTimeout(tt); tt = setTimeout(function(){ S.toast = ''; var t = document.querySelector('.toast'); if (t) t.remove(); }, 3400); render(); }
+  function render(){
+    var app = document.getElementById('app');
+    if (!S.user){ app.innerHTML = viewLogin() + (S.toast ? '<div class="toast" role="status">' + S.toast + '</div>' : ''); return; }
+    var ae = document.activeElement, fid = ae && ae.id === 'stu-q' ? ae.id : null;
+    app.innerHTML = ({ home:viewHome, att:viewAtt, marks:viewMarks, stu:viewStu, me:viewMe })[S.tab]() + tabs() +
+      (S.sheet ? '<div class="overlay" data-a="sclose"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(S.sheet.title) + '" data-stop="1"><div class="row"><p class="h">' + S.sheet.title + '</p><button class="btn btn-sm" data-a="sclose">Close</button></div>' + S.sheet.html + '</div></div>' : '') +
+      (S.toast ? '<div class="toast" role="status">' + S.toast + '</div>' : '');
+    if (fid){ var f = document.getElementById(fid); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+  }
+  function flush(){
+    var n = S.queue.length, alerts = 0;
+    S.queue.forEach(function(q){ if (q.type === 'att'){ S.att[q.k].synced = true; alerts += q.alerts; } });
+    S.queue = []; S.lastSync = nowTime();
+    return n ? 'Back online. Synced ' + n + ' change' + (n > 1 ? 's' : '') + (alerts ? ' and sent ' + alerts + ' absence alert' + (alerts > 1 ? 's' : '') : '') + '.' : 'Back online.';
+  }
+
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('[data-a]'); if (!el) return;
+    if (el.tagName === 'SELECT' || el.tagName === 'INPUT') return;
+    if (el.classList.contains('overlay') && e.target.closest('[data-stop]')) return;
+    var a = el.dataset.a, v = el.dataset.v;
+    if (a === 'fill'){ var u = staffById(v); S.lgPhone = fmtPhone(u.phone); S.lgPin = u.pin; S.lgErr = ''; render(); }
+    else if (a === 'tab'){ S.tab = v; S.sheet = null; S.mkErr = ''; render(); document.getElementById('app').scrollIntoView({ block:'start' }); }
+    else if (a === 'net'){ S.online = !S.online; toast(S.online ? flush() : 'Offline. You can keep working; changes save on this phone.'); }
+    else if (a === 'logout'){ S.user = null; S.tab = 'home'; S.lgPin = ''; S.sheet = null; render(); }
+    else if (a === 'goatt'){ S.attU = v; S.attView = 'today'; S.tab = 'att'; render(); }
+    else if (a === 'gomk'){ S.mkKey = v; S.tab = 'marks'; S.mkErr = ''; render(); }
+    else if (a === 'attu'){ S.attU = v; render(); }
+    else if (a === 'attv'){ S.attView = v; render(); }
+    else if (a === 'mark'){ draftFor(S.attU)[v] = el.dataset.s; render(); }
+    else if (a === 'allp'){ var d = draftFor(S.attU); Object.keys(d).forEach(function(id){ d[id] = 'P'; }); render(); }
+    else if (a === 'attsave'){
+      var k = S.attU, dr = draftFor(k), was = S.att[k], abs = Object.keys(dr).filter(function(id){ return dr[id] === 'A' && (!was || was.marks[id] !== 'A'); }).length;
+      S.att[k] = { marks: Object.assign({}, dr), time: nowTime(), synced: S.online };
+      if (!S.online){ S.queue = S.queue.filter(function(q){ return !(q.type === 'att' && q.k === k); }); S.queue.push({ type:'att', k:k, alerts:abs }); }
+      toast(S.online ? 'Attendance saved for ' + uName(k) + '.' + (abs ? ' Absence alert sent to ' + abs + ' parent' + (abs > 1 ? 's' : '') + ' on WhatsApp.' : '') : 'Saved on this phone. It syncs' + (abs ? ' and sends ' + abs + ' absence alert' + (abs > 1 ? 's' : '') : '') + ' when you’re back online.');
+    }
+    else if (a === 'stu'){ var s = students.filter(function(x){ return x.id === +v; })[0]; S.sheet = { title:'Student details', html: stuSheet(s) }; render(); }
+    else if (a === 'sclose'){ S.sheet = null; render(); }
+  });
+  document.addEventListener('change', function(e){
+    var el = e.target, a = el.dataset.a; if (!a) return;
+    if (el.tagName === 'SELECT') el.blur();
+    if (a === 'mkexam'){ S.mkExam = el.value; S.mkErr = ''; render(); }
+    else if (a === 'mkkey'){ S.mkKey = el.value; S.mkErr = ''; render(); }
+    else if (a === 'stuu'){ S.stuU = el.value; render(); }
+  });
+  document.addEventListener('input', function(e){
+    var el = e.target;
+    if (el.dataset.a === 'q'){ S.q = el.value; render(); return; }
+    if (el.classList.contains('mark')){ var o = OUT(S.mkExam), n = el.value === '' ? 0 : Number(el.value); el.style.borderColor = el.value !== '' && (!(n >= 0 && n <= o) || n % 1) ? 'var(--bad)' : ''; }
+  });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.sheet){ S.sheet = null; render(); } });
+  document.addEventListener('submit', function(e){
+    e.preventDefault(); var f = e.target;
+    if (f.id === 'login-form'){
+      var ph = document.getElementById('lg-phone').value.replace(/\D/g, ''), pin = document.getElementById('lg-pin').value.trim();
+      S.lgPhone = document.getElementById('lg-phone').value; S.lgPin = pin;
+      var t = teachers().filter(function(u){ return u.phone === ph; })[0], w = WEB_ONLY.filter(function(u){ return u.phone === ph; })[0];
+      S.lgErr = ph.length !== 11 ? 'Enter your 11-digit mobile number.' : w ? 'This app is for teachers. ' + esc(first(w.name)) + ', please sign in on the web dashboard as the ' + w.title + '.' : !t ? 'This number is not registered. Ask the school office to add you.' : !/^\d{4}$/.test(pin) ? 'Enter your 4-digit PIN.' : pin !== t.pin ? 'Wrong PIN. Try again or ask the office to reset it.' : '';
+      if (S.lgErr){ render(); return; }
+      S.user = t; S.tab = 'home'; S.lgErr = ''; S.attU = null; S.mkKey = null; S.stuU = 'all'; S.q = ''; S.attDraft = {}; render(); toast('Welcome, ' + esc(first(t.name)) + '.');
+      return;
+    }
+    if (f.id === 'mk-form'){
+      var e0 = S.mkExam, o = OUT(e0), x = S.mkKey.split('::')[1], bad = 0, ch = 0, vals = [];
+      Array.prototype.slice.call(f.querySelectorAll('.mark')).forEach(function(inp){ var raw = inp.value.trim(), n = Number(raw);
+        if (raw !== '' && (!(n >= 0 && n <= o) || n % 1)){ bad++; return; } vals.push([inp.dataset.sid, raw === '' ? null : n]); });
+      if (bad){ S.mkErr = bad + ' mark' + (bad > 1 ? 's are' : ' is') + ' wrong. Use whole numbers from 0 to ' + o + '.'; var keep = {}; Array.prototype.slice.call(f.querySelectorAll('.mark')).forEach(function(i){ keep[i.id] = i.value; }); render(); Object.keys(keep).forEach(function(id){ var i = document.getElementById(id); i.value = keep[id]; var n = Number(keep[id]); if (keep[id] !== '' && (!(n >= 0 && n <= o) || n % 1)) i.style.borderColor = 'var(--bad)'; }); return; }
+      vals.forEach(function(p){ var s = students.filter(function(y){ return y.id === +p[0]; })[0], cur = mk(s, e0, x); if (cur !== p[1]){ ch++; if (p[1] === null) delete s.marks[e0][x]; else s.marks[e0][x] = p[1]; } });
+      S.mkErr = '';
+      if (ch && !S.online) S.queue.push({ type:'marks', key:S.mkKey });
+      toast(!ch ? 'No changes to save.' : S.online ? 'Saved ' + ch + ' mark' + (ch > 1 ? 's' : '') + '. The owner sees them on the dashboard.' : 'Saved ' + ch + ' mark' + (ch > 1 ? 's' : '') + ' on this phone. They sync when you’re online.');
+      return;
+    }
+    if (f.id === 'pin-form'){
+      var po = document.getElementById('pn-old').value, pn = document.getElementById('pn-new').value, pn2 = document.getElementById('pn-new2').value;
+      S.pinErr = po !== S.user.pin ? 'Current PIN is wrong.' : !/^\d{4}$/.test(pn) ? 'The new PIN must be 4 digits.' : pn === po ? 'Choose a PIN different from the current one.' : pn !== pn2 ? 'The two new PINs don’t match.' : '';
+      if (S.pinErr){ render(); return; }
+      S.user.pin = pn; render(); toast('PIN changed. Use it next time you sign in.');
+    }
+  });
+  render();
+})();
+</script>
