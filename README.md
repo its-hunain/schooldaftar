@@ -1,4 +1,4 @@
-# SchoolSaathi
+# SchoolDaftar
 
 School management software for Pakistani schools. Run your whole school from one place: fees, attendance, results, staff, payroll and profit and loss, with parents updated on WhatsApp.
 

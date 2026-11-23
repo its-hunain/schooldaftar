@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SchoolSaathi Admin</title>
+<title>SchoolDaftar Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -1311,7 +1311,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   var ADMIN = WEB_USERS[0];
   function renderLogin(){
     var chk = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>';
-    document.getElementById('login-root').innerHTML = '<div class="login"><section class="login-art"><div class="brand" style="padding:0"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolSaathi</span></div>' +
+    document.getElementById('login-root').innerHTML = '<div class="login"><section class="login-art"><div class="brand" style="padding:0"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolDaftar</span></div>' +
       '<div style="display:flex;flex-direction:column;gap:16px"><h2>Your whole school, on one dashboard.</h2><p>Students, staff, fees, attendance, results, expenses and profit and loss. Teachers and accountants use the mobile app, and everything comes here.</p></div>' +
       '<ul>' + ['Full control of every record','Payroll with increments and slips','Monthly and yearly profit and loss','Export any report to PDF or Excel'].map(function(t){ return '<li>' + chk + t + '</li>'; }).join('') + '</ul></section>' +
       '<section class="login-form"><form class="login-card" id="login-form" novalidate><div><h1>Sign in</h1><p class="sub">Owner, admin and accounts office, ' + SCHOOL + '</p></div>' +
@@ -1329,7 +1329,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (!authed){ renderLogin(); return; }
     document.getElementById('login-root').innerHTML = '';
     charts.forEach(function(c){ c.destroy(); }); charts = [];
-    document.getElementById('side').innerHTML = '<div class="brand"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolSaathi</span></div>' +
+    document.getElementById('side').innerHTML = '<div class="brand"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolDaftar</span></div>' +
       navFor().map(function(n){ return '<button class="navlink" data-a="go" data-v="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ico(n[2]) + (isAdm() && n[0] === 'staff' ? 'Staff' : n[1]) + '</button>'; }).join('') +
       '<div class="foot">' + (S.user && S.user.role === 'accountant' ? 'Accounts office \u00b7 demo with sample data. Salaries and profit are visible to the owner only.' : isAdm() ? 'Admin office \u00b7 demo with sample data. Fees, salaries and profit are visible to the owner only.' : 'Owner / Principal dashboard \u00b7 demo with sample data. Teachers use the mobile app.') + '</div>';
     var t = TITLES[S.view];
@@ -1668,7 +1668,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         STAFF.push(nu); log('staff', 'Added ' + nu.name + ' (' + roleLabel(nu) + ')' + (byAdm ? ', salary to be set by the owner' : ' at ' + fmt(sal) + ' a month')); render();
         if (role === 'support'){ closeModal(); toast(nu.name + ' added' + (byAdm ? '. The owner sets the salary.' : ' at ' + fmt(sal) + ' a month.')); }
         else openModal('Login created', '<div class="slip"><div class="row"><span>Name</span><b>' + esc(nu.name) + '</b></div><div class="row"><span>Mobile</span><b class="num">' + fmtPhone(nu.phone) + '</b></div><div class="row"><span>PIN</span><b class="num" style="font-size:18px;letter-spacing:3px">' + nu.pin + '</b></div>' + (byAdm ? '<div class="row"><span>Salary</span><b>Set by the owner</b></div>' : '<div class="row"><span>Salary</span><b class="num">' + fmt(sal) + '/mo from ' + ymLabel(nu.joined) + '</b></div>') + '</div>' +
-          (nu.role === 'accountant' || nu.role === 'admin' ? chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! ' + SCHOOL + ' ke SchoolSaathi web dashboard par aap ka ' + (nu.role === 'admin' ? 'admin' : 'accounts') + ' login ban gaya hai. Pehli dafa sign in ke liye link aur password is message ke saath hai.'], 'Sent on WhatsApp. ' + (nu.role === 'admin' ? 'Admins' : 'Accountants') + ' sign in on the web dashboard, not the mobile app.') : chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! ' + SCHOOL + ' ki SchoolSaathi teacher app mein aap ka account ban gaya hai.<br>Mobile: <b>' + fmtPhone(nu.phone) + '</b><br>PIN: <b>' + nu.pin + '</b>'], 'Sent on WhatsApp. They sign in to the teacher app with this number and PIN.')) + '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="mclose">Done</button></div>');
+          (nu.role === 'accountant' || nu.role === 'admin' ? chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! ' + SCHOOL + ' ke SchoolDaftar web dashboard par aap ka ' + (nu.role === 'admin' ? 'admin' : 'accounts') + ' login ban gaya hai. Pehli dafa sign in ke liye link aur password is message ke saath hai.'], 'Sent on WhatsApp. ' + (nu.role === 'admin' ? 'Admins' : 'Accountants') + ' sign in on the web dashboard, not the mobile app.') : chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! ' + SCHOOL + ' ki SchoolDaftar teacher app mein aap ka account ban gaya hai.<br>Mobile: <b>' + fmtPhone(nu.phone) + '</b><br>PIN: <b>' + nu.pin + '</b>'], 'Sent on WhatsApp. They sign in to the teacher app with this number and PIN.')) + '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="mclose">Done</button></div>');
       }
     }
     else if (id === 'inc-form'){

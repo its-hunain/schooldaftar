@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SchoolSaathi Mobile App</title>
+<title>SchoolDaftar Mobile App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
 <style>
@@ -305,7 +305,7 @@ button{cursor:pointer}
   };
   function ico(k){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icons[k] + '</svg>'; }
   function header(title, sub){
-    return '<div class="top"><div class="top-row"><div class="logo"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i>SchoolSaathi</div>' +
+    return '<div class="top"><div class="top-row"><div class="logo"><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i>SchoolDaftar</div>' +
       (S.user ? '<button class="net" data-a="net" aria-label="Network: ' + (S.online ? 'online' : 'offline') + '. Tap to switch for the demo.">' + (S.online ? 'Online' : 'Offline') + (S.queue.length ? ' · ' + S.queue.length + ' to sync' : '') + '<span class="' + (S.online ? 'on' : 'off') + '">' + (S.online ? 'ON' : 'OFF') + '</span></button>' : '') +
       '</div><h1>' + title + '</h1><p>' + sub + '</p></div>';
   }
