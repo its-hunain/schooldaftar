@@ -224,21 +224,31 @@ button{cursor:pointer}
   var CONC_TYPES = [['auto','Automatic (sibling discount if any)'],['none','No concession'],['staff','Staff child'],['sch','Scholarship (%)'],['fixed','Fixed amount off (Rs)']];
   var STAFF = [
     { id:1, role:'accountant', name:'Kashif Mehmood', phone:'03002222222', pin:'2222', classes:[], salary0:37000, joined:'2022-03', incs:[{ month:'2026-01', from:37000, to:40000 }] },
-    { id:2, role:'teacher', name:'Sana Javed', phone:'03003333333', pin:'3333', classes:['5','6','3'], salary0:32000, joined:'2023-04', incs:[{ month:'2024-07', from:32000, to:35000 },{ month:'2026-07', from:35000, to:38000 }] },
-    { id:3, role:'teacher', name:'Imran Ali', phone:'03004444444', pin:'4444', classes:['9','10'], salary0:33000, joined:'2021-08', incs:[{ month:'2025-07', from:33000, to:36000 }] },
-    { id:4, role:'teacher', name:'Rabia Noor', phone:'03005555555', pin:'5555', classes:['Montessori','KG-1','KG-2'], salary0:35000, joined:'2026-02', incs:[] },
-    { id:5, role:'teacher', name:'Nadia Parveen', phone:'03006666666', pin:'6666', classes:['1','2'], salary0:30000, joined:'2024-01', incs:[{ month:'2025-01', from:30000, to:34000 }] },
-    { id:6, role:'teacher', name:'Faisal Rehman', phone:'03007777777', pin:'7777', classes:['7','8'], salary0:33000, joined:'2025-08', incs:[] },
-    { id:7, role:'teacher', name:'Hina Aslam', phone:'03008888888', pin:'8888', classes:['3','4'], salary0:32000, joined:'2026-03', incs:[] },
+    { id:2, role:'teacher', name:'Sana Javed', phone:'03003333333', pin:'3333', subject:'English', classes:['6','7','8','9','10'], salary0:32000, joined:'2023-04', incs:[{ month:'2024-07', from:32000, to:35000 },{ month:'2026-07', from:35000, to:38000 }] },
+    { id:3, role:'teacher', name:'Imran Ali', phone:'03004444444', pin:'4444', subject:'Maths', classes:['6','7','8','9','10'], salary0:33000, joined:'2021-08', incs:[{ month:'2025-07', from:33000, to:36000 }] },
+    { id:4, role:'teacher', name:'Rabia Noor', phone:'03005555555', pin:'5555', subject:'All', classes:['Montessori','KG-1','KG-2'], salary0:35000, joined:'2026-02', incs:[] },
+    { id:5, role:'teacher', name:'Nadia Parveen', phone:'03006666666', pin:'6666', subject:'Urdu', classes:['1','2','3','4','5'], salary0:30000, joined:'2024-01', incs:[{ month:'2025-01', from:30000, to:34000 }] },
+    { id:6, role:'teacher', name:'Faisal Rehman', phone:'03007777777', pin:'7777', subject:'Science', classes:['1','2','3','4','5','6','7','8'], salary0:33000, joined:'2025-08', incs:[] },
+    { id:7, role:'teacher', name:'Hina Aslam', phone:'03008888888', pin:'8888', subject:'Maths', classes:['1','2','3','4','5'], salary0:32000, joined:'2026-03', incs:[] },
     { id:8, role:'support', job:'Security guard', name:'Aslam Khan', phone:'03111234567', classes:[], salary0:23000, joined:'2019-05', incs:[{ month:'2026-01', from:23000, to:25000 }] },
     { id:9, role:'support', job:'Peon', name:'Shabbir Ahmed', phone:'03127654321', classes:[], salary0:22000, joined:'2024-06', incs:[] },
     { id:10, role:'support', job:'Van driver', name:'Akram Ali', phone:'03139876543', classes:[], salary0:26000, joined:'2023-02', incs:[{ month:'2025-12', from:26000, to:28000 }] },
-    { id:11, role:'teacher', name:'Ayesha Siddiqui', phone:'03009999999', pin:'9999', classes:['1','5'], salary0:31000, joined:'2025-03', incs:[] },
-    { id:12, role:'teacher', name:'Zubair Ahmed', phone:'03001112223', pin:'1212', classes:['9','10'], salary0:36000, joined:'2024-08', incs:[{ month:'2025-08', from:36000, to:39000 }] }
+    { id:11, role:'teacher', name:'Ayesha Siddiqui', phone:'03009999999', pin:'9999', subject:'English', classes:['1','2','3','4','5'], salary0:31000, joined:'2025-03', incs:[] },
+    { id:12, role:'teacher', name:'Zubair Ahmed', phone:'03001112223', pin:'1212', subject:'Physics', classes:['9','10'], salary0:36000, joined:'2024-08', incs:[{ month:'2025-08', from:36000, to:39000 }] },
+    { id:13, role:'admin', name:'Saima Khan', phone:'03001231234', classes:[], salary0:42000, joined:'2023-01', incs:[{ month:'2025-01', from:42000, to:45000 }] },
+    { id:14, role:'teacher', name:'Farah Naz', phone:'03002345678', pin:'2345', subject:'Urdu', classes:['6','7','8','9','10'], salary0:33000, joined:'2022-08', incs:[{ month:'2024-08', from:33000, to:36000 }] },
+    { id:15, role:'teacher', name:'Bilal Hussain', phone:'03003456789', pin:'3456', subject:'Chemistry', classes:['9','10'], salary0:37000, joined:'2023-08', incs:[] },
+    { id:16, role:'teacher', name:'Mehwish Tariq', phone:'03004567890', pin:'4567', subject:'Biology', classes:['9','10'], salary0:36000, joined:'2024-04', incs:[] },
+    { id:17, role:'teacher', name:'Abdul Rehman', phone:'03005678901', pin:'5678', subject:'Islamiat', classes:['1','2','3','4','5','6','7','8','9','10'], salary0:30000, joined:'2020-04', incs:[{ month:'2024-04', from:30000, to:33000 }] },
+    { id:18, role:'teacher', name:'Sadia Iqbal', phone:'03006789012', pin:'6789', subject:'Social Studies', classes:['1','2','3','4','5','6','7','8'], salary0:29000, joined:'2025-01', incs:[] },
+    { id:19, role:'teacher', name:'Usman Ghani', phone:'03007890123', pin:'7890', subject:'Pak Studies', classes:['9','10'], salary0:31000, joined:'2024-08', incs:[] },
+    { id:20, role:'teacher', name:'Kamran Shah', phone:'03008901234', pin:'8901', subject:'Computer', classes:['6','7','8'], salary0:34000, joined:'2023-03', incs:[] }
   ];
-  var staffId = 13;
-  units().forEach(function(k){ var c = gOf(k), si = SECTIONS[c].indexOf(secOf(k)), ts = STAFF.filter(function(u){ return u.role === 'teacher' && u.classes.indexOf(c) >= 0; });
-    if (ts.length) subjectsOf(c).forEach(function(x, i){ SUBT[k][x] = ts[(i + si) % ts.length].id; }); });
+  var staffId = 21;
+  // Each teacher has one subject and teaches it in their classes. The pre-primary teacher (subject 'All') teaches every subject there.
+  function canTeach(u, c, x){ return u.role === 'teacher' && (u.subject === x || (u.subject === 'All' && /^(Montessori|KG)/.test(c))); }
+  units().forEach(function(k){ var c = gOf(k);
+    subjectsOf(c).forEach(function(x){ var t = STAFF.filter(function(u){ return canTeach(u, c, x) && u.classes.indexOf(c) >= 0; })[0]; if (t) SUBT[k][x] = t.id; }); });
   var CT = {};
   units().forEach(function(k){
     var cnt = function(u){ return Object.keys(CT).filter(function(x){ return CT[x] === u.id; }).length; };
@@ -267,7 +277,7 @@ button{cursor:pointer}
   function nowTime(){ var d = new Date(); return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2); }
   function first(n){ return n.split(' ')[0]; }
   var TODAY = DAYS[DAYS.length-1];
-  var WEB_ONLY = [{ phone:'03001111111', name:'Tariq Hussain', title:'owner' }].concat(STAFF.filter(function(u){ return u.role === 'accountant'; }).map(function(u){ return { phone:u.phone, name:u.name, title:'accountant' }; }));
+  var WEB_ONLY = [{ phone:'03001111111', name:'Tariq Hussain', title:'owner' }].concat(STAFF.filter(function(u){ return u.role === 'accountant' || u.role === 'admin'; }).map(function(u){ return { phone:u.phone, name:u.name, title:u.role }; }));
   function teachers(){ return STAFF.filter(function(u){ return u.role === 'teacher' && !u.left; }); }
   function myCT(){ return ctOf(S.user); }
   function myTeach(){ return teachesOf(S.user); }

@@ -266,22 +266,31 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   var CONC_TYPES = [['auto','Automatic (sibling discount if any)'],['none','No concession'],['staff','Staff child'],['sch','Scholarship (%)'],['fixed','Fixed amount off (Rs)']];
   var STAFF = [
     { id:1, role:'accountant', name:'Kashif Mehmood', phone:'03002222222', pin:'2222', classes:[], salary0:37000, joined:'2022-03', incs:[{ month:'2026-01', from:37000, to:40000 }] },
-    { id:2, role:'teacher', name:'Sana Javed', phone:'03003333333', pin:'3333', classes:['5','6','3'], salary0:32000, joined:'2023-04', incs:[{ month:'2024-07', from:32000, to:35000 },{ month:'2026-07', from:35000, to:38000 }] },
-    { id:3, role:'teacher', name:'Imran Ali', phone:'03004444444', pin:'4444', classes:['9','10'], salary0:33000, joined:'2021-08', incs:[{ month:'2025-07', from:33000, to:36000 }] },
-    { id:4, role:'teacher', name:'Rabia Noor', phone:'03005555555', pin:'5555', classes:['Montessori','KG-1','KG-2'], salary0:35000, joined:'2026-02', incs:[] },
-    { id:5, role:'teacher', name:'Nadia Parveen', phone:'03006666666', pin:'6666', classes:['1','2'], salary0:30000, joined:'2024-01', incs:[{ month:'2025-01', from:30000, to:34000 }] },
-    { id:6, role:'teacher', name:'Faisal Rehman', phone:'03007777777', pin:'7777', classes:['7','8'], salary0:33000, joined:'2025-08', incs:[] },
-    { id:7, role:'teacher', name:'Hina Aslam', phone:'03008888888', pin:'8888', classes:['3','4'], salary0:32000, joined:'2026-03', incs:[] },
+    { id:2, role:'teacher', name:'Sana Javed', phone:'03003333333', pin:'3333', subject:'English', classes:['6','7','8','9','10'], salary0:32000, joined:'2023-04', incs:[{ month:'2024-07', from:32000, to:35000 },{ month:'2026-07', from:35000, to:38000 }] },
+    { id:3, role:'teacher', name:'Imran Ali', phone:'03004444444', pin:'4444', subject:'Maths', classes:['6','7','8','9','10'], salary0:33000, joined:'2021-08', incs:[{ month:'2025-07', from:33000, to:36000 }] },
+    { id:4, role:'teacher', name:'Rabia Noor', phone:'03005555555', pin:'5555', subject:'All', classes:['Montessori','KG-1','KG-2'], salary0:35000, joined:'2026-02', incs:[] },
+    { id:5, role:'teacher', name:'Nadia Parveen', phone:'03006666666', pin:'6666', subject:'Urdu', classes:['1','2','3','4','5'], salary0:30000, joined:'2024-01', incs:[{ month:'2025-01', from:30000, to:34000 }] },
+    { id:6, role:'teacher', name:'Faisal Rehman', phone:'03007777777', pin:'7777', subject:'Science', classes:['1','2','3','4','5','6','7','8'], salary0:33000, joined:'2025-08', incs:[] },
+    { id:7, role:'teacher', name:'Hina Aslam', phone:'03008888888', pin:'8888', subject:'Maths', classes:['1','2','3','4','5'], salary0:32000, joined:'2026-03', incs:[] },
     { id:8, role:'support', job:'Security guard', name:'Aslam Khan', phone:'03111234567', classes:[], salary0:23000, joined:'2019-05', incs:[{ month:'2026-01', from:23000, to:25000 }] },
     { id:9, role:'support', job:'Peon', name:'Shabbir Ahmed', phone:'03127654321', classes:[], salary0:22000, joined:'2024-06', incs:[] },
     { id:10, role:'support', job:'Van driver', name:'Akram Ali', phone:'03139876543', classes:[], salary0:26000, joined:'2023-02', incs:[{ month:'2025-12', from:26000, to:28000 }] },
-    { id:11, role:'teacher', name:'Ayesha Siddiqui', phone:'03009999999', pin:'9999', classes:['1','5'], salary0:31000, joined:'2025-03', incs:[] },
-    { id:12, role:'teacher', name:'Zubair Ahmed', phone:'03001112223', pin:'1212', classes:['9','10'], salary0:36000, joined:'2024-08', incs:[{ month:'2025-08', from:36000, to:39000 }] },
-    { id:13, role:'admin', name:'Saima Khan', phone:'03001231234', classes:[], salary0:42000, joined:'2023-01', incs:[{ month:'2025-01', from:42000, to:45000 }] }
+    { id:11, role:'teacher', name:'Ayesha Siddiqui', phone:'03009999999', pin:'9999', subject:'English', classes:['1','2','3','4','5'], salary0:31000, joined:'2025-03', incs:[] },
+    { id:12, role:'teacher', name:'Zubair Ahmed', phone:'03001112223', pin:'1212', subject:'Physics', classes:['9','10'], salary0:36000, joined:'2024-08', incs:[{ month:'2025-08', from:36000, to:39000 }] },
+    { id:13, role:'admin', name:'Saima Khan', phone:'03001231234', classes:[], salary0:42000, joined:'2023-01', incs:[{ month:'2025-01', from:42000, to:45000 }] },
+    { id:14, role:'teacher', name:'Farah Naz', phone:'03002345678', pin:'2345', subject:'Urdu', classes:['6','7','8','9','10'], salary0:33000, joined:'2022-08', incs:[{ month:'2024-08', from:33000, to:36000 }] },
+    { id:15, role:'teacher', name:'Bilal Hussain', phone:'03003456789', pin:'3456', subject:'Chemistry', classes:['9','10'], salary0:37000, joined:'2023-08', incs:[] },
+    { id:16, role:'teacher', name:'Mehwish Tariq', phone:'03004567890', pin:'4567', subject:'Biology', classes:['9','10'], salary0:36000, joined:'2024-04', incs:[] },
+    { id:17, role:'teacher', name:'Abdul Rehman', phone:'03005678901', pin:'5678', subject:'Islamiat', classes:['1','2','3','4','5','6','7','8','9','10'], salary0:30000, joined:'2020-04', incs:[{ month:'2024-04', from:30000, to:33000 }] },
+    { id:18, role:'teacher', name:'Sadia Iqbal', phone:'03006789012', pin:'6789', subject:'Social Studies', classes:['1','2','3','4','5','6','7','8'], salary0:29000, joined:'2025-01', incs:[] },
+    { id:19, role:'teacher', name:'Usman Ghani', phone:'03007890123', pin:'7890', subject:'Pak Studies', classes:['9','10'], salary0:31000, joined:'2024-08', incs:[] },
+    { id:20, role:'teacher', name:'Kamran Shah', phone:'03008901234', pin:'8901', subject:'Computer', classes:['6','7','8'], salary0:34000, joined:'2023-03', incs:[] }
   ];
-  var staffId = 14;
-  units().forEach(function(k){ var c = gOf(k), si = SECTIONS[c].indexOf(secOf(k)), ts = STAFF.filter(function(u){ return u.role === 'teacher' && u.classes.indexOf(c) >= 0; });
-    if (ts.length) subjectsOf(c).forEach(function(x, i){ SUBT[k][x] = ts[(i + si) % ts.length].id; }); });
+  var staffId = 21;
+  // Each teacher has one subject and teaches it in their classes. The pre-primary teacher (subject 'All') teaches every subject there.
+  function canTeach(u, c, x){ return u.role === 'teacher' && (u.subject === x || (u.subject === 'All' && /^(Montessori|KG)/.test(c))); }
+  units().forEach(function(k){ var c = gOf(k);
+    subjectsOf(c).forEach(function(x){ var t = STAFF.filter(function(u){ return canTeach(u, c, x) && u.classes.indexOf(c) >= 0; })[0]; if (t) SUBT[k][x] = t.id; }); });
   var CT = {};
   units().forEach(function(k){
     var cnt = function(u){ return Object.keys(CT).filter(function(x){ return CT[x] === u.id; }).length; };
@@ -738,7 +747,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'role',label:'Role',v:roleLabel,h:function(u){ return pill(esc(roleLabel(u)), u.role === 'teacher' ? 'p-ok' : u.role === 'accountant' || u.role === 'admin' ? 'p-warn' : 'p-info'); }},
         {k:'phone',label:'Mobile',v:function(u){ return fmtPhone(u.phone); }},
         {k:'cls',label:'Teaches',v:function(u){ return teachesOf(u).length; },h:function(u){ if (u.role !== 'teacher') return '<span class="sub">—</span>'; var t = teachesOf(u); if (!t.length) return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '">No subjects yet ▾</button>';
-          var txt = t.map(function(x){ return uName(x.c) + ': ' + x.subs.join(', '); }).join(' · '); return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '" title="' + esc(txt) + '">' + t.reduce(function(a,x){ return a + x.subs.length; },0) + ' subjects in ' + t.length + ' class' + (t.length > 1 ? 'es' : '') + ' ▾</button>' + (ctOf(u).length ? '<div class="sub" style="margin-top:4px">Class teacher: ' + ctOf(u).map(uName).join(', ') + '</div>' : ''); }},
+          var txt = t.map(function(x){ return uName(x.c) + ': ' + x.subs.join(', '); }).join(' · '); return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '" title="' + esc(txt) + '">' + esc(u.subject === 'All' ? 'All subjects' : u.subject || 'Subjects') + ' in ' + t.length + ' class' + (t.length > 1 ? 'es' : '') + ' ▾</button>' + (ctOf(u).length ? '<div class="sub" style="margin-top:4px">Class teacher: ' + ctOf(u).map(uName).join(', ') + '</div>' : ''); }},
         {k:'join',label:'Joined',v:function(u){ return u.joined; },h:function(u){ return ymLabel(u.joined); }}
     ];
     if (!adm) cols.push(
@@ -833,7 +842,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       ['2026-11-18','13:22',K,'Accountant','fees','Waived late fine of Rs 200 (October) for ' + st(77).name + '. Reason: Parent request',1],
       ['2026-11-18','10:01',T,'Owner / Principal','staff','Increment for Sana Javed: Rs 35,000 to Rs 38,000 from Jul 2026',0],
       ['2026-11-17','12:30',K,'Accountant','expenses','Deleted expense: Printer toner (Rs 3,500, 12 Nov)',1],
-      ['2026-11-16','09:45','Sana Javed','Teacher (app)','marks','Entered Mid-term marks: English, ' + uName('5|B') + ', 14 students',0],
+      ['2026-11-16','09:45','Ayesha Siddiqui','Teacher (app)','marks','Entered Mid-term marks: English, ' + uName('5|B') + ', 14 students',0],
       ['2026-11-16','08:10','Rabia Noor','Teacher (app)','attendance','Montessori attendance: 14 present, 1 absent. Absence alert sent to 1 parent',0],
       ['2026-11-14','10:05',T,'Owner / Principal','ann','Sent announcement "Parent-teacher meeting" to all parents',0],
       ['2026-11-13','16:20',T,'Owner / Principal','settings','Late fine changed from Rs 100 to Rs 200',1],
@@ -933,10 +942,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var subT = teachers.filter(function(u){ return subs.some(function(x){ return SUBT[c][x] === u.id; }); });
     var open = subs.filter(function(x){ return !SUBT[c][x]; });
     var tOpts = function(sub){ var cur = SUBT[c][sub]; return '<select data-a="subteach" data-s="' + esc(sub) + '" aria-label="Teacher for ' + esc(sub) + '" style="border:1px solid ' + (cur ? 'var(--line)' : 'var(--warn)') + ';border-radius:8px;padding:6px 8px;min-width:200px;background:var(--surface);color:var(--ink)"><option value="">Not assigned</option>' +
-      teachers.map(function(u){ return '<option value="' + u.id + '"' + (+cur === u.id ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>'; };
+      teachers.filter(function(u){ return canTeach(u, gOf(c), sub) || +cur === u.id; }).map(function(u){ return '<option value="' + u.id + '"' + (+cur === u.id ? ' selected' : '') + '>' + esc(u.name) + (u.subject === 'All' ? ' (pre-primary)' : '') + '</option>'; }).join('') + '</select>'; };
     return '<div class="toolbar">' + bySeg + sel('f-stcls','stcls', unitOpts(), c, 'Class') + '<span class="spacer"></span></div>' +
       '<div class="kpis">' + kpi('Subjects in ' + uName(c), subs.length) + kpi('Teachers for this class', subT.length, esc(subT.map(function(u){ return u.name.split(' ')[0]; }).join(', ') || 'None yet')) + kpi('Without a teacher', open.length, open.length ? esc(open.join(', ')) : 'Every subject covered', open.length ? 'bad' : '') + '</div>' +
-      '<p class="sub">Pick a teacher for each subject. It saves straight away. Teachers see only their own subjects when they enter marks.</p>' +
+      '<p class="sub">Pick a teacher for each subject. Each teacher has one subject, so the list shows only teachers of that subject. It saves straight away.</p>' +
       table('subt', [
         {k:'n',label:'Subject',v:function(x){ return x; },h:function(x){ return '<b>' + esc(x) + '</b>'; }},
         {k:'t',label:'Taught by',h:function(x){ return tOpts(x); }}
@@ -947,8 +956,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (!S.subTeacher || !staffById(S.subTeacher) || staffById(S.subTeacher).left) S.subTeacher = teachers[0].id;
     var u = staffById(S.subTeacher), mine = teachesOf(u), count = mine.reduce(function(a,x){ return a + x.subs.length; }, 0);
     var tsel = sel('f-subt','subt', teachers.map(function(t){ return [t.id, t.name]; }), u.id, 'Teacher');
-    var grid = units().map(function(c){
-      var subs = subjectsOf(gOf(c));
+    var grid = units().filter(function(c){ return subjectsOf(gOf(c)).some(function(x){ return canTeach(u, gOf(c), x); }); }).map(function(c){
+      var subs = subjectsOf(gOf(c)).filter(function(x){ return canTeach(u, gOf(c), x); });
       return '<tr><td><b>' + uName(c) + '</b><div class="sub">' + subs.filter(function(x){ return SUBT[c][x] === u.id; }).length + ' of ' + subs.length + '</div></td><td style="white-space:normal"><div style="display:flex;flex-wrap:wrap;gap:6px">' +
         subs.map(function(x){ var owner = SUBT[c][x], on = owner === u.id, other = owner && !on ? staffById(owner) : null;
           return '<label style="display:inline-flex;align-items:center;gap:6px;border:1px solid ' + (on ? 'var(--brand)' : 'var(--line)') + ';background:' + (on ? 'var(--brand-soft)' : 'var(--surface)') + ';border-radius:999px;padding:5px 10px;font-size:13px;color:var(--ink);cursor:pointer">' +
@@ -956,7 +965,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     }).join('');
     return '<div class="toolbar">' + bySeg + tsel + '<span class="spacer"></span></div>' +
       '<div class="kpis">' + kpi('Subjects', count, esc(u.name)) + kpi('Classes', mine.length, esc(mine.map(function(x){ return cn(x.c); }).join(', ') || 'None yet')) + kpi('Class teacher of', ctOf(u).length ? ctOf(u).map(uName).join(', ') : 'None', 'Takes attendance') + kpi('Unassigned subjects', units().reduce(function(a,c){ return a + subjectsOf(gOf(c)).filter(function(x){ return !SUBT[c][x]; }).length; }, 0), 'Across all sections', 'warn') + '</div>' +
-      '<form class="panel" id="ta-form" data-id="' + u.id + '" novalidate><div class="row"><h2>Subjects for ' + esc(u.name) + '</h2><span class="sub">Tick what this teacher teaches. A name in brackets means another teacher has it now; ticking moves it to ' + esc(u.name.split(' ')[0]) + '.</span></div>' +
+      '<form class="panel" id="ta-form" data-id="' + u.id + '" novalidate><div class="row"><h2>' + (u.subject === 'All' ? 'Pre-primary classes for ' : esc(u.subject || 'Subjects') + ' classes for ') + esc(u.name) + '</h2><span class="sub">Tick the classes this teacher teaches. A name in brackets means another teacher has it now; ticking moves it to ' + esc(u.name.split(' ')[0]) + '.</span></div>' +
         '<div class="tablewrap"><table><thead><tr><th>Class</th><th>Subjects</th></tr></thead><tbody>' + grid + '</tbody></table></div>' +
         '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="tareset">Undo changes</button><button class="btn btn-primary" type="submit">Save assignments</button></div></form>';
   }
@@ -1103,12 +1112,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       (s.id ? '' : '<label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="sf-adm" checked> Charge admission fee of Rs 5,000</label>') +
       err(e) + '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">' + (s.id ? 'Save changes' : 'Add student') + '</button></div></form>';
   }
+  function allSubjects(){ var o = []; classes.forEach(function(c){ subjectsOf(c).forEach(function(x){ if (o.indexOf(x) < 0) o.push(x); }); }); return o; }
   function staffForm(u, e, role){
     u = u || {}; role = role || u.role || 'teacher';
     return '<form class="form" id="staff-form" data-id="' + (u.id || '') + '" data-role="' + role + '" novalidate>' +
       '<div class="field">Role<div class="seg" role="group" aria-label="Role">' + [['teacher','Teacher']].concat(isAdm() && role !== 'admin' ? [] : [['admin','Admin']], [['accountant','Accountant'],['support','Support staff']]).map(function(r){ return '<button type="button" data-a="srole" data-v="' + r[0] + '" aria-pressed="' + (role === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="fields"><label class="field" for="tf-name">Full name<input id="tf-name" value="' + esc(u.name) + '"></label><label class="field" for="tf-phone">Mobile' + (role === 'support' ? '' : ' (used to sign in to the app)') + '<input id="tf-phone" type="tel" value="' + esc(u.phone ? fmtPhone(u.phone) : '') + '" placeholder="0300 1234567"></label></div>' +
       (role === 'support' ? '<label class="field" for="tf-job">Job title<input id="tf-job" value="' + esc(u.job) + '" placeholder="Security guard, Peon, Van driver"></label>' : '') +
+      (role === 'teacher' ? '<label class="field" for="tf-subj">Subject<select id="tf-subj">' + allSubjects().map(function(x){ return '<option value="' + esc(x) + '"' + (u.subject === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '<option value="All"' + (u.subject === 'All' ? ' selected' : '') + '>Pre-primary (all subjects)</option></select></label>' : '') +
       (role === 'teacher' ? '<div class="field">Classes<div class="chk">' + classes.map(function(c){ return '<label><input type="checkbox" class="tf-cls" value="' + c + '"' + ((u.classes || []).indexOf(c) >= 0 ? ' checked' : '') + '>' + c + '</label>'; }).join('') + '</div></div>' : '') +
       (u.id ? (isAdm() ? '' : '<p class="sub">Salary changes go through <b>Increment</b>, so the history stays complete.</p>') :
         isAdm() ? '<label class="field" for="tf-join">Joining month<input id="tf-join" type="month" value="' + NOW_YM + '" max="2026-12"></label><p class="sub">The owner sets the salary after you add them.</p>' :
@@ -1499,13 +1510,13 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (id === 'staff-form'){
       var role = f.dataset.role, uid = +f.dataset.id || null, sph = v('tf-phone').replace(/\D/g, ''), cls = Array.prototype.slice.call(document.querySelectorAll('.tf-cls')).filter(function(x){ return x.checked; }).map(function(x){ return x.value; });
       var sal = parseInt(v('tf-sal'), 10), dup = STAFF.some(function(u){ return !u.left && u.phone === sph && u.id !== uid; });
-      var dr = { id: uid, name: v('tf-name').trim(), phone: sph, job: v('tf-job').trim(), classes: cls, role: role };
+      var dr = { id: uid, name: v('tf-name').trim(), phone: sph, job: v('tf-job').trim(), classes: cls, role: role, subject: role === 'teacher' ? v('tf-subj') : undefined };
       var se = !dr.name ? 'Enter the name.' : sph.length !== 11 ? 'Enter an 11-digit mobile number.' : dup ? 'Someone on your staff already uses this number.' : role === 'teacher' && !cls.length ? 'Choose at least one class.' : role === 'support' && !dr.job ? 'Enter a job title.' : !uid && !isAdm() && !(sal > 0) ? 'Enter the monthly salary.' : !uid && !v('tf-join') ? 'Choose the joining month.' : '';
       if (se){ S.modal.html = staffForm(uid ? Object.assign({}, staffById(uid), dr) : dr, se, role); renderModal(); return; }
-      if (uid){ var u = staffById(uid); log('staff', 'Edited staff details of ' + dr.name); u.name = dr.name; u.phone = sph; u.role = role; u.classes = role === 'teacher' ? cls : []; u.job = role === 'support' ? dr.job : ''; if (role !== 'support' && !u.pin) u.pin = String(1000 + Math.floor(Math.random()*9000)); closeModal(); render(); toast('Saved changes for ' + u.name + '.'); }
+      if (uid){ var u = staffById(uid); log('staff', 'Edited staff details of ' + dr.name); u.name = dr.name; u.phone = sph; u.role = role; u.classes = role === 'teacher' ? cls : []; u.job = role === 'support' ? dr.job : ''; u.subject = dr.subject; if (role !== 'support' && !u.pin) u.pin = String(1000 + Math.floor(Math.random()*9000)); closeModal(); render(); toast('Saved changes for ' + u.name + '.'); }
       else {
         var byAdm = isAdm();
-        var nu = { id: staffId++, role: role, name: dr.name, phone: sph, classes: role === 'teacher' ? cls : [], job: role === 'support' ? dr.job : '', salary0: byAdm ? 0 : sal, joined: v('tf-join'), incs: [] };
+        var nu = { id: staffId++, role: role, name: dr.name, phone: sph, subject: dr.subject, classes: role === 'teacher' ? cls : [], job: role === 'support' ? dr.job : '', salary0: byAdm ? 0 : sal, joined: v('tf-join'), incs: [] };
         if (byAdm) nu.salPending = true;
         if (role !== 'support') nu.pin = String(1000 + Math.floor(Math.random()*9000));
         STAFF.push(nu); log('staff', 'Added ' + nu.name + ' (' + roleLabel(nu) + ')' + (byAdm ? ', salary to be set by the owner' : ' at ' + fmt(sal) + ' a month')); render();
