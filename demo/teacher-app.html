@@ -283,7 +283,7 @@ button{cursor:pointer}
   function myTeach(){ return teachesOf(S.user); }
   function myUnits(){ var o = myCT().slice(); myTeach().forEach(function(t){ if (o.indexOf(t.c) < 0) o.push(t.c); }); return units().filter(function(k){ return o.indexOf(k) >= 0; }); }
 
-  var S = { user:null, tab:'home', online:true, queue:[], att:{}, attDraft:{}, attU:null, attView:'today', mkExam:'Mid-term', mkKey:null, mkErr:'', stuU:'all', q:'', stuPg:1, sheet:null, lgPhone:'', lgPin:'', lgErr:'', pinErr:'', lastSync:'08:02', toast:'' };
+  var S = { user:null, tab:'home', online:true, queue:[], att:{}, attDraft:{}, attU:null, attView:'today', mkExam:'Mid-term', mkKey:null, mkErr:'', stuU:'all', q:'', stuPg:1, pg:{}, mkDraft:{}, sheet:null, lgPhone:'', lgPin:'', lgErr:'', pinErr:'', lastSync:'08:02', toast:'' };
 
   var icons = {
     home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
@@ -312,8 +312,18 @@ button{cursor:pointer}
       (S.lgErr ? banner(S.lgErr, 'p-bad') : '') + '<button class="btn btn-primary btn-block" type="submit">Sign in</button><p class="sub">Forgot your PIN? The school office can reset it from the web dashboard.</p></form>' +
       banner('<span><b>Owner or accounts office?</b> Please sign in on the web dashboard. This app is only for teachers.</span>', 'p-info') +
       '<div class="card"><p class="h" style="font-size:15px">Demo teachers</p><p class="sub">Tap one to fill it in. Each teacher only sees their own sections and subjects.</p><div class="roles">' +
-      teachers().map(function(u){ var ct = ctOf(u), t = teachesOf(u), n = t.reduce(function(a,x){ return a + x.subs.length; }, 0);
-        return '<button class="rolebtn" type="button" data-a="fill" data-v="' + u.id + '"><span class="ic">' + ico('user') + '</span><span><b>' + esc(u.name) + '</b><span class="num">' + fmtPhone(u.phone) + ' · PIN ' + u.pin + '</span><br><span>' + (ct.length ? 'Class teacher: ' + ct.map(uName).join(', ') + ' · ' : '') + n + ' subjects</span></span></button>'; }).join('') + '</div></div></div>';
+      (function(){ var pl = paged('login', teachers()); return '<div' + pl.anchor + '></div>' + pl.items.map(function(u){ var ct = ctOf(u), t = teachesOf(u), n = t.reduce(function(a,x){ return a + x.subs.length; }, 0);
+        return '<button class="rolebtn" type="button" data-a="fill" data-v="' + u.id + '"><span class="ic">' + ico('user') + '</span><span><b>' + esc(u.name) + '</b><span class="num">' + fmtPhone(u.phone) + ' · PIN ' + u.pin + '</span><br><span>' + (ct.length ? 'Class teacher: ' + ct.map(uName).join(', ') + ' · ' : '') + n + ' subjects</span></span></button>'; }).join('') + pl.pager; })() + '</div></div></div>';
+  }
+
+  // ---------- pagination: every list shows PER_PAGE items with Previous / Next ----------
+  var PER_PAGE = 10;
+  function paged(key, list){
+    var pages = Math.max(1, Math.ceil(list.length / PER_PAGE)), p = Math.min(Math.max(1, S.pg[key] || 1), pages); S.pg[key] = p;
+    var from = (p - 1) * PER_PAGE;
+    return { items: list.slice(from, from + PER_PAGE), from: from,
+      pager: pages > 1 ? '<nav class="pager" aria-label="Pages"><button class="btn btn-sm" type="button" data-a="pg" data-k="' + esc(key) + '" data-v="' + (p - 1) + '"' + (p <= 1 ? ' disabled' : '') + '>Previous</button><span class="sub num">' + (from + 1) + '–' + Math.min(from + PER_PAGE, list.length) + ' of ' + list.length + ' · page ' + p + ' of ' + pages + '</span><button class="btn btn-sm" type="button" data-a="pg" data-k="' + esc(key) + '" data-v="' + (p + 1) + '"' + (p >= pages ? ' disabled' : '') + '>Next</button></nav>' : '',
+      anchor: ' data-pgk="' + esc(key) + '"' };
   }
 
   // ---------- home ----------
@@ -321,13 +331,14 @@ button{cursor:pointer}
   function mkCount(k, x, e){ var l = stuIn(k); return { done: l.filter(function(s){ return mk(s, e, x) !== null; }).length, n: l.length }; }
   function viewHome(){
     var ct = myCT(), t = myTeach();
-    var att = ct.length ? '<div class="list">' + ct.map(function(k){ var c = attSummary(k), a = S.att[k];
+    var pa = paged('home-att', ct), ps = paged('home-subs', t);
+    var att = ct.length ? '<div class="list"' + pa.anchor + '>' + pa.items.map(function(k){ var c = attSummary(k), a = S.att[k];
         return '<div class="item"><div class="grow"><div class="name">' + uName(k) + '</div><div class="meta num">' + (c ? c.P + ' present · ' + c.A + ' absent · ' + c.L + ' leave · ' + (a.synced ? 'saved ' + a.time : 'saved on phone, waiting to sync') : stuIn(k).length + ' students · not taken yet') + '</div></div>' +
-          (c ? pill(a.synced ? 'Done' : 'To sync', a.synced ? 'p-ok' : 'p-warn') : '<button class="btn btn-sm btn-primary" data-a="goatt" data-v="' + esc(k) + '">Take</button>') + '</div>'; }).join('') + '</div>'
+          (c ? pill(a.synced ? 'Done' : 'To sync', a.synced ? 'p-ok' : 'p-warn') : '<button class="btn btn-sm btn-primary" data-a="goatt" data-v="' + esc(k) + '">Take</button>') + '</div>'; }).join('') + '</div>' + pa.pager
       : '<p class="sub">You are not a class teacher, so you don’t take attendance. You enter marks for your subjects.</p>';
-    var subs = t.length ? '<div class="list">' + t.map(function(x){ var left = x.subs.filter(function(y){ var m = mkCount(x.c, y, S.mkExam); return m.done < m.n; });
+    var subs = t.length ? '<div class="list"' + ps.anchor + '>' + ps.items.map(function(x){ var left = x.subs.filter(function(y){ var m = mkCount(x.c, y, S.mkExam); return m.done < m.n; });
         return '<div class="item"><div class="grow"><div class="name">' + uName(x.c) + '</div><div class="meta">' + esc(x.subs.join(', ')) + '</div><div class="meta">' + S.mkExam + ': ' + (left.length ? left.length + ' subject' + (left.length > 1 ? 's' : '') + ' still missing marks' : 'all marks entered') + '</div></div>' +
-          '<button class="btn btn-sm' + (left.length ? ' btn-primary' : '') + '" data-a="gomk" data-v="' + esc(x.c + '::' + (left[0] || x.subs[0])) + '">' + (left.length ? 'Enter' : 'View') + '</button></div>'; }).join('') + '</div>'
+          '<button class="btn btn-sm' + (left.length ? ' btn-primary' : '') + '" data-a="gomk" data-v="' + esc(x.c + '::' + (left[0] || x.subs[0])) + '">' + (left.length ? 'Enter' : 'View') + '</button></div>'; }).join('') + '</div>' + ps.pager
       : '<p class="sub">No subjects are assigned to you yet. The owner assigns them on the web dashboard.</p>';
     return header('Assalam o Alaikum, ' + esc(first(S.user.name)), dayLabel(TODAY) + ' 2026') + '<div class="body">' +
       (S.queue.length ? banner('<span><b>' + S.queue.length + ' change' + (S.queue.length > 1 ? 's' : '') + ' saved on this phone.</b> They sync on their own when the internet is back.</span>', 'p-warn') : '') +
@@ -349,23 +360,28 @@ button{cursor:pointer}
     var head = header('Attendance · ' + uName(k), dayLabel(TODAY) + (saved ? ' · saved at ' + saved.time : ' · not saved yet'));
     if (S.attView === 'month'){
       var past = DAYS.slice(0, -1);
-      var rows = list.map(function(s, i){ var c = { P:0, A:0, L:0 }; past.forEach(function(dd){ c[attOf(s, dd)]++; }); var n = past.length; if (saved){ c[saved.marks[s.id]]++; n++; } var p = c.P / n;
+      var pm = paged('attm:' + k, list);
+      var rows = pm.items.map(function(s, i){ i += pm.from; var c = { P:0, A:0, L:0 }; past.forEach(function(dd){ c[attOf(s, dd)]++; }); var n = past.length; if (saved){ c[saved.marks[s.id]]++; n++; } var p = c.P / n;
         return '<tr><td>' + (i + 1) + '</td><td>' + esc(s.name) + '</td><td class="r num">' + c.P + '</td><td class="r num"' + (c.A ? ' style="color:var(--bad);font-weight:700"' : '') + '>' + c.A + '</td><td class="r num">' + c.L + '</td><td class="r">' + pill(Math.round(p * 100) + '%', p < .75 ? 'p-bad' : p < .9 ? 'p-warn' : 'p-ok') + '</td></tr>'; }).join('');
       return head + '<div class="body">' + segU + segV + '<p class="sub">November 2026 · ' + (past.length + (saved ? 1 : 0)) + ' school days' + (saved ? '' : ' (today not saved yet)') + '</p>' +
-        '<div class="card" style="padding:8px"><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>#</th><th>Student</th><th class="r">P</th><th class="r">A</th><th class="r">L</th><th class="r">%</th></tr></thead><tbody>' + rows + '</tbody></table></div></div></div>';
+        '<div class="card" style="padding:8px"' + pm.anchor + '><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>#</th><th>Student</th><th class="r">P</th><th class="r">A</th><th class="r">L</th><th class="r">%</th></tr></thead><tbody>' + rows + '</tbody></table></div>' + pm.pager + '</div></div>';
     }
     var c = { P:0, A:0, L:0 }; list.forEach(function(s){ c[d[s.id]]++; });
     return head + '<div class="body">' + segU + segV +
       '<div class="row"><span style="display:flex;gap:6px;flex-wrap:wrap">' + pill(c.P + ' present', 'p-ok') + pill(c.A + ' absent', 'p-bad') + pill(c.L + ' leave', 'p-info') + '</span><button class="btn btn-sm" data-a="allp">All present</button></div>' +
-      '<div class="list">' + list.map(function(s, i){ var st = d[s.id];
+      (function(){ var pt = paged('attd:' + k, list); return '<div class="list"' + pt.anchor + '>' + pt.items.map(function(s, i){ i += pt.from; var st = d[s.id];
         return '<div class="item"><span class="sub num" style="width:20px">' + (i + 1) + '</span><div class="grow"><div class="name">' + esc(s.name) + '</div><div class="meta">' + esc(s.father) + '</div></div><span class="pal" role="group" aria-label="' + esc(s.name) + '">' +
-          [['P','Present'],['A','Absent'],['L','Leave']].map(function(o){ return '<button class="' + (st === o[0] ? 'sel-' + o[0] : '') + '" data-a="mark" data-v="' + s.id + '" data-s="' + o[0] + '" aria-pressed="' + (st === o[0]) + '" aria-label="' + o[1] + '">' + o[0] + '</button>'; }).join('') + '</span></div>'; }).join('') + '</div>' +
+          [['P','Present'],['A','Absent'],['L','Leave']].map(function(o){ return '<button class="' + (st === o[0] ? 'sel-' + o[0] : '') + '" data-a="mark" data-v="' + s.id + '" data-s="' + o[0] + '" aria-pressed="' + (st === o[0]) + '" aria-label="' + o[1] + '">' + o[0] + '</button>'; }).join('') + '</span></div>'; }).join('') + '</div>' + pt.pager; })() +
       '<p class="sub">Parents of absent students get a WhatsApp alert when you save. Leave sends no alert.' + (S.online ? '' : ' <b style="color:var(--warn)">You are offline:</b> it saves on this phone and the alerts go out once you’re back online.') + '</p>' +
       '<button class="btn btn-primary btn-block" data-a="attsave">' + (saved ? 'Update attendance' : 'Save attendance') + '</button></div>';
   }
 
   // ---------- marks ----------
   function mkOpts(){ var o = []; myTeach().forEach(function(t){ t.subs.forEach(function(x){ o.push([t.c + '::' + x, uName(t.c) + ' · ' + x]); }); }); return o; }
+  // Typed marks live in a draft until saved, so moving between pages keeps them.
+  function mkDKey(sid, e){ return S.mkKey + ':' + e + ':' + sid; }
+  function mkVal(s, e, x){ var d = S.mkDraft[mkDKey(s.id, e)]; if (d !== undefined) return d; var v = mk(s, e, x); return v === null ? '' : String(v); }
+  function mkOk(raw, o){ var n = Number(raw); return raw === '' || (n >= 0 && n <= o && n % 1 === 0); }
   function viewMarks(){
     var opts = mkOpts();
     if (!opts.length) return header('Marks', 'Exam marks for your subjects') + '<div class="body"><div class="empty">No subjects are assigned to you yet. The owner assigns them on the web dashboard.</div></div>';
@@ -376,8 +392,8 @@ button{cursor:pointer}
       '<div class="fields"><label class="field" for="mk-exam">Exam<select id="mk-exam" data-a="mkexam">' + EXAMS.map(function(ex){ return '<option value="' + ex[0] + '"' + (ex[0] === e ? ' selected' : '') + '>' + ex[0] + ' /' + ex[1] + '</option>'; }).join('') + '</select></label>' +
       '<label class="field" for="mk-key">Class and subject<select id="mk-key" data-a="mkkey">' + opts.map(function(p){ return '<option value="' + esc(p[0]) + '"' + (p[0] === S.mkKey ? ' selected' : '') + '>' + esc(p[1]) + '</option>'; }).join('') + '</select></label></div>' +
       '<div class="kpis"><div class="kpi"><div class="l">Entered</div><div class="v num">' + done.length + ' / ' + list.length + '</div><div class="s">Blank means not entered</div></div><div class="kpi"><div class="l">Class average</div><div class="v num">' + (avg === null ? '—' : (Math.round(avg * 10) / 10) + ' / ' + o) + '</div><div class="s">' + (avg === null ? 'No marks yet' : Math.round(avg / o * 100) + '%') + '</div></div></div>' +
-      '<form id="mk-form" novalidate><div class="list">' + list.map(function(s, i){ var v = mk(s, e, x);
-        return '<div class="item"><span class="sub num" style="width:20px">' + (i + 1) + '</span><div class="grow"><div class="name">' + esc(s.name) + '</div></div><label class="sub" for="mk-' + s.id + '" style="display:flex;align-items:center;gap:6px"><input class="mark num" id="mk-' + s.id + '" data-sid="' + s.id + '" type="number" inputmode="numeric" min="0" max="' + o + '" value="' + (v === null ? '' : v) + '" placeholder="—" aria-label="' + esc(s.name) + ' marks out of ' + o + '">/ ' + o + '</label></div>'; }).join('') + '</div>' +
+      (function(){ var pk = paged('mk:' + S.mkKey + ':' + e, list); return '<form id="mk-form" novalidate><div class="list"' + pk.anchor + '>' + pk.items.map(function(s, i){ i += pk.from; var v = mkVal(s, e, x), bad = !mkOk(v, o);
+        return '<div class="item"><span class="sub num" style="width:20px">' + (i + 1) + '</span><div class="grow"><div class="name">' + esc(s.name) + '</div></div><label class="sub" for="mk-' + s.id + '" style="display:flex;align-items:center;gap:6px"><input class="mark num" id="mk-' + s.id + '" data-sid="' + s.id + '" type="number" inputmode="numeric" min="0" max="' + o + '" value="' + esc(v) + '" placeholder="—"' + (bad ? ' style="border-color:var(--bad)"' : '') + ' aria-label="' + esc(s.name) + ' marks out of ' + o + '">/ ' + o + '</label></div>'; }).join('') + '</div>' + pk.pager; })() +
       (S.mkErr ? banner(S.mkErr, 'p-bad') : '') +
       '<p class="sub" style="margin-top:12px">You only see the subjects assigned to you. The owner sends result cards to parents from the web dashboard.</p>' +
       '<button class="btn btn-primary btn-block" type="submit" style="margin-top:12px">Save marks</button></form></div>';
@@ -412,10 +428,10 @@ button{cursor:pointer}
 
   // ---------- me ----------
   function viewMe(){
-    var u = S.user, ct = myCT(), t = myTeach();
+    var u = S.user, ct = myCT(), t = myTeach(), pme = paged('me', t);
     return header('My account', esc(u.name) + ' · Teacher') + '<div class="body">' +
-      '<div class="rc"><div class="row"><span class="sub">Mobile</span><b class="num">' + fmtPhone(u.phone) + '</b></div><div class="row"><span class="sub">Class teacher of</span><b>' + (ct.length ? ct.map(uName).join(', ') : 'None') + '</b></div>' +
-        t.map(function(x){ return '<div class="row" style="align-items:flex-start"><span class="sub">' + uName(x.c) + '</span><b style="text-align:right">' + esc(x.subs.join(', ')) + '</b></div>'; }).join('') + '</div>' +
+      '<div class="rc"' + pme.anchor + '><div class="row"><span class="sub">Mobile</span><b class="num">' + fmtPhone(u.phone) + '</b></div><div class="row"><span class="sub">Class teacher of</span><b>' + (ct.length ? ct.map(uName).join(', ') : 'None') + '</b></div>' +
+        pme.items.map(function(x){ return '<div class="row" style="align-items:flex-start"><span class="sub">' + uName(x.c) + '</span><b style="text-align:right">' + esc(x.subs.join(', ')) + '</b></div>'; }).join('') + pme.pager + '</div>' +
       '<div class="card"><div class="row"><p class="h" style="font-size:15px">Sync</p>' + pill(S.online ? 'Online' : 'Offline', S.online ? 'p-ok' : 'p-warn') + '</div><p class="sub">' + (S.queue.length ? S.queue.length + ' change' + (S.queue.length > 1 ? 's' : '') + ' waiting on this phone. ' : 'Everything is synced. ') + 'Last synced at ' + S.lastSync + '.</p>' +
         '<p class="sub">The app works without internet. Attendance and marks are saved on the phone and sent when the connection is back.</p></div>' +
       '<form class="card" id="pin-form" novalidate><p class="h" style="font-size:15px">Change PIN</p><div class="fields"><label class="field" for="pn-old">Current PIN<input id="pn-old" type="password" inputmode="numeric" maxlength="4"></label><label class="field" for="pn-new">New PIN<input id="pn-new" type="password" inputmode="numeric" maxlength="4"></label></div>' +
@@ -465,6 +481,7 @@ button{cursor:pointer}
     }
     else if (a === 'stu'){ var s = students.filter(function(x){ return x.id === +v; })[0]; S.sheet = { title:'Student details', html: stuSheet(s) }; render(); }
     else if (a === 'sclose'){ S.sheet = null; render(); }
+    else if (a === 'pg'){ var pgk = el.dataset.k; S.pg[pgk] = +v; render(); var pa0 = Array.prototype.slice.call(document.querySelectorAll('[data-pgk]')).filter(function(n){ return n.getAttribute('data-pgk') === pgk; })[0]; if (pa0) pa0.scrollIntoView({ block:'start' }); }
     else if (a === 'stupg'){ S.stuPg = +v; render(); var c = document.getElementById('stu-count'); if (c) c.scrollIntoView({ block:'start' }); }
   });
   document.addEventListener('change', function(e){
@@ -477,7 +494,7 @@ button{cursor:pointer}
   document.addEventListener('input', function(e){
     var el = e.target;
     if (el.dataset.a === 'q'){ S.q = el.value; S.stuPg = 1; render(); return; }
-    if (el.classList.contains('mark')){ var o = OUT(S.mkExam), n = el.value === '' ? 0 : Number(el.value); el.style.borderColor = el.value !== '' && (!(n >= 0 && n <= o) || n % 1) ? 'var(--bad)' : ''; }
+    if (el.classList.contains('mark')){ S.mkDraft[mkDKey(el.dataset.sid, S.mkExam)] = el.value.trim(); var o = OUT(S.mkExam), n = el.value === '' ? 0 : Number(el.value); el.style.borderColor = el.value !== '' && (!(n >= 0 && n <= o) || n % 1) ? 'var(--bad)' : ''; }
   });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.sheet){ S.sheet = null; render(); } });
   document.addEventListener('submit', function(e){
@@ -492,10 +509,12 @@ button{cursor:pointer}
       return;
     }
     if (f.id === 'mk-form'){
-      var e0 = S.mkExam, o = OUT(e0), x = S.mkKey.split('::')[1], bad = 0, ch = 0, vals = [];
-      Array.prototype.slice.call(f.querySelectorAll('.mark')).forEach(function(inp){ var raw = inp.value.trim(), n = Number(raw);
-        if (raw !== '' && (!(n >= 0 && n <= o) || n % 1)){ bad++; return; } vals.push([inp.dataset.sid, raw === '' ? null : n]); });
-      if (bad){ S.mkErr = bad + ' mark' + (bad > 1 ? 's are' : ' is') + ' wrong. Use whole numbers from 0 to ' + o + '.'; var keep = {}; Array.prototype.slice.call(f.querySelectorAll('.mark')).forEach(function(i){ keep[i.id] = i.value; }); render(); Object.keys(keep).forEach(function(id){ var i = document.getElementById(id); i.value = keep[id]; var n = Number(keep[id]); if (keep[id] !== '' && (!(n >= 0 && n <= o) || n % 1)) i.style.borderColor = 'var(--bad)'; }); return; }
+      var e0 = S.mkExam, o = OUT(e0), x = S.mkKey.split('::')[1], ch = 0, vals = [], badRows = [];
+      Array.prototype.slice.call(f.querySelectorAll('.mark')).forEach(function(inp){ S.mkDraft[mkDKey(inp.dataset.sid, e0)] = inp.value.trim(); });
+      stuIn(S.mkKey.split('::')[0]).forEach(function(s, i){ var raw = mkVal(s, e0, x).trim();
+        if (!mkOk(raw, o)){ badRows.push(i + 1); return; } vals.push([s.id, raw === '' ? null : Number(raw)]); });
+      if (badRows.length){ S.mkErr = badRows.length + ' mark' + (badRows.length > 1 ? 's are' : ' is') + ' wrong (row ' + badRows.join(', ') + '). Use whole numbers from 0 to ' + o + '.'; render(); return; }
+      Object.keys(S.mkDraft).forEach(function(dk){ if (dk.indexOf(S.mkKey + ':' + e0 + ':') === 0) delete S.mkDraft[dk]; });
       vals.forEach(function(p){ var s = students.filter(function(y){ return y.id === +p[0]; })[0], cur = mk(s, e0, x); if (cur !== p[1]){ ch++; if (p[1] === null) delete s.marks[e0][x]; else s.marks[e0][x] = p[1]; } });
       S.mkErr = '';
       if (ch && !S.online) S.queue.push({ type:'marks', key:S.mkKey });

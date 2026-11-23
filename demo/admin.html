@@ -507,7 +507,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       '<div class="grid2"><div class="panel"><div class="row"><h2>Top defaulters</h2><button class="btn btn-sm" data-a="go" data-v="fees">Collect fees</button></div>' +
         table('dashdef', [{k:'n',label:'Student',v:function(s){ return s.name; },nosort:1},{k:'c',label:'Class',v:function(s){ return s.cls; },nosort:1},{k:'o',label:'Owes',r:1,v:function(s){ return owed(s); },h:function(s){ return nf(owed(s)); },nosort:1}], top, {noPage:1}) + '</div>' +
       '<div class="panel"><div class="row"><h2>Attendance today by class</h2><button class="btn btn-sm" data-a="go" data-v="attendance">Attendance</button></div><div class="chartbox"><canvas id="ch-at" aria-label="Attendance today by class" role="img"></canvas></div></div></div>' +
-      (due.length ? '<div class="panel"><div class="row"><h2>Increments due</h2><span class="sub">12 months or more since the last raise</span></div>' + table('dashinc', [{k:'n',label:'Name',v:function(u){ return u.name; },nosort:1},{k:'r',label:'Role',v:roleLabel,nosort:1},{k:'s',label:'Salary',r:1,v:curSalary,h:function(u){ return nf(curSalary(u)); },nosort:1},{k:'m',label:'Months',r:1,v:sinceRaise,nosort:1},{k:'x',label:'',act:1,h:function(u){ return '<button class="btn btn-sm" data-a="inc" data-v="' + u.id + '">Give increment</button>'; }}], due, {noPage:1}) + '</div>' : '');
+      (due.length ? '<div class="panel"><div class="row"><h2>Increments due</h2><span class="sub">12 months or more since the last raise</span></div>' + table('dashinc', [{k:'n',label:'Name',v:function(u){ return u.name; },nosort:1},{k:'r',label:'Role',v:roleLabel,nosort:1},{k:'s',label:'Salary',r:1,v:curSalary,h:function(u){ return nf(curSalary(u)); },nosort:1},{k:'m',label:'Months',r:1,v:sinceRaise,nosort:1},{k:'x',label:'',act:1,h:function(u){ return '<button class="btn btn-sm" data-a="inc" data-v="' + u.id + '">Give increment</button>'; }}], due, {}) + '</div>' : '');
   };
   VIEWS.dashboard.after = function(){
     var rows = []; for (var m = 0; m <= CUR; m++) rows.push({ m:m, i: incomeOf(m).total, e: expensesOf(m).total });
@@ -688,7 +688,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       '<p class="sub">Scholarships and fixed concessions are set per student in <b>Edit student</b>. Sibling discount is given automatically when two students share the same father and WhatsApp number.</p>' + err(e) +
       '<div class="row" style="justify-content:flex-end">' + (inPage ? '' : '<button type="button" class="btn" data-a="mclose">Cancel</button>') + '<button class="btn btn-primary" type="submit">Save rules</button></div></form>' +
       '<h3 style="font-size:15px">Students with a concession (' + withC.length + ')</h3>' +
-      table('concl', [{k:'n',label:'Student',h:function(s){ return '<b>' + esc(s.name) + '</b><div class="sub">' + sName(s) + '</div>'; }},{k:'t',label:'Concession',h:function(s){ return esc(concOf(s).label); }},{k:'f',label:'Fee',r:1,h:function(s){ return nf(s.fee); }},{k:'o',label:'Off',r:1,h:function(s){ return '−' + nf(concOf(s).amt); }},{k:'p',label:'Pays',r:1,h:function(s){ return nf(netFee(s)); }}], withC, {noPage:1, foot:'<tfoot><tr><td colspan="3">Total per month</td><td class="r num">−' + nf(withC.reduce(function(x,s){ return x + concOf(s).amt; }, 0)) + '</td><td></td></tr></tfoot>'});
+      table('concl', [{k:'n',label:'Student',h:function(s){ return '<b>' + esc(s.name) + '</b><div class="sub">' + sName(s) + '</div>'; }},{k:'t',label:'Concession',h:function(s){ return esc(concOf(s).label); }},{k:'f',label:'Fee',r:1,h:function(s){ return nf(s.fee); }},{k:'o',label:'Off',r:1,h:function(s){ return '−' + nf(concOf(s).amt); }},{k:'p',label:'Pays',r:1,h:function(s){ return nf(netFee(s)); }}], withC, {foot:'<tfoot><tr><td colspan="3">Total per month</td><td class="r num">−' + nf(withC.reduce(function(x,s){ return x + concOf(s).amt; }, 0)) + '</td><td></td></tr></tfoot>'});
   }
 
   var PROMO = {};
@@ -706,7 +706,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       {k:'to',label:'Moves to',h:function(x){ return nextCls(x) ? cn(nextCls(x)) : 'Passed out (leaves school)'; }},
       {k:'s',label:'Status',h:function(x){ return PROMO[x] ? pill('Done · ' + PROMO[x].moved + ' moved' + (PROMO[x].held ? ', ' + PROMO[x].held + ' held back' : ''), 'p-ok') : promoBlock(x) ? pill('Waiting for ' + cn(promoBlock(x)), 'p-warn') : pill('Ready', 'p-info'); }},
       {k:'x',label:'',act:1,h:function(x){ return '<button class="btn btn-sm' + (x === c ? ' btn-primary' : '') + '" data-a="propick" data-v="' + esc(x) + '">' + (x === c ? 'Selected' : 'Open') + '</button>'; }}
-    ], classes.slice().reverse(), {noPage:1});
+    ], classes.slice().reverse(), {});
     var head = '<div class="panel" style="background:var(--info-bg);border-color:var(--info)"><b>How it works</b><div class="sub" style="color:var(--ink)">Start from the top: first Class 10 (passed out), then Class 9 moves to 10, and so on down to Montessori. That way two batches never mix. Students who failed the final (or mid-term, if the final isn’t entered) are held back by default; you can change any of them. Sections stay the same where the next class has them. The demo lets you try it now; a real school does this in April.</div></div>';
     var body;
     if (done) body = '<div class="banner p-ok">' + cn(c) + ' is done: ' + done.moved + ' students ' + (n ? 'moved to ' + cn(n) : 'passed out') + (done.held ? ', ' + done.held + ' held back' : '') + '.</div>';
@@ -720,7 +720,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'r',label:'Result',r:1,v:function(s){ var p = proPct(s); return p === null ? -1 : p; },h:function(s){ var p = proPct(s); return p === null ? '—' : '<span style="color:var(--' + (p < .5 ? 'bad' : 'ink') + ');font-weight:600">' + Math.round(p * 100) + '%</span>'; }},
         {k:'a',label:'Attendance (year)',r:1,v:yr,h:function(s){ return Math.round(yr(s) * 100) + '%'; }},
         {k:'d',label:'Decision',h:function(s){ return proHeld(s) ? pill('Held back in ' + cn(c), 'p-warn') : pill(n ? 'To ' + uName(n + '|' + (SECTIONS[n].indexOf(s.sec) >= 0 ? s.sec : 'A')) : 'Passed out', 'p-ok'); }}
-      ], list, {noPage:1}) +
+      ], list, {}) +
       '<div class="row" style="justify-content:flex-end"><span class="sub">' + moving.length + ' ' + (n ? 'move to ' + cn(n) : 'pass out') + ', ' + held + ' held back</span><button class="btn btn-primary" data-a="proyes"' + (blk || !moving.length && !held ? ' disabled' : '') + '>' + (n ? 'Promote ' + moving.length + ' to ' + cn(n) : 'Mark ' + moving.length + ' as passed out') + '</button></div>';
     return head + '<div class="panel"><div class="row"><h2>' + cn(c) + (n ? ' → ' + cn(n) : ' → passed out') + '</h2>' + (list.length ? '<span class="sub">' + list.length + ' students</span>' : '') + '</div>' + body + '</div><div class="panel"><h2>All classes, top to bottom</h2>' + ov + '</div>';
   };
@@ -786,7 +786,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
           {k:'st',label:dayLabel(S.attDay),h:function(s){ var st = attOf(s, S.attDay); return '<span class="pal" role="group" aria-label="' + esc(s.name) + '">' + [['P','Present'],['A','Absent'],['L','Leave']].map(function(o){ return '<button class="' + (st===o[0]?'sel-'+o[0]:'') + '" data-a="att" data-v="' + s.id + '" data-s="' + o[0] + '" aria-pressed="' + (st===o[0]) + '" aria-label="' + o[1] + '">' + o[0] + '</button>'; }).join('') + '</span>'; }},
           {k:'pm',label:'Present in ' + MN[S.attMonth],r:1,v:function(s){ return attCount(s, S.attMonth).P; },h:function(s){ var r = attCount(s, S.attMonth); return r.P + ' / ' + r.n; }},
           {k:'pc',label:MN[S.attMonth] + ' %',r:1,v:function(s){ var r = attCount(s, S.attMonth); return r.P / r.n; },h:function(s){ var r = attCount(s, S.attMonth), p = r.P / r.n; return p < .75 ? pill(Math.round(p*100) + '%','p-bad') : Math.round(p*100) + '%'; }}
-        ], list, {noPage:1});
+        ], list, {});
     }
 
     if (S.attView === 'month'){
@@ -803,7 +803,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
           {k:'l',label:'Leave',r:1,v:function(s){ return cnt[s.id].L; }},
           {k:'d',label:'School days',r:1,v:function(s){ return cnt[s.id].n; }},
           {k:'pc',label:'Attendance',r:1,v:pct,h:function(s){ var p = pct(s); return pill(Math.round(p*100) + '%', p < .75 ? 'p-bad' : p < .9 ? 'p-warn' : 'p-ok'); }}
-        ], list, {noPage:1});
+        ], list, {});
     }
 
     var yr = {}; all.forEach(function(s){ var tp = 0, tn = 0; yr[s.id] = {}; ATT_MONTHS.forEach(function(m){ var r = attCount(s, m); yr[s.id][m] = r.P / r.n; tp += r.P; tn += r.n; }); yr[s.id].all = tp / tn; });
@@ -817,7 +817,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'name',label:'Student',v:function(s){ return s.name; },h:function(s){ return '<b>' + esc(s.name) + '</b>'; }}
       ].concat(ATT_MONTHS.map(function(m){ return {k:'m' + m,label:MN[m] + (m === CUR ? '*' : ''),r:1,v:function(s){ return yr[s.id][m]; },h:function(s){ return cell(yr[s.id][m]); }}; })).concat([
         {k:'all',label:'Year',r:1,v:function(s){ return yr[s.id].all; },h:function(s){ var p = yr[s.id].all; return pill(Math.round(p*100) + '%', p < .75 ? 'p-bad' : p < .9 ? 'p-warn' : 'p-ok'); }}
-      ]), list, {noPage:1, foot:'<tfoot><tr><td>Class average</td>' + ATT_MONTHS.map(function(m){ return '<td class="r num">' + Math.round(cavg(m)*100) + '</td>'; }).join('') + '<td class="r num">' + Math.round(cavg('all')*100) + '%</td></tr></tfoot>'}) +
+      ]), list, {foot:'<tfoot><tr><td>Class average</td>' + ATT_MONTHS.map(function(m){ return '<td class="r num">' + Math.round(cavg(m)*100) + '</td>'; }).join('') + '<td class="r num">' + Math.round(cavg('all')*100) + '%</td></tr></tfoot>'}) +
       '<p class="sub">* November so far</p>';
   };
 
@@ -907,7 +907,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
             teachers.map(function(u){ return '<option value="' + u.id + '"' + (CT[k] === u.id ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>'; }},
         {k:'o',label:'Also class teacher of',v:function(k){ return CT[k] ? ctOf(staffById(CT[k])).length : 0; },h:function(k){ if (!CT[k]) return '<span class="sub">—</span>'; var o = ctOf(staffById(CT[k])).filter(function(x){ return x !== k; }); return o.length ? esc(o.map(uName).join(', ')) : '<span class="sub">Only this section</span>'; }},
         {k:'a',label:'Attendance today',v:function(k){ var t = todayAtt(k); return t.p / Math.max(t.n,1); },h:function(k){ if (!ctName(k)) return pill('No one to take it','p-warn'); var t = todayAtt(k); return t.p + ' / ' + t.n + ' present'; }}
-      ], rows, {noPage:1});
+      ], rows, {});
   };
   function sectionsHtml(){
     return '<p class="sub">Split a big class into sections, like 5-A and 5-B. Each section gets its own class teacher, subject teachers, attendance register and result list. Subjects stay the same for the whole class.</p>' +
@@ -917,7 +917,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'x',label:'',act:1,h:function(c){ var L = SECTIONS[c], last = L[L.length-1], busy = stuIn(c + '|' + last).length;
           return (L.length > 1 ? '<button class="btn btn-sm btn-danger" data-a="secdel" data-v="' + esc(c) + '"' + (busy ? ' disabled title="Move its ' + busy + ' students to another section first"' : '') + '>Remove ' + last + '</button>' : '') +
             (L.length < 6 ? '<button class="btn btn-sm" data-a="secadd" data-v="' + esc(c) + '">Add section ' + String.fromCharCode(65 + L.length) + '</button>' : ''); }}
-      ], classes.slice(), {noPage:1}) +
+      ], classes.slice(), {}) +
       '<p class="sub">To move students into a new section, open <b>Students</b>, edit the student and pick the section. A section can be removed only when it is empty.</p>';
   }
 
@@ -928,7 +928,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       {k:'n',label:'Subjects',r:1,v:function(x){ return subjectsOf(x).length; }},
       {k:'l',label:'Subject list',v:function(x){ return subjectsOf(x).join(', '); },h:function(x){ var t = subjectsOf(x).join(', '); return '<span class="sub" title="' + esc(t) + '">' + esc(t.length > 70 ? t.slice(0, 68) + '…' : t) + '</span>'; }},
       {k:'x',label:'',act:1,h:function(x){ return '<button class="btn btn-sm' + (x === c ? ' btn-primary' : '') + '" data-a="subpick" data-v="' + esc(x) + '">' + (x === c ? 'Selected' : 'Manage') + '</button>'; }}
-    ], classes.slice(), {noPage:1});
+    ], classes.slice(), {});
     return '<div class="toolbar">' + sel('f-subcls','subcls', classOpts(0), c, 'Class') + '<span class="spacer"></span><button class="btn btn-primary" data-a="subadd">Add subject</button></div>' +
       '<div class="kpis">' + kpi('Subjects in ' + cn(c), subs.length, 'Used for marks and result cards') + kpi('Students', stu.length) + kpi('Exams', EXAMS.length, EXAMS.map(function(x){ return x[0]; }).join(', ')) + '</div>' +
       '<div class="panel"><div class="row"><h2>' + cn(c) + ' subjects</h2><span class="sub">The order here is the order on result cards</span></div>' +
@@ -965,18 +965,24 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (!S.subTeacher || !staffById(S.subTeacher) || staffById(S.subTeacher).left) S.subTeacher = teachers[0].id;
     var u = staffById(S.subTeacher), mine = teachesOf(u), count = mine.reduce(function(a,x){ return a + x.subs.length; }, 0);
     var tsel = sel('f-subt','subt', teachers.map(function(t){ return [t.id, tLabel(t)]; }), u.id, 'Teacher');
-    var grid = units().map(function(c){
+    // Ticks are kept in a draft until saved, so changing page does not lose them.
+    if (!S.taDraft || S.taDraft.tid !== u.id) S.taDraft = { tid: u.id, m: {} };
+    var dm = S.taDraft.m, isOn = function(c, x){ var k = c + '::' + x; return dm[k] !== undefined ? dm[k] : SUBT[c][x] === u.id; };
+    var U = units(), pages = Math.max(1, Math.ceil(U.length / PAGE)), pg = Math.min(Math.max(1, S.page.tagrid || 1), pages); S.page.tagrid = pg;
+    var pager = pages > 1 ? '<div class="pager"><span class="num">' + ((pg-1)*PAGE+1) + '–' + Math.min(pg*PAGE, U.length) + ' of ' + U.length + ' sections</span><span style="display:flex;gap:6px"><button type="button" class="btn btn-sm" data-a="pg" data-k="tagrid" data-v="' + (pg-1) + '"' + (pg===1?' disabled':'') + '>Previous</button><button type="button" class="btn btn-sm" data-a="pg" data-k="tagrid" data-v="' + (pg+1) + '"' + (pg===pages?' disabled':'') + '>Next</button></span></div>' : '';
+    var nDraft = Object.keys(dm).filter(function(k){ var p = k.split('::'); return dm[k] !== (SUBT[p[0]][p[1]] === u.id); }).length;
+    var grid = U.slice((pg-1)*PAGE, pg*PAGE).map(function(c){
       var subs = subjectsOf(gOf(c));
-      return '<tr><td><b>' + uName(c) + '</b><div class="sub">' + subs.filter(function(x){ return SUBT[c][x] === u.id; }).length + ' of ' + subs.length + '</div></td><td style="white-space:normal"><div style="display:flex;flex-wrap:wrap;gap:6px">' +
-        subs.map(function(x){ var owner = SUBT[c][x], on = owner === u.id, other = owner && !on ? staffById(owner) : null;
+      return '<tr><td><b>' + uName(c) + '</b><div class="sub">' + subs.filter(function(x){ return isOn(c, x); }).length + ' of ' + subs.length + '</div></td><td style="white-space:normal"><div style="display:flex;flex-wrap:wrap;gap:6px">' +
+        subs.map(function(x){ var owner = SUBT[c][x], on = isOn(c, x), other = owner && owner !== u.id ? staffById(owner) : null;
           return '<label style="display:inline-flex;align-items:center;gap:6px;border:1px solid ' + (on ? 'var(--brand)' : 'var(--line)') + ';background:' + (on ? 'var(--brand-soft)' : 'var(--surface)') + ';border-radius:999px;padding:5px 10px;font-size:13px;color:var(--ink);cursor:pointer">' +
             '<input type="checkbox" class="ta-chk" data-c="' + esc(c) + '" data-s="' + esc(x) + '"' + (on ? ' checked' : '') + '>' + (canTeach(u, gOf(c), x) ? '<b title="Main subject">★ ' + esc(x) + '</b>' : esc(x)) + (other ? ' <span class="sub">(' + esc(other.name.split(' ')[0]) + ')</span>' : !owner ? ' <span class="sub">(no teacher)</span>' : '') + '</label>'; }).join('') + '</div></td></tr>';
     }).join('');
     return '<div class="toolbar">' + bySeg + tsel + '<span class="spacer"></span></div>' +
       '<div class="kpis">' + kpi('Subjects', count, esc(u.name)) + kpi('Classes', mine.length, esc(mine.map(function(x){ return cn(x.c); }).join(', ') || 'None yet')) + kpi('Class teacher of', ctOf(u).length ? ctOf(u).map(uName).join(', ') : 'None', 'Takes attendance') + kpi('Unassigned subjects', units().reduce(function(a,c){ return a + subjectsOf(gOf(c)).filter(function(x){ return !SUBT[c][x]; }).length; }, 0), 'Across all sections', 'warn') + '</div>' +
       '<form class="panel" id="ta-form" data-id="' + u.id + '" novalidate><div class="row"><h2>Subjects for ' + esc(u.name) + (u.subject ? ' <span class="sub">· main subject: ' + esc(u.subject === 'All' ? 'Pre-primary (all subjects)' : u.subject) + '</span>' : '') + '</h2><span class="sub">Tick what this teacher teaches. ★ marks their main subject, but any subject can be ticked. A name in brackets means another teacher has it now; ticking moves it to ' + esc(u.name.split(' ')[0]) + '.</span></div>' +
-        '<div class="tablewrap"><table><thead><tr><th>Class</th><th>Subjects</th></tr></thead><tbody>' + grid + '</tbody></table></div>' +
-        '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="tareset">Undo changes</button><button class="btn btn-primary" type="submit">Save assignments</button></div></form>';
+        '<div class="tablewrap"><table><thead><tr><th>Class</th><th>Subjects</th></tr></thead><tbody>' + grid + '</tbody></table>' + pager + '</div>' +
+        '<div class="row" style="justify-content:flex-end">' + (nDraft ? '<span class="sub" style="align-self:center;margin-right:auto">' + nDraft + ' unsaved change' + (nDraft > 1 ? 's' : '') + '</span>' : '') + '<button type="button" class="btn" data-a="tareset">Undo changes</button><button class="btn btn-primary" type="submit">Save assignments</button></div></form>';
   }
   function subjectForm(mode, old, e){
     var c = S.subClass;
@@ -1007,7 +1013,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'tot',label:'Total',r:1,v:function(s){ return tot(s,e); },h:function(s){ return entered(s,e).length ? tot(s,e) + ' / ' + entered(s,e).length * o : '—'; }},
         {k:'pct',label:'%',r:1,v:function(s){ var p = pctOf(s,e); return p === null ? -1 : p; },h:function(s){ var p = pctOf(s,e); return p === null ? '—' : Math.round(p*100) + '%'; }},
         {k:'gr',label:'Grade',v:function(s){ var p = pctOf(s,e); return p === null ? 'Z' : grade(p); },h:function(s){ var p = pctOf(s,e); return p === null ? '—' : pill(grade(p), p >= .5 ? 'p-ok' : 'p-bad'); }}
-      ]), list, {noPage:1});
+      ]), list, {});
   };
 
   VIEWS.fees = function(){
@@ -1095,7 +1101,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
 
   // ================= modals =================
-  function openModal(title, html, wide){ S.modal = { title:title, html:html, wide:wide }; renderModal(); }
+  function openModal(title, html, wide, regen){ S.modal = { title:title, html:html, wide:wide, regen:regen }; renderModal(); }
   function closeModal(){ S.modal = null; renderModal(); }
   function renderModal(){
     var r = document.getElementById('modal-root');
@@ -1142,7 +1148,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       err(e) + '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">Save salary</button></div></form>';
     return '<form class="form" id="inc-form" data-id="' + u.id + '" novalidate><div class="row"><b>' + esc(u.name) + ' · ' + esc(roleLabel(u)) + '</b><span class="num">Current ' + fmt(curSalary(u)) + '/mo</span></div>' +
       '<p class="sub">Joined ' + ymLabel(u.joined) + ' at ' + fmt(u.salary0) + '. ' + (sinceRaise(u) >= 12 ? '<b style="color:var(--warn)">' + sinceRaise(u) + ' months since the last raise.</b>' : sinceRaise(u) + ' months since the last raise.') + '</p>' +
-      (u.incs.length ? table('inch', [{k:'m',label:'Effective',h:function(h){ return ymLabel(h.month); }},{k:'f',label:'From',r:1,h:function(h){ return nf(h.from); }},{k:'t',label:'To',r:1,h:function(h){ return nf(h.to); }},{k:'p',label:'Raise',r:1,h:function(h){ return '+' + Math.round((h.to-h.from)/h.from*100) + '%'; }}], u.incs.slice().reverse(), {noPage:1}) : '') +
+      (u.incs.length ? table('inch', [{k:'m',label:'Effective',h:function(h){ return ymLabel(h.month); }},{k:'f',label:'From',r:1,h:function(h){ return nf(h.from); }},{k:'t',label:'To',r:1,h:function(h){ return nf(h.to); }},{k:'p',label:'Raise',r:1,h:function(h){ return '+' + Math.round((h.to-h.from)/h.from*100) + '%'; }}], u.incs.slice().reverse(), {}) : '') +
       '<div class="fields"><label class="field" for="if-new">New monthly salary (Rs)<input id="if-new" type="number" min="1" placeholder="' + curSalary(u) + '"></label><label class="field" for="if-m">Effective from<input id="if-m" type="month" value="2026-12" max="2027-12"></label></div>' +
       err(e) + '<div class="row" style="justify-content:flex-end">' + (u.incs.length ? '<button type="button" class="btn" data-a="slip" data-v="' + u.id + '">Last slip</button>' : '') + '<button class="btn btn-primary" type="submit">Save increment</button></div></form>';
   }
@@ -1231,7 +1237,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'forgot') toast('A reset link goes to the owner\u2019s email. In this demo, use the demo login below.');
     else if (a === 'logout'){ S.authed = false; S.user = null; S.lgPass = ''; S.lgErr = ''; closeModal(); render(); window.scrollTo(0, 0); }
     else if (a === 'sort'){ var k = el.dataset.k, cur = S.sort[k]; S.sort[k] = cur && cur.k === val ? { k: val, dir: -cur.dir } : { k: val, dir: 1 }; render(); }
-    else if (a === 'pg'){ S.page[el.dataset.k] = +val; render(); }
+    else if (a === 'pg'){ S.page[el.dataset.k] = +val; if (S.modal && S.modal.regen && el.closest('.modal')){ S.modal.html = S.modal.regen(); renderModal(); } else render(); }
     else if (a === 'dl') toast('In the real app this downloads the ' + val + '.');
     else if (a === 'mclose') closeModal();
     // students
@@ -1244,7 +1250,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'slcview'){ openModal('School leaving certificate', slcHtml(byId(val)), true); }
     else if (a === 'slcprint'){ var sp = byId(val); printNow(slcHtml(sp).split('<div class="row" style="justify-content:flex-end">')[0]); }
     else if (a === 'slcissue'){ var si = byId(val); si.slcNo = 'SLC-2026-0' + (slcSeq++); si.conduct = si.conduct || 'Good'; log('students', 'Issued leaving certificate ' + si.slcNo + ' to ' + si.name); render(); openModal('School leaving certificate', slcHtml(si), true); }
-    else if (a === 'secman') openModal('Sections', sectionsHtml(), true);
+    else if (a === 'secman') openModal('Sections', sectionsHtml(), true, sectionsHtml);
     else if (a === 'secadd'){ var sc = SECTIONS[val], nx = String.fromCharCode(65 + sc.length); sc.push(nx); SUBT[val + '|' + nx] = {}; log('classes', 'Added section ' + uName(val + '|' + nx)); S.modal.html = sectionsHtml(); renderModal(); render(); toast(uName(val + '|' + nx) + ' added. Move students into it from Edit student, then pick its class teacher.'); }
     else if (a === 'secdel'){ var sd = SECTIONS[val], lx = sd[sd.length-1], kk = val + '|' + lx; if (stuIn(kk).length) return; var nm0 = uName(kk); sd.pop(); delete SUBT[kk]; delete CT[kk];
       ['attClass','resClass','stClass'].forEach(function(p){ if (S[p] === kk) S[p] = val + '|A'; }); log('classes', 'Removed section ' + nm0, true); S.modal.html = sectionsHtml(); renderModal(); render(); toast(nm0 + ' removed.'); }
@@ -1275,7 +1281,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       S.modal.html = staffForm(draft.id ? Object.assign({}, u0, { name: draft.name, phone: draft.phone || u0.phone }) : { name: draft.name, phone: draft.phone, job: draft.job }, '', val); renderModal(); }
     else if (a === 'staffdel'){ var su = staffById(val); openModal('Remove staff member', confirmBox('Remove <b>' + esc(su.name) + '</b>? ' + (isAdm() ? 'Their salary stops from December' : 'Salary stops from December') + (su.role !== 'support' ? ' and their login stops working' : '') + '.' + (isAdm() ? '' : ' Past salaries stay in your reports.'), 'staffdelyes', val, 'Remove')); }
     else if (a === 'staffdelyes'){ var gu = staffById(val); gu.left = '2026-12'; log('staff', 'Removed ' + gu.name + ' (' + roleLabel(gu) + ') from staff, salary stops from Dec 2026', true); closeModal(); render(); toast(gu.name + ' removed.'); }
-    else if (a === 'inc'){ if (isAdm()) return; var iu0 = staffById(val); openModal(iu0.salPending ? 'Set salary' : 'Salary increment', incForm(iu0), !iu0.salPending); }
+    else if (a === 'inc'){ if (isAdm()) return; var iu0 = staffById(val); openModal(iu0.salPending ? 'Set salary' : 'Salary increment', incForm(iu0), !iu0.salPending, function(){ return incForm(iu0); }); }
     else if (a === 'slip'){ if (isAdm()) return; var iu = staffById(val); openModal('Increment slip', slipHtml(iu, iu.incs[iu.incs.length-1])); }
     else if (a === 'slipsend'){ closeModal(); toast('Increment slip sent to ' + val + ' on WhatsApp.'); }
     // attendance
@@ -1314,9 +1320,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'remind1'){ var rs = byId(val); closeModal(); toast('Reminder with the dues breakdown sent to ' + rs.parent + ' on WhatsApp.'); }
     else if (a === 'collectfor'){ var cs0 = byId(val); S.colQ = cs0.name; S.colSid = cs0.id; S.modal = null; openModal('Collect fee', collectHtml(), true); }
     else if (a === 'teachview'){ var tv = staffById(val), tl = teachesOf(tv);
-      openModal(esc(tv.name) + ' teaches', (tl.length ? table('tv', [{k:'c',label:'Class',h:function(x){ return '<b>' + uName(x.c) + '</b>'; }},{k:'s',label:'Subjects',h:function(x){ return esc(x.subs.join(', ')); }},{k:'x',label:'',act:1,h:function(x){ return '<button class="btn btn-sm" data-a="teachgo" data-v="' + esc(x.c) + '">Change</button>'; }}], tl, {noPage:1}) : '<p>No subjects assigned yet.</p>') +
+      var tvH = function(){ return (tl.length ? table('tv', [{k:'c',label:'Class',h:function(x){ return '<b>' + uName(x.c) + '</b>'; }},{k:'s',label:'Subjects',h:function(x){ return esc(x.subs.join(', ')); }},{k:'x',label:'',act:1,h:function(x){ return '<button class="btn btn-sm" data-a="teachgo" data-v="' + esc(x.c) + '">Change</button>'; }}], tl, {}) : '<p>No subjects assigned yet.</p>') +
         '<p class="sub">Assign or change subjects in <b>Subject teachers</b>, by class or by teacher. The teacher then sees only these classes and subjects when entering marks.</p>' +
-        '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="teachassign" data-v="' + tv.id + '">Assign subjects</button></div>'); }
+        '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="teachassign" data-v="' + tv.id + '">Assign subjects</button></div>'; }; openModal(esc(tv.name) + ' teaches', tvH(), false, tvH); }
     else if (a === 'teachgo'){ S.stClass = val; S.subBy = 'class'; closeModal(); go('subjectteachers'); }
     else if (a === 'anntpl'){ var dt = annDraft(), tp = TEMPLATES[+val]; dt.title = tp[1]; dt.body = tp[2]; S.annErr = ''; render(); var ab = document.getElementById('an-body'); if (ab) ab.focus(); }
     else if (a === 'anto'){ var dto = annDraft(); dto.to = val; render(); }
@@ -1326,7 +1332,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'anncancel'){ log('ann', 'Cancelled a scheduled announcement'); announcements = announcements.filter(function(x){ return x.id !== +val; }); render(); toast('Scheduled announcement cancelled.'); }
     else if (a === 'annreuse'){ var ar = announcements.filter(function(x){ return x.id === +val; })[0]; S.ann = { title: ar.title, body: ar.body, to: ar.to, classes: ar.classes.slice(), staff: ar.staff, when:'now', at:'2026-11-21T08:00' }; render(); window.scrollTo(0, 0); toast('Copied into the form. Edit it and send.'); }
     else if (a === 'subby'){ S.subBy = val; render(); }
-    else if (a === 'tareset'){ render(); toast('Changes undone.'); }
+    else if (a === 'tareset'){ S.taDraft = null; render(); toast('Changes undone.'); }
     else if (a === 'teachassign'){ S.subBy = 'teacher'; S.subTeacher = +val; closeModal(); go('subjectteachers'); }
     else if (a === 'subpick'){ S.subClass = val; render(); }
     else if (a === 'subadd') openModal('Add subject to ' + cn(S.subClass), subjectForm('add'), true);
@@ -1357,7 +1363,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'expedit') openModal('Edit expense', expForm(expenses.filter(function(x){ return x.id === +val; })[0]));
     else if (a === 'expdel'){ var xe = expenses.filter(function(x){ return x.id === +val; })[0]; openModal('Delete expense', confirmBox('Delete <b>' + esc(xe.desc) + '</b> (' + fmt(xe.amount) + ')? It is removed from profit and loss.', 'expdelyes', val, 'Delete')); }
     else if (a === 'expdelyes'){ var xd = expenses.filter(function(x){ return x.id === +val; })[0]; log('expenses', 'Deleted expense: ' + xd.desc + ' (' + fmt(xd.amount) + ', ' + dayLabel(xd.date) + ')', true); expenses = expenses.filter(function(x){ return x.id !== +val; }); closeModal(); render(); toast('Expense deleted.'); }
-    else if (a === 'payview'){ var pr = payroll(S.expMonth); openModal('Salaries · ' + MNL[S.expMonth] + ' 2026', '<p class="sub">From each person’s salary and increments in Staff & payroll.</p>' + table('payv', [{k:'n',label:'Name',h:function(r){ return esc(r.u.name); }},{k:'r',label:'Role',h:function(r){ return esc(roleLabel(r.u)); }},{k:'a',label:'Salary',r:1,h:function(r){ return nf(r.amt); }}], pr.rows, {noPage:1, foot:'<tfoot><tr><td>Total</td><td>' + pr.rows.length + ' staff</td><td class="r num">' + nf(pr.total) + '</td></tr></tfoot>'})); }
+    else if (a === 'payview'){ var pr = payroll(S.expMonth); var pvH = function(){ return '<p class="sub">From each person’s salary and increments in Staff & payroll.</p>' + table('payv', [{k:'n',label:'Name',h:function(r){ return esc(r.u.name); }},{k:'r',label:'Role',h:function(r){ return esc(roleLabel(r.u)); }},{k:'a',label:'Salary',r:1,h:function(r){ return nf(r.amt); }}], pr.rows, {foot:'<tfoot><tr><td>Total</td><td>' + pr.rows.length + ' staff</td><td class="r num">' + nf(pr.total) + '</td></tr></tfoot>'}); }; openModal('Salaries · ' + MNL[S.expMonth] + ' 2026', pvH(), false, pvH); }
     // finance
     else if (a === 'plper'){ S.plPer = val; render(); }
   });
@@ -1365,7 +1371,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var el = e.target;
     if (el.classList.contains('an-cls') || el.id === 'an-staff'){ var d2 = annDraft(), ac = document.getElementById('an-count'); if (ac) ac.innerHTML = annCountHtml(d2); return; }
     if (el.classList.contains('ct-chk')){ var lb2 = el.parentNode; lb2.style.borderColor = el.checked ? 'var(--info)' : 'var(--line)'; lb2.style.background = el.checked ? 'var(--info-bg)' : 'var(--surface)'; return; }
-    if (el.classList.contains('ta-chk')){ var lb = el.parentNode; lb.style.borderColor = el.checked ? 'var(--brand)' : 'var(--line)'; lb.style.background = el.checked ? 'var(--brand-soft)' : 'var(--surface)'; return; }
+    if (el.classList.contains('ta-chk')){ if (S.taDraft) S.taDraft.m[el.dataset.c + '::' + el.dataset.s] = el.checked; var lb = el.parentNode; lb.style.borderColor = el.checked ? 'var(--brand)' : 'var(--line)'; lb.style.background = el.checked ? 'var(--brand-soft)' : 'var(--surface)'; return; }
     if (el.id === 'c-all' || el.classList.contains('c-item')){
       var boxes = Array.prototype.slice.call(document.querySelectorAll('.c-item'));
       if (el.id === 'c-all') boxes.forEach(function(b){ b.checked = el.checked; });
@@ -1425,9 +1431,12 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     }
     if (id === 'ta-form'){
       var tu2 = staffById(f.dataset.id), moved = [], added = 0, removed = 0;
-      Array.prototype.slice.call(document.querySelectorAll('.ta-chk')).forEach(function(b){ var c = b.dataset.c, x = b.dataset.s, cur = SUBT[c][x];
-        if (b.checked && cur !== tu2.id){ if (cur){ var o = staffById(cur); if (o) moved.push(o.name.split(' ')[0]); } SUBT[c][x] = tu2.id; added++; }
-        else if (!b.checked && cur === tu2.id){ delete SUBT[c][x]; removed++; } });
+      var tdm = S.taDraft && S.taDraft.tid === tu2.id ? S.taDraft.m : {};
+      Array.prototype.slice.call(document.querySelectorAll('.ta-chk')).forEach(function(b){ tdm[b.dataset.c + '::' + b.dataset.s] = b.checked; });
+      Object.keys(tdm).forEach(function(dk){ var c = dk.split('::')[0], x = dk.split('::')[1], cur = SUBT[c][x], chk = tdm[dk];
+        if (chk && cur !== tu2.id){ if (cur){ var o = staffById(cur); if (o) moved.push(o.name.split(' ')[0]); } SUBT[c][x] = tu2.id; added++; }
+        else if (!chk && cur === tu2.id){ delete SUBT[c][x]; removed++; } });
+      S.taDraft = null;
       var ctMoved = 0; Array.prototype.slice.call(document.querySelectorAll('.ct-chk')).forEach(function(b){ var c = b.dataset.c;
         if (b.checked && CT[c] !== tu2.id){ CT[c] = tu2.id; ctMoved++; } else if (!b.checked && CT[c] === tu2.id){ delete CT[c]; ctMoved++; } });
       if (ctMoved && !added && !removed) added = -1;
