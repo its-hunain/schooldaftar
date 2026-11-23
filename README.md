@@ -32,9 +32,9 @@ The demos use sample data only. Nothing is saved, and every change resets when t
 - Expenses and profit and loss
 - Activity log
 
-## Price
+## Pricing
 
-**Rs 10,000 per month.** First month free.
+Pricing depends on the school's size and needs. Book a free demo to see it and get a quote. A free trial is available before you decide.
 
 ## Contact
 
