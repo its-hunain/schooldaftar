@@ -747,7 +747,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'role',label:'Role',v:roleLabel,h:function(u){ return pill(esc(roleLabel(u)), u.role === 'teacher' ? 'p-ok' : u.role === 'accountant' || u.role === 'admin' ? 'p-warn' : 'p-info'); }},
         {k:'phone',label:'Mobile',v:function(u){ return fmtPhone(u.phone); }},
         {k:'cls',label:'Teaches',v:function(u){ return teachesOf(u).length; },h:function(u){ if (u.role !== 'teacher') return '<span class="sub">—</span>'; var t = teachesOf(u); if (!t.length) return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '">No subjects yet ▾</button>';
-          var txt = t.map(function(x){ return uName(x.c) + ': ' + x.subs.join(', '); }).join(' · '); return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '" title="' + esc(txt) + '">' + esc(u.subject === 'All' ? 'All subjects' : u.subject || 'Subjects') + ' in ' + t.length + ' class' + (t.length > 1 ? 'es' : '') + ' ▾</button>' + (ctOf(u).length ? '<div class="sub" style="margin-top:4px">Class teacher: ' + ctOf(u).map(uName).join(', ') + '</div>' : ''); }},
+          var txt = t.map(function(x){ return uName(x.c) + ': ' + x.subs.join(', '); }).join(' · '); return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '" title="' + esc(txt) + '">' + esc(subjSummary(t)) + ' in ' + t.length + ' class' + (t.length > 1 ? 'es' : '') + ' ▾</button>' + (ctOf(u).length ? '<div class="sub" style="margin-top:4px">Class teacher: ' + ctOf(u).map(uName).join(', ') + '</div>' : ''); }},
         {k:'join',label:'Joined',v:function(u){ return u.joined; },h:function(u){ return ymLabel(u.joined); }}
     ];
     if (!adm) cols.push(
@@ -934,6 +934,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       ], subs.slice(), {noPage:1, empty:'No subjects yet. Add the first one.'}) + '</div>' +
       '<div class="panel"><h2>All classes</h2>' + overview + '</div>';
   };
+  function subjSummary(t){ var o = []; t.forEach(function(x){ x.subs.forEach(function(s){ if (o.indexOf(s) < 0) o.push(s); }); }); return o.length <= 2 ? o.join(', ') : o.length + ' subjects'; }
+  function tLabel(u){ return u.name + (u.subject ? ' · ' + (u.subject === 'All' ? 'Pre-primary' : u.subject) : ''); }
   VIEWS.subjectteachers = function(){
     var bySeg = '<div class="field">Assign by<div class="seg" role="group" aria-label="Assign by">' + [['class','Class'],['teacher','Teacher']].map(function(x){ return '<button data-a="subby" data-v="' + x[0] + '" aria-pressed="' + (S.subBy===x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
     if (S.subBy === 'teacher') return subjectsByTeacher(bySeg);
@@ -942,10 +944,12 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var subT = teachers.filter(function(u){ return subs.some(function(x){ return SUBT[c][x] === u.id; }); });
     var open = subs.filter(function(x){ return !SUBT[c][x]; });
     var tOpts = function(sub){ var cur = SUBT[c][sub]; return '<select data-a="subteach" data-s="' + esc(sub) + '" aria-label="Teacher for ' + esc(sub) + '" style="border:1px solid ' + (cur ? 'var(--line)' : 'var(--warn)') + ';border-radius:8px;padding:6px 8px;min-width:200px;background:var(--surface);color:var(--ink)"><option value="">Not assigned</option>' +
-      teachers.filter(function(u){ return canTeach(u, gOf(c), sub) || +cur === u.id; }).map(function(u){ return '<option value="' + u.id + '"' + (+cur === u.id ? ' selected' : '') + '>' + esc(u.name) + (u.subject === 'All' ? ' (pre-primary)' : '') + '</option>'; }).join('') + '</select>'; };
+      [['Main subject: ' + sub, true], ['Other teachers', false]].map(function(g){
+        var list = teachers.filter(function(u){ return canTeach(u, gOf(c), sub) === g[1]; });
+        return list.length ? '<optgroup label="' + esc(g[0]) + '">' + list.map(function(u){ return '<option value="' + u.id + '"' + (+cur === u.id ? ' selected' : '') + '>' + esc(tLabel(u)) + '</option>'; }).join('') + '</optgroup>' : ''; }).join('') + '</select>'; };
     return '<div class="toolbar">' + bySeg + sel('f-stcls','stcls', unitOpts(), c, 'Class') + '<span class="spacer"></span></div>' +
       '<div class="kpis">' + kpi('Subjects in ' + uName(c), subs.length) + kpi('Teachers for this class', subT.length, esc(subT.map(function(u){ return u.name.split(' ')[0]; }).join(', ') || 'None yet')) + kpi('Without a teacher', open.length, open.length ? esc(open.join(', ')) : 'Every subject covered', open.length ? 'bad' : '') + '</div>' +
-      '<p class="sub">Pick a teacher for each subject. Each teacher has one subject, so the list shows only teachers of that subject. It saves straight away.</p>' +
+      '<p class="sub">Pick a teacher for each subject. Teachers whose main subject it is are listed first, but anyone can be picked. It saves straight away.</p>' +
       table('subt', [
         {k:'n',label:'Subject',v:function(x){ return x; },h:function(x){ return '<b>' + esc(x) + '</b>'; }},
         {k:'t',label:'Taught by',h:function(x){ return tOpts(x); }}
@@ -955,17 +959,17 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var teachers = STAFF.filter(function(u){ return !u.left && u.role === 'teacher'; });
     if (!S.subTeacher || !staffById(S.subTeacher) || staffById(S.subTeacher).left) S.subTeacher = teachers[0].id;
     var u = staffById(S.subTeacher), mine = teachesOf(u), count = mine.reduce(function(a,x){ return a + x.subs.length; }, 0);
-    var tsel = sel('f-subt','subt', teachers.map(function(t){ return [t.id, t.name]; }), u.id, 'Teacher');
-    var grid = units().filter(function(c){ return subjectsOf(gOf(c)).some(function(x){ return canTeach(u, gOf(c), x); }); }).map(function(c){
-      var subs = subjectsOf(gOf(c)).filter(function(x){ return canTeach(u, gOf(c), x); });
+    var tsel = sel('f-subt','subt', teachers.map(function(t){ return [t.id, tLabel(t)]; }), u.id, 'Teacher');
+    var grid = units().map(function(c){
+      var subs = subjectsOf(gOf(c));
       return '<tr><td><b>' + uName(c) + '</b><div class="sub">' + subs.filter(function(x){ return SUBT[c][x] === u.id; }).length + ' of ' + subs.length + '</div></td><td style="white-space:normal"><div style="display:flex;flex-wrap:wrap;gap:6px">' +
         subs.map(function(x){ var owner = SUBT[c][x], on = owner === u.id, other = owner && !on ? staffById(owner) : null;
           return '<label style="display:inline-flex;align-items:center;gap:6px;border:1px solid ' + (on ? 'var(--brand)' : 'var(--line)') + ';background:' + (on ? 'var(--brand-soft)' : 'var(--surface)') + ';border-radius:999px;padding:5px 10px;font-size:13px;color:var(--ink);cursor:pointer">' +
-            '<input type="checkbox" class="ta-chk" data-c="' + esc(c) + '" data-s="' + esc(x) + '"' + (on ? ' checked' : '') + '>' + esc(x) + (other ? ' <span class="sub">(' + esc(other.name.split(' ')[0]) + ')</span>' : !owner ? ' <span class="sub">(no teacher)</span>' : '') + '</label>'; }).join('') + '</div></td></tr>';
+            '<input type="checkbox" class="ta-chk" data-c="' + esc(c) + '" data-s="' + esc(x) + '"' + (on ? ' checked' : '') + '>' + (canTeach(u, gOf(c), x) ? '<b title="Main subject">★ ' + esc(x) + '</b>' : esc(x)) + (other ? ' <span class="sub">(' + esc(other.name.split(' ')[0]) + ')</span>' : !owner ? ' <span class="sub">(no teacher)</span>' : '') + '</label>'; }).join('') + '</div></td></tr>';
     }).join('');
     return '<div class="toolbar">' + bySeg + tsel + '<span class="spacer"></span></div>' +
       '<div class="kpis">' + kpi('Subjects', count, esc(u.name)) + kpi('Classes', mine.length, esc(mine.map(function(x){ return cn(x.c); }).join(', ') || 'None yet')) + kpi('Class teacher of', ctOf(u).length ? ctOf(u).map(uName).join(', ') : 'None', 'Takes attendance') + kpi('Unassigned subjects', units().reduce(function(a,c){ return a + subjectsOf(gOf(c)).filter(function(x){ return !SUBT[c][x]; }).length; }, 0), 'Across all sections', 'warn') + '</div>' +
-      '<form class="panel" id="ta-form" data-id="' + u.id + '" novalidate><div class="row"><h2>' + (u.subject === 'All' ? 'Pre-primary classes for ' : esc(u.subject || 'Subjects') + ' classes for ') + esc(u.name) + '</h2><span class="sub">Tick the classes this teacher teaches. A name in brackets means another teacher has it now; ticking moves it to ' + esc(u.name.split(' ')[0]) + '.</span></div>' +
+      '<form class="panel" id="ta-form" data-id="' + u.id + '" novalidate><div class="row"><h2>Subjects for ' + esc(u.name) + (u.subject ? ' <span class="sub">· main subject: ' + esc(u.subject === 'All' ? 'Pre-primary (all subjects)' : u.subject) + '</span>' : '') + '</h2><span class="sub">Tick what this teacher teaches. ★ marks their main subject, but any subject can be ticked. A name in brackets means another teacher has it now; ticking moves it to ' + esc(u.name.split(' ')[0]) + '.</span></div>' +
         '<div class="tablewrap"><table><thead><tr><th>Class</th><th>Subjects</th></tr></thead><tbody>' + grid + '</tbody></table></div>' +
         '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="tareset">Undo changes</button><button class="btn btn-primary" type="submit">Save assignments</button></div></form>';
   }
