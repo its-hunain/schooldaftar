@@ -79,6 +79,9 @@ thead th{border-top:0;background:var(--surface-2);font-size:12px;color:var(--mut
 th.r,td.r{text-align:right}
 th button{border:0;background:none;padding:0;font-weight:600;color:inherit;font-size:12px;display:inline-flex;gap:4px;align-items:center}
 tr:hover td{background:var(--surface-2)}
+tr.clickrow{cursor:pointer}
+tr.clickrow:hover td{background:var(--brand-soft)}
+tr.clickrow:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 td.act{display:flex;gap:6px;justify-content:flex-end}
 tfoot td{font-weight:700;background:var(--surface-2)}
 .pill{font-size:11.5px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap;display:inline-block}
@@ -490,7 +493,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       (flagged ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + flagged + ' changes this month need a look</b><div class="sub">Deleted records, changed concessions and removed sections.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : '') +
       '<div class="grid2"><div class="panel"><div class="row"><h2>Attendance today by class</h2><button class="btn btn-sm" data-a="go" data-v="attendance">Attendance</button></div><div class="chartbox"><canvas id="ch-at" aria-label="Attendance today by class" role="img"></canvas></div></div>' +
       '<div class="panel"><div class="row"><h2>Recent changes</h2><button class="btn btn-sm" data-a="go" data-v="activity">Activity log</button></div>' +
-        table('dashact', [{k:'w',label:'When',h:function(l){ return dayLabel(l.date) + ', ' + l.time; }},{k:'p',label:'Who',h:function(l){ return esc(l.who); }},{k:'t',label:'What changed',h:function(l){ return '<span style="white-space:normal;display:block;min-width:200px">' + esc(l.text) + '</span>'; }}], vl.slice(0, 6), {noPage:1, empty:'No changes yet.'}) + '</div></div>';
+        table('dashact', [{k:'w',label:'When',h:function(l){ return dayLabel(l.date) + ', ' + l.time; }},{k:'p',label:'Who',h:function(l){ return esc(l.who); }},{k:'t',label:'What changed',h:function(l){ return '<span style="white-space:normal;display:block;min-width:200px">' + esc(l.text) + '</span>'; }}], vl.slice(0, 6), {noPage:1, empty:'No changes yet.', rowAttr: logRowAttr}) + '</div></div>';
   }
   VIEWS.dashboard = function(){
     if (isAdm()) return admDashboard();
@@ -724,6 +727,38 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       '<div class="row" style="justify-content:flex-end"><span class="sub">' + moving.length + ' ' + (n ? 'move to ' + cn(n) : 'pass out') + ', ' + held + ' held back</span><button class="btn btn-primary" data-a="proyes"' + (blk || !moving.length && !held ? ' disabled' : '') + '>' + (n ? 'Promote ' + moving.length + ' to ' + cn(n) : 'Mark ' + moving.length + ' as passed out') + '</button></div>';
     return head + '<div class="panel"><div class="row"><h2>' + cn(c) + (n ? ' → ' + cn(n) : ' → passed out') + '</h2>' + (list.length ? '<span class="sub">' + list.length + ' students</span>' : '') + '</div>' + body + '</div><div class="panel"><h2>All classes, top to bottom</h2>' + ov + '</div>';
   };
+  // Where a log entry leads: the section for its area, filtered to the student, teacher or class it names.
+  var KIND_VIEW = { fees:'fees', students:'students', staff:'staff', marks:'results', attendance:'attendance', expenses:'expenses', settings:'settings', ann:'announce', classes:'classteachers', promotion:'promote' };
+  function longestIn(text, list, nameOf){ return list.filter(function(x){ return text.indexOf(nameOf(x)) >= 0; }).sort(function(a, b){ return nameOf(b).length - nameOf(a).length; })[0]; }
+  function logTarget(l){
+    var t = { v: KIND_VIEW[l.kind], q:{}, s:{}, pages:[] }, tx = l.text;
+    var st = longestIn(tx, students.concat(alumni), function(s){ return s.name; });
+    var un = longestIn(tx, units(), uName);
+    var ex = EXAMS.filter(function(e){ return tx.indexOf(e[0]) >= 0; })[0];
+    if (l.kind === 'students' && st){ t.q.stu = st.name; t.s = { stuStatus: alumni.indexOf(st) >= 0 ? 'left' : 'active', stuClass:'all', stuFee:'all' }; t.pages = ['stu','alu']; }
+    else if (l.kind === 'fees' && st){
+      if (/^Collected/.test(tx) && DAYS.indexOf(l.date) >= 0){ t.v = 'collection'; t.q.col = st.name; t.s = { colDay: l.date, colMethod:'all' }; }
+      else { t.q.fees = st.name; t.s = { feeStatus:'all', feeClass:'all', feeType:'all' }; t.pages = ['fees']; } }
+    else if (l.kind === 'marks'){ t.s = { resExam: ex ? ex[0] : S.resExam }; if (st){ t.s.resClass = uOf(st); t.q.res = st.name; } else if (un) t.s.resClass = un; t.pages = ['res']; }
+    else if (l.kind === 'attendance'){ t.s = { attView:'daily', attMonth: CUR }; if (DAYS.indexOf(l.date) >= 0) t.s.attDay = l.date; if (st){ t.s.attClass = uOf(st); t.q.att = st.name; } else if (un) t.s.attClass = un; }
+    else if (l.kind === 'staff'){ var su = longestIn(tx, STAFF.filter(function(u){ return !u.left; }), function(u){ return u.name; }); if (su){ t.q.staff = su.name; t.s = { staffRole:'all' }; t.pages = ['staff']; } }
+    else if (l.kind === 'expenses'){ t.s = { expMonth: +l.date.slice(5,7) - 1, expCat:'all' }; }
+    else if (l.kind === 'classes'){
+      var sub = longestIn(tx, allSubjects(), function(x){ return x; });
+      if (un && sub && / in /.test(tx)){ t.v = 'subjectteachers'; t.s = { subBy:'class', stClass: un }; }
+      else if (sub && /removed from/.test(tx)){ var cc = longestIn(tx, classes, cn); t.v = 'subjects'; if (cc) t.s = { subClass: cc }; }
+      else if (un){ t.q.ct = uName(un); t.pages = ['ct']; } }
+    else if (l.kind === 'ann'){ var m = tx.match(/"([^"]+)"/); if (m) t.q.annq = m[1]; t.pages = ['ann']; }
+    return t.v && canSee(t.v) ? t : null;
+  }
+  function openLog(id){
+    var l = LOG.filter(function(x){ return x.id === +id; })[0], t = l && logTarget(l); if (!t) return;
+    Object.keys(t.s).forEach(function(k){ S[k] = t.s[k]; }); Object.keys(t.q).forEach(function(k){ S.q[k] = t.q[k]; }); t.pages.forEach(function(k){ S.page[k] = 1; });
+    go(t.v);
+    var what = Object.keys(t.q).map(function(k){ return t.q[k]; })[0];
+    toast('Opened ' + (TITLES[t.v] ? TITLES[t.v][0] : t.v) + (what ? ', filtered to ' + esc(what) : '') + '.');
+  }
+  function logRowAttr(l){ var t = logTarget(l); return t ? ' class="clickrow" data-a="actgo" data-v="' + l.id + '" tabindex="0" title="Open in ' + esc(TITLES[t.v] ? TITLES[t.v][0] : t.v) + '"' : ''; }
   VIEWS.activity = function(){
     var VL = visibleLog(), kinds = Object.keys(KINDS).filter(function(k){ return !isAdm() || ['fees','expenses','settings'].indexOf(k) < 0; });
     var whos = VL.map(function(l){ return l.who; }).filter(function(w, i, a){ return a.indexOf(w) === i; });
@@ -738,8 +773,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'w',label:'Who',v:function(l){ return l.who; },h:function(l){ return '<b>' + esc(l.who) + '</b><div class="sub">' + esc(l.role) + '</div>'; }},
         {k:'k',label:'Area',v:function(l){ return KINDS[l.kind]; },h:function(l){ return pill(KINDS[l.kind], 'p-info'); }},
         {k:'t',label:'What changed',v:function(l){ return l.text; },h:function(l){ return '<span style="white-space:normal;display:block;min-width:280px">' + esc(l.text) + '</span>'; }},
-        {k:'f',label:'',v:function(l){ return l.flag ? 1 : 0; },h:function(l){ return l.flag ? pill('Needs a look','p-warn') : ''; }}
-      ], rows, { empty:'Nothing matches these filters.' });
+        {k:'f',label:'',v:function(l){ return l.flag ? 1 : 0; },h:function(l){ var t = logTarget(l); return (l.flag ? pill('Needs a look','p-warn') + ' ' : '') + (t ? '<button class="btn btn-sm" data-a="actgo" data-v="' + l.id + '">Open ›</button>' : ''); }}
+      ], rows, { empty:'Nothing matches these filters.', rowAttr: logRowAttr });
   };
 
   VIEWS.staff = function(){
@@ -1271,6 +1306,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         else { students = students.filter(function(x){ return x !== s; }); s.status = 'passed'; s.leftOn = DAYS[DAYS.length-1]; s.reason = 'Passed out (Matric)'; s.conduct = 'Good'; s.lastClass = sName(s); s.writeOff = 0; alumni.push(s); } });
       PROMO[qc] = { moved: mv, held: hb }; log('promotion', qn ? 'Promoted ' + mv + ' students from ' + cn(qc) + ' to ' + cn(qn) + (hb ? ', held back ' + hb : '') : mv + ' students of ' + cn(qc) + ' marked as passed out' + (hb ? ', ' + hb + ' held back' : ''));
       var prev = classes[classes.indexOf(qc) - 1]; if (prev) S.proFrom = prev; S.proHeld = {}; closeModal(); render(); window.scrollTo(0, 0); toast(qn ? mv + ' students are now in ' + cn(qn) + '.' : mv + ' students marked as passed out.'); }
+    else if (a === 'actgo') openLog(val);
     else if (a === 'actflag'){ S.actFlag = val === '1'; render(); }
     else if (a === 'actcheck'){ S.actFlag = true; go('activity'); }
     // staff
@@ -1416,7 +1452,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (el.dataset.a === 'cq'){ S.colQ = el.value; S.colSid = null; S.modal.html = collectHtml(); renderModal(); var cqi = document.getElementById('cq'); cqi.focus(); cqi.setSelectionRange(cqi.value.length, cqi.value.length); return; }
     if (el.dataset.a === 'q'){ S.q[el.dataset.k] = el.value; S.page[el.dataset.k] = 1; render(); }
   });
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.modal) closeModal(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.modal) closeModal();
+    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('clickrow')) openLog(e.target.dataset.v); });
   document.addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target, id = f.id;
