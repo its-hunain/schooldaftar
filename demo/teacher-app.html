@@ -124,6 +124,8 @@ button{cursor:pointer}
 .pager{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .btn:disabled{opacity:.45;cursor:default}
 .empty{font-size:13px;color:var(--muted);text-align:center;padding:18px}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.pager button:disabled{opacity:.45;cursor:default}
 @media (prefers-reduced-motion: no-preference){ .sheet{animation:up .18s ease-out} @keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}} }
 </style>
 
@@ -271,7 +273,7 @@ button{cursor:pointer}
   function myTeach(){ return teachesOf(S.user); }
   function myUnits(){ var o = myCT().slice(); myTeach().forEach(function(t){ if (o.indexOf(t.c) < 0) o.push(t.c); }); return units().filter(function(k){ return o.indexOf(k) >= 0; }); }
 
-  var S = { user:null, tab:'home', online:true, queue:[], att:{}, attDraft:{}, attU:null, attView:'today', mkExam:'Mid-term', mkKey:null, mkErr:'', stuU:'all', q:'', sheet:null, lgPhone:'', lgPin:'', lgErr:'', pinErr:'', lastSync:'08:02', toast:'' };
+  var S = { user:null, tab:'home', online:true, queue:[], att:{}, attDraft:{}, attU:null, attView:'today', mkExam:'Mid-term', mkKey:null, mkErr:'', stuU:'all', q:'', stuPg:1, sheet:null, lgPhone:'', lgPin:'', lgErr:'', pinErr:'', lastSync:'08:02', toast:'' };
 
   var icons = {
     home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
@@ -372,14 +374,21 @@ button{cursor:pointer}
   }
 
   // ---------- students ----------
+  var STU_PER_PAGE = 10;
   function viewStu(){
     var U = myUnits(); if (S.stuU !== 'all' && U.indexOf(S.stuU) < 0) S.stuU = 'all';
     var list = students.filter(function(s){ return (S.stuU === 'all' ? U.indexOf(uOf(s)) >= 0 : uOf(s) === S.stuU) && (!S.q || (s.name + ' ' + s.father).toLowerCase().indexOf(S.q.toLowerCase()) >= 0); });
+    var total = list.length, pages = Math.max(1, Math.ceil(total / STU_PER_PAGE));
+    S.stuPg = Math.min(Math.max(1, S.stuPg), pages);
+    var from = (S.stuPg - 1) * STU_PER_PAGE;
+    list = list.slice(from, from + STU_PER_PAGE);
     return header('My students', U.length + ' section' + (U.length === 1 ? '' : 's') + ' you teach') + '<div class="body">' +
       '<div class="fields"><label class="field" for="stu-u">Section<select id="stu-u" data-a="stuu"><option value="all">All my sections</option>' + U.map(function(k){ return '<option value="' + esc(k) + '"' + (S.stuU === k ? ' selected' : '') + '>' + uName(k) + (myCT().indexOf(k) >= 0 ? ' (class teacher)' : '') + '</option>'; }).join('') + '</select></label></div>' +
       '<label class="field" for="stu-q">Search<input id="stu-q" type="search" data-a="q" value="' + esc(S.q) + '" placeholder="Student or father name"></label>' +
-      '<p class="sub num">' + list.length + ' students</p>' +
-      (list.length ? '<div class="list">' + list.map(function(s){ return '<div class="item"><div class="grow"><div class="name">' + esc(s.name) + '</div><div class="meta">' + uName(uOf(s)) + ' · ' + esc(s.father) + '</div></div><button class="btn btn-sm" data-a="stu" data-v="' + s.id + '">Details</button></div>'; }).join('') + '</div>' : '<div class="empty">No students match.</div>') + '</div>';
+      '<p class="sub num" id="stu-count">' + (pages > 1 ? 'Showing ' + (from + 1) + '–' + Math.min(from + STU_PER_PAGE, total) + ' of ' + total + ' students' : total + ' students') + '</p>' +
+      (list.length ? '<div class="list">' + list.map(function(s){ return '<div class="item"><div class="grow"><div class="name">' + esc(s.name) + '</div><div class="meta">' + uName(uOf(s)) + ' · ' + esc(s.father) + '</div></div><button class="btn btn-sm" data-a="stu" data-v="' + s.id + '">Details</button></div>'; }).join('') + '</div>' +
+        (pages > 1 ? '<nav class="pager" aria-label="Student pages"><button class="btn btn-sm" data-a="stupg" data-v="' + (S.stuPg - 1) + '"' + (S.stuPg <= 1 ? ' disabled' : '') + '>Previous</button><span class="sub num">Page ' + S.stuPg + ' of ' + pages + '</span><button class="btn btn-sm" data-a="stupg" data-v="' + (S.stuPg + 1) + '"' + (S.stuPg >= pages ? ' disabled' : '') + '>Next</button></nav>' : '')
+        : '<div class="empty">No students match.</div>') + '</div>';
   }
   function stuSheet(s){
     var k = uOf(s), past = DAYS.slice(0, -1), p = past.filter(function(d){ return attOf(s, d) === 'P'; }).length / past.length;
@@ -446,17 +455,18 @@ button{cursor:pointer}
     }
     else if (a === 'stu'){ var s = students.filter(function(x){ return x.id === +v; })[0]; S.sheet = { title:'Student details', html: stuSheet(s) }; render(); }
     else if (a === 'sclose'){ S.sheet = null; render(); }
+    else if (a === 'stupg'){ S.stuPg = +v; render(); var c = document.getElementById('stu-count'); if (c) c.scrollIntoView({ block:'start' }); }
   });
   document.addEventListener('change', function(e){
     var el = e.target, a = el.dataset.a; if (!a) return;
     if (el.tagName === 'SELECT') el.blur();
     if (a === 'mkexam'){ S.mkExam = el.value; S.mkErr = ''; render(); }
     else if (a === 'mkkey'){ S.mkKey = el.value; S.mkErr = ''; render(); }
-    else if (a === 'stuu'){ S.stuU = el.value; render(); }
+    else if (a === 'stuu'){ S.stuU = el.value; S.stuPg = 1; render(); }
   });
   document.addEventListener('input', function(e){
     var el = e.target;
-    if (el.dataset.a === 'q'){ S.q = el.value; render(); return; }
+    if (el.dataset.a === 'q'){ S.q = el.value; S.stuPg = 1; render(); return; }
     if (el.classList.contains('mark')){ var o = OUT(S.mkExam), n = el.value === '' ? 0 : Number(el.value); el.style.borderColor = el.value !== '' && (!(n >= 0 && n <= o) || n % 1) ? 'var(--bad)' : ''; }
   });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.sheet){ S.sheet = null; render(); } });
@@ -468,7 +478,7 @@ button{cursor:pointer}
       var t = teachers().filter(function(u){ return u.phone === ph; })[0], w = WEB_ONLY.filter(function(u){ return u.phone === ph; })[0];
       S.lgErr = ph.length !== 11 ? 'Enter your 11-digit mobile number.' : w ? 'This app is for teachers. ' + esc(first(w.name)) + ', please sign in on the web dashboard as the ' + w.title + '.' : !t ? 'This number is not registered. Ask the school office to add you.' : !/^\d{4}$/.test(pin) ? 'Enter your 4-digit PIN.' : pin !== t.pin ? 'Wrong PIN. Try again or ask the office to reset it.' : '';
       if (S.lgErr){ render(); return; }
-      S.user = t; S.tab = 'home'; S.lgErr = ''; S.attU = null; S.mkKey = null; S.stuU = 'all'; S.q = ''; S.attDraft = {}; render(); toast('Welcome, ' + esc(first(t.name)) + '.');
+      S.user = t; S.tab = 'home'; S.lgErr = ''; S.attU = null; S.mkKey = null; S.stuU = 'all'; S.q = ''; S.stuPg = 1; S.attDraft = {}; render(); toast('Welcome, ' + esc(first(t.name)) + '.');
       return;
     }
     if (f.id === 'mk-form'){
