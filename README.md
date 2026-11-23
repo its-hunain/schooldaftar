@@ -8,15 +8,16 @@ School management software for Pakistani schools. Run your whole school from one
 
 Try it with sample data:
 
-- [Owner and accountant dashboard](https://its-hunain.github.io/schoolsaathi/demo/admin.html)
+- [Owner, admin and accountant dashboard](https://its-hunain.github.io/schoolsaathi/demo/admin.html)
 - [Teacher app](https://its-hunain.github.io/schoolsaathi/demo/teacher-app.html)
 
 The demos use sample data only. Nothing is saved, and every change resets when the page reloads.
 
 ## Who uses it
 
-- **Owner:** the whole school on one dashboard
-- **Accountant:** fees, challans, expenses and payroll
+- **Owner / Principal:** the whole school on one dashboard, including fees, salaries and profit and loss
+- **Admin:** admissions, student records, staff, classes, attendance and results, without salaries or profit
+- **Accountant:** fees, challans, daily collection and expenses
 - **Teacher:** Android app for attendance and results
 - **Parents:** reminders, receipts, absence alerts and result cards on WhatsApp, with no app to install
 

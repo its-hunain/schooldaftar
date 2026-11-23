@@ -6,7 +6,7 @@
 <title>SchoolSaathi | School management software for Pakistani schools</title>
 <meta name="description" content="Run your whole school from one place. Fees, attendance, results, staff, payroll and profit and loss, with parents updated on WhatsApp. Rs 10,000 a month, first month free.">
 <meta property="og:title" content="SchoolSaathi | Run your whole school from one place">
-<meta property="og:description" content="Web dashboard for the owner and accounts, Android app for teachers, and WhatsApp updates for parents. First month free.">
+<meta property="og:description" content="Web dashboard for the owner, admin and accounts office, Android app for teachers, and WhatsApp updates for parents. First month free.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#0b1220">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234ade80'/%3E%3Cpath d='M8 16.5l5 5L24 10' fill='none' stroke='%230b1220' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -101,7 +101,7 @@ section{padding:96px 0}
 .alt{background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 
 /* roles */
-.roles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .role{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:12px}
 .role .tag{align-self:flex-start;font-family:var(--mono);font-size:11.5px;letter-spacing:.5px;color:var(--accent-deep);background:#ecfdf3;border:1px solid #bbf7d0;border-radius:999px;padding:3px 10px}
 .role p{color:var(--body);font-size:15px}
@@ -265,7 +265,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     <div>
       <span class="pill"><b></b>Runs on WhatsApp · No app for parents</span>
       <h1 id="hero-title">Run your whole school from <em>one place.</em></h1>
-      <p class="lead">A web dashboard for the owner and accounts office, an Android app for teachers, and WhatsApp updates for parents. Fees, attendance, results, staff and profit and loss, all connected.</p>
+      <p class="lead">A web dashboard for the owner, admin and accounts office, an Android app for teachers, and WhatsApp updates for parents. Fees, attendance, results, staff and profit and loss, all connected.</p>
       <div class="hero-cta">
         <a class="btn btn-accent" href="https://wa.me/923158327536?text=Assalam%20o%20Alaikum!%20I%20would%20like%20a%20free%20demo%20of%20SchoolSaathi%20for%20my%20school." target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-wa"/></svg>Book a free demo</a>
         <a class="btn btn-ghost" href="#demo">Try the live demo<svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
@@ -312,9 +312,15 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     <div class="roles">
       <article class="role">
         <span class="tag">Web dashboard</span>
-        <h3>Owner</h3>
-        <p>The whole school at a glance, from any computer or phone browser.</p>
-        <ul><li>All students, staff and classes</li><li>Salaries, increments and slips</li><li>Profit and loss with graphs</li><li>Activity log of every change</li></ul>
+        <h3>Owner / Principal</h3>
+        <p>The whole school at a glance, with the money side kept to you.</p>
+        <ul><li>Fees, expenses and profit and loss</li><li>Salaries, increments and slips</li><li>Full control of every record</li><li>Activity log of every change</li></ul>
+      </article>
+      <article class="role">
+        <span class="tag">Web dashboard</span>
+        <h3>Admin</h3>
+        <p>Runs the school day to day, without seeing salaries or profit.</p>
+        <ul><li>Admissions, student records and promotion</li><li>Staff, class teachers and subjects</li><li>Attendance, exams and result cards</li><li>Announcements to parents</li></ul>
       </article>
       <article class="role">
         <span class="tag">Web portal</span>
@@ -464,7 +470,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
         <div class="amt"><b>Rs 10,000</b><span>per month</span></div>
         <div class="tags"><span>First month free</span><span>No setup fee</span><span>Cancel anytime</span></div>
         <ul>
-          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Owner web dashboard</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Owner / Principal dashboard</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Admin office dashboard</li>
           <li><svg aria-hidden="true"><use href="#i-check"/></svg>Accountant fee counter</li>
           <li><svg aria-hidden="true"><use href="#i-check"/></svg>Teacher Android app</li>
           <li><svg aria-hidden="true"><use href="#i-check"/></svg>WhatsApp parent updates</li>
@@ -494,9 +501,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     </div>
     <div class="demo-grid">
       <article class="demo">
-        <h3>Owner and accountant dashboard</h3>
+        <h3>Owner, admin and accountant dashboard</h3>
         <p>Fees and challans, attendance, results, staff and payroll, promotion, announcements and profit and loss. Best on a computer.</p>
-        <div class="cred">Owner: owner@xyzschool.pk · demo1234<br>Accountant: accounts@xyzschool.pk · demo1234</div>
+        <div class="cred">Owner / Principal: owner@xyzschool.pk · demo1234<br>Admin: admin@xyzschool.pk · demo1234<br>Accountant: accounts@xyzschool.pk · demo1234</div>
         <a class="btn btn-dark" href="demo/admin.html" target="_blank" rel="noopener">Open the dashboard<svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
       </article>
       <article class="demo">
@@ -519,7 +526,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
       <details><summary>Do parents need to install an app?</summary><p>No. Parents get fee reminders, receipts, absence alerts, result cards and announcements on WhatsApp, which they already use.</p></details>
       <details><summary>What if there is no internet at school?</summary><p>The teacher app saves attendance and marks on the phone and sends them when the internet is back. Absence alerts go out after it syncs.</p></details>
       <details><summary>Can we bring our existing data?</summary><p>Yes. Share your register or Excel sheets and we enter students, parents, staff and fees for you before you go live.</p></details>
-      <details><summary>Who can see salaries and profit?</summary><p>Only the owner. The accountant sees fees, collection, students and expenses. Teachers see only their own sections and subjects.</p></details>
+      <details><summary>Who can see salaries and profit?</summary><p>Only the owner / principal. The admin manages students, staff, classes, attendance and results. The accountant sees fees, collection, students and expenses. Teachers see only their own sections and subjects.</p></details>
       <details><summary>Does it handle sections, sibling discounts and late fines?</summary><p>Yes. Classes can be split into sections like 5-A and 5-B, sibling and staff-child discounts apply automatically, and late fines are added after the due date you set.</p></details>
       <details><summary>Is there a contract?</summary><p>No long contract. The first month is free, there is no setup fee, and you can cancel anytime.</p></details>
     </div>

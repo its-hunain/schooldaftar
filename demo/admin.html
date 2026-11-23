@@ -276,9 +276,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     { id:9, role:'support', job:'Peon', name:'Shabbir Ahmed', phone:'03127654321', classes:[], salary0:22000, joined:'2024-06', incs:[] },
     { id:10, role:'support', job:'Van driver', name:'Akram Ali', phone:'03139876543', classes:[], salary0:26000, joined:'2023-02', incs:[{ month:'2025-12', from:26000, to:28000 }] },
     { id:11, role:'teacher', name:'Ayesha Siddiqui', phone:'03009999999', pin:'9999', classes:['1','5'], salary0:31000, joined:'2025-03', incs:[] },
-    { id:12, role:'teacher', name:'Zubair Ahmed', phone:'03001112223', pin:'1212', classes:['9','10'], salary0:36000, joined:'2024-08', incs:[{ month:'2025-08', from:36000, to:39000 }] }
+    { id:12, role:'teacher', name:'Zubair Ahmed', phone:'03001112223', pin:'1212', classes:['9','10'], salary0:36000, joined:'2024-08', incs:[{ month:'2025-08', from:36000, to:39000 }] },
+    { id:13, role:'admin', name:'Saima Khan', phone:'03001231234', classes:[], salary0:42000, joined:'2023-01', incs:[{ month:'2025-01', from:42000, to:45000 }] }
   ];
-  var staffId = 13;
+  var staffId = 14;
   units().forEach(function(k){ var c = gOf(k), si = SECTIONS[c].indexOf(secOf(k)), ts = STAFF.filter(function(u){ return u.role === 'teacher' && u.classes.indexOf(c) >= 0; });
     if (ts.length) subjectsOf(c).forEach(function(x, i){ SUBT[k][x] = ts[(i + si) % ts.length].id; }); });
   var CT = {};
@@ -358,11 +359,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function tot(s, e){ return entered(s,e).reduce(function(a,x){ return a + mk(s,e,x); }, 0); }
   function pctOf(s, e){ var n = entered(s,e).length; return n ? tot(s,e) / (n * OUT(e)) : null; }
   function curSalary(u){ return u.incs.length ? u.incs[u.incs.length-1].to : u.salary0; }
+  function isAdm(){ return !!(S.user && S.user.role === 'admin'); }
+  // The admin runs day-to-day records but never sees salaries or money logs.
+  function visibleLog(){ return isAdm() ? LOG.filter(function(l){ return ['fees','expenses','settings'].indexOf(l.kind) < 0 && !(l.kind === 'staff' && /Rs\s?[\d,]+/.test(l.text)); }) : LOG; }
   function salaryAt(u, ym){ if (ym < u.joined || (u.left && ym >= u.left)) return 0; var sal = u.salary0; u.incs.forEach(function(i){ if (i.month <= ym) sal = i.to; }); return sal; }
   function payroll(m){ var ym = '2026-' + ('0' + (m+1)).slice(-2); var rows = STAFF.map(function(u){ return { u:u, amt: salaryAt(u, ym) }; }).filter(function(r){ return r.amt > 0; });
     return { rows: rows, total: rows.reduce(function(a,r){ return a + r.amt; }, 0) }; }
   function sinceRaise(u){ return ymIdx(NOW_YM) - ymIdx(u.incs.length ? u.incs[u.incs.length-1].month : u.joined); }
-  function roleLabel(u){ return u.role === 'support' ? (u.job || 'Support staff') : u.role === 'teacher' ? 'Teacher' : 'Accountant'; }
+  function roleLabel(u){ return u.role === 'support' ? (u.job || 'Support staff') : u.role === 'teacher' ? 'Teacher' : u.role === 'admin' ? 'Admin' : 'Accountant'; }
   function r10(n){ return Math.round(n / 10) * 10; }
   function sibsOf(s){ return students.filter(function(x){ return x.parent === s.parent && x.id !== s.id; }); }
   function sibRank(s){ return students.filter(function(x){ return x.parent === s.parent && x.id < s.id; }).length; }
@@ -376,7 +380,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function concText(c){ return c.type === 'auto' ? 'Automatic' : c.type === 'none' ? 'None' : c.type === 'staff' ? 'Staff child' : c.type === 'sch' ? 'Scholarship ' + c.pct + '%' : 'Rs ' + nf(c.amt) + ' off'; }
   var LOG = [], logId = 1;
   var KINDS = { fees:'Fees', students:'Students', staff:'Staff', marks:'Marks', attendance:'Attendance', expenses:'Expenses', settings:'Settings', ann:'Announcements', classes:'Classes', promotion:'Promotion' };
-  function log(kind, text, flag){ LOG.unshift({ id: logId++, date: DAYS[DAYS.length-1], time: nowTime(), who: S.user ? S.user.name : 'Tariq Hussain', role: S.user ? S.user.title : 'Owner', kind: kind, text: text, flag: !!flag }); }
+  function log(kind, text, flag){ LOG.unshift({ id: logId++, date: DAYS[DAYS.length-1], time: nowTime(), who: S.user ? S.user.name : 'Tariq Hussain', role: S.user ? S.user.title : 'Owner / Principal', kind: kind, text: text, flag: !!flag }); }
   function feeItems(s){
     var it = [];
     s.tu.slice().sort(function(a,b){ return a.m - b.m; }).forEach(function(t){ var c = concOf(s);
@@ -417,7 +421,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   var S = { view:'dashboard', q:{}, sort:{}, page:{}, modal:null,
     stuClass:'all', stuFee:'all', staffRole:'all', attClass:'5|A', stClass:'5|A', stuStatus:'active', proFrom:'10', proHeld:{}, actWho:'all', actKind:'all', actFlag:false, attDay: DAYS[DAYS.length-1], attView:'daily', attMonth: CUR, subClass:'5', subBy:'class', subTeacher:null, colDay: DAYS[DAYS.length-1], colMethod:'all', colQ:'', colSid:null, user:null, resExam:'Mid-term', resClass:'5|A',
     feeType:'all', feeClass:'all', feeStatus:'due', expMonth:CUR, expCat:'all', plPer:'year', plMonth:CUR };
-  var ROLE_NAV = { owner:['dashboard','announce','collection','students','promote','staff','classteachers','subjects','subjectteachers','attendance','results','fees','expenses','finance','activity'], accountant:['collection','fees','students','expenses'] };
+  var ROLE_NAV = { owner:['dashboard','announce','collection','students','promote','staff','classteachers','subjects','subjectteachers','attendance','results','fees','expenses','finance','activity'], admin:['dashboard','announce','students','promote','staff','classteachers','subjects','subjectteachers','attendance','results','activity'], accountant:['collection','fees','students','expenses'] };
   function navFor(){ var allow = ROLE_NAV[S.user ? S.user.role : 'owner']; return NAV.filter(function(n){ return allow.indexOf(n[0]) >= 0; }).sort(function(a,b){ return allow.indexOf(a[0]) - allow.indexOf(b[0]); }); }
   function canSee(v){ return ROLE_NAV[S.user ? S.user.role : 'owner'].indexOf(v) >= 0; }
   var NAV = [['promote','Promotion','up'],['activity','Activity log','clock'],['announce','Announcements','mega'],['classteachers','Class teachers','ctic'],['subjects','Subjects','book'],['subjectteachers','Subject teachers','users'],['collection','Daily collection','cash'],['dashboard','Dashboard','home'],['students','Students','student'],['staff','Staff & payroll','users'],['attendance','Attendance','check'],['results','Exams & results','doc'],['fees','Fees','card'],['expenses','Expenses','wallet'],['finance','Finance','chart']];
@@ -468,7 +472,18 @@ tfoot td{font-weight:700;background:var(--surface-2)}
 
   // ================= views =================
   var VIEWS = {};
+  function admDashboard(){
+    var ta = todayAtt(), act = STAFF.filter(function(u){ return !u.left; }), U = units(), noCT = U.filter(function(k){ return !CT[k]; }).length;
+    var vl = visibleLog(), flagged = vl.filter(function(l){ return l.flag; }).length;
+    return '<div class="kpis">' + kpi('Students', students.length, classes.length + ' classes, ' + U.length + ' sections') + kpi('Staff', act.length, act.filter(function(u){ return u.role === 'teacher'; }).length + ' teachers') +
+      kpi('Attendance today', Math.round(ta.p/ta.n*100) + '%', ta.a + ' absent · ' + ta.l + ' leave') + kpi('Sections without a class teacher', noCT, noCT ? 'Assign in Class teachers' : 'All assigned', noCT ? 'warn' : 'ok') + '</div>' +
+      (flagged ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + flagged + ' changes this month need a look</b><div class="sub">Deleted records, changed concessions and removed sections.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : '') +
+      '<div class="grid2"><div class="panel"><div class="row"><h2>Attendance today by class</h2><button class="btn btn-sm" data-a="go" data-v="attendance">Attendance</button></div><div class="chartbox"><canvas id="ch-at" aria-label="Attendance today by class" role="img"></canvas></div></div>' +
+      '<div class="panel"><div class="row"><h2>Recent changes</h2><button class="btn btn-sm" data-a="go" data-v="activity">Activity log</button></div>' +
+        table('dashact', [{k:'w',label:'When',h:function(l){ return dayLabel(l.date) + ', ' + l.time; }},{k:'p',label:'Who',h:function(l){ return esc(l.who); }},{k:'t',label:'What changed',h:function(l){ return '<span style="white-space:normal;display:block;min-width:200px">' + esc(l.text) + '</span>'; }}], vl.slice(0, 6), {noPage:1, empty:'No changes yet.'}) + '</div></div>';
+  }
   VIEWS.dashboard = function(){
+    if (isAdm()) return admDashboard();
     var items = allItems(), col = items.filter(function(i){ return i.paid; }).reduce(function(a,i){ return a + i.amount; }, 0), pend = items.filter(function(i){ return !i.paid; }).reduce(function(a,i){ return a + i.amount; }, 0);
     var defs = students.filter(function(s){ return owed(s) > 0; }), ta = todayAtt(), inc = incomeOf(CUR).total, ex = expensesOf(CUR).total;
     var due = STAFF.filter(function(u){ return !u.left && sinceRaise(u) >= 12; });
@@ -476,7 +491,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     return '<div class="kpis">' + kpi('Students', students.length, classes.length + ' classes, ' + units().length + ' sections') + kpi('Staff', STAFF.filter(function(u){ return !u.left; }).length, 'Payroll ' + fmt(payroll(CUR).total) + '/mo') +
       kpi('Fees collected (Nov)', fmt(col), Math.round(col/(col+pend)*100) + '% of ' + fmt(col+pend)) + kpi('Fees pending', fmt(pend), defs.length + ' students', 'warn') +
       kpi('Attendance today', Math.round(ta.p/ta.n*100) + '%', ta.a + ' absent · ' + ta.l + ' leave') + kpi('Profit (Nov so far)', fmt(inc - ex), 'Income ' + fmt(inc) + ' · expenses ' + fmt(ex), inc - ex >= 0 ? 'ok' : 'bad') + '</div>' +
-      (function(){ var n = LOG.filter(function(l){ return l.flag; }).length; return n ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + n + ' changes this month need a look</b><div class="sub">Undone payments, waived fines, changed concessions and deleted records.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : ''; })() +
+      (function(){ var n = visibleLog().filter(function(l){ return l.flag; }).length; return n ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + n + ' changes this month need a look</b><div class="sub">Undone payments, waived fines, changed concessions and deleted records.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : ''; })() +
       '<div class="grid2"><div class="panel"><div class="row"><h2>Income vs expenses, 2026</h2><button class="btn btn-sm" data-a="go" data-v="finance">Finance</button></div><div class="chartbox"><canvas id="ch-ie" aria-label="Income and expenses by month" role="img"></canvas></div></div>' +
       '<div class="panel"><div class="row"><h2>Fees collected by class (Nov)</h2><button class="btn btn-sm" data-a="go" data-v="fees">Fees</button></div><div class="chartbox"><canvas id="ch-fc" aria-label="Fee collection percentage by class" role="img"></canvas></div></div></div>' +
       '<div class="grid2"><div class="panel"><div class="row"><h2>Top defaulters</h2><button class="btn btn-sm" data-a="go" data-v="fees">Collect fees</button></div>' +
@@ -696,11 +711,13 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     return head + '<div class="panel"><div class="row"><h2>' + cn(c) + (n ? ' → ' + cn(n) : ' → passed out') + '</h2>' + (list.length ? '<span class="sub">' + list.length + ' students</span>' : '') + '</div>' + body + '</div><div class="panel"><h2>All classes, top to bottom</h2>' + ov + '</div>';
   };
   VIEWS.activity = function(){
-    var whos = LOG.map(function(l){ return l.who; }).filter(function(w, i, a){ return a.indexOf(w) === i; });
-    var rows = LOG.filter(function(l){ return (S.actWho === 'all' || l.who === S.actWho) && (S.actKind === 'all' || l.kind === S.actKind) && (!S.actFlag || l.flag) && match('act', l.text + ' ' + l.who); });
-    var today = LOG.filter(function(l){ return l.date === DAYS[DAYS.length-1]; }).length;
-    return '<div class="kpis">' + kpi('Changes today', today) + kpi('Need a look', LOG.filter(function(l){ return l.flag; }).length, 'This month', 'warn') + kpi('Payments undone', LOG.filter(function(l){ return /^Undid payment/.test(l.text); }).length, 'This month', 'bad') + kpi('People', whos.length, 'Made changes this month') + '</div>' +
-      '<div class="toolbar">' + search('act', 'What changed') + sel('f-actw','actwho', [['all','Everyone']].concat(whos.map(function(w){ return [w, w]; })), S.actWho, 'Who') + sel('f-actk','actkind', [['all','All areas']].concat(Object.keys(KINDS).map(function(k){ return [k, KINDS[k]]; })), S.actKind, 'Area') +
+    var VL = visibleLog(), kinds = Object.keys(KINDS).filter(function(k){ return !isAdm() || ['fees','expenses','settings'].indexOf(k) < 0; });
+    var whos = VL.map(function(l){ return l.who; }).filter(function(w, i, a){ return a.indexOf(w) === i; });
+    var rows = VL.filter(function(l){ return (S.actWho === 'all' || l.who === S.actWho) && (S.actKind === 'all' || l.kind === S.actKind) && (!S.actFlag || l.flag) && match('act', l.text + ' ' + l.who); });
+    var today = VL.filter(function(l){ return l.date === DAYS[DAYS.length-1]; }).length;
+    return '<div class="kpis">' + kpi('Changes today', today) + kpi('Need a look', VL.filter(function(l){ return l.flag; }).length, 'This month', 'warn') + (isAdm() ? kpi('Records deleted', VL.filter(function(l){ return /^Deleted the record|^Removed /.test(l.text); }).length, 'This month', 'bad') : kpi('Payments undone', VL.filter(function(l){ return /^Undid payment/.test(l.text); }).length, 'This month', 'bad')) + kpi('People', whos.length, 'Made changes this month') + '</div>' +
+      (isAdm() ? '<p class="sub">Fee, expense and salary changes are visible to the owner only.</p>' : '') +
+      '<div class="toolbar">' + search('act', 'What changed') + sel('f-actw','actwho', [['all','Everyone']].concat(whos.map(function(w){ return [w, w]; })), S.actWho, 'Who') + sel('f-actk','actkind', [['all','All areas']].concat(kinds.map(function(k){ return [k, KINDS[k]]; })), S.actKind, 'Area') +
         '<div class="field">Show<div class="seg" role="group" aria-label="Show"><button data-a="actflag" data-v="0" aria-pressed="' + !S.actFlag + '">Everything</button><button data-a="actflag" data-v="1" aria-pressed="' + S.actFlag + '">Needs a look</button></div></div><span class="spacer"></span>' + exportBtns('activity log') + '</div>' +
       table('act', [
         {k:'d',label:'When',v:function(l){ return l.date + l.time + ('000' + l.id).slice(-4); },h:function(l){ return dayLabel(l.date) + ', ' + l.time; }},
@@ -712,23 +729,29 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   };
 
   VIEWS.staff = function(){
-    var act = STAFF.filter(function(u){ return !u.left; }), pr = payroll(CUR);
+    var act = STAFF.filter(function(u){ return !u.left; }), pr = payroll(CUR), adm = isAdm();
     var rows = act.filter(function(u){ return (S.staffRole === 'all' || u.role === S.staffRole) && match('staff', u.name + ' ' + u.phone + ' ' + roleLabel(u)); });
-    return '<div class="kpis">' + kpi('Staff', act.length, act.filter(function(u){ return u.role === 'teacher'; }).length + ' teachers') + kpi('Monthly payroll', fmt(pr.total), 'Added to expenses automatically') +
-      kpi('Increments due', act.filter(function(u){ return sinceRaise(u) >= 12; }).length, '12+ months since last raise', 'warn') + kpi('Logins', act.filter(function(u){ return u.role !== 'support'; }).length, 'Teachers on the app, accounts on the web') + '</div>' +
-      '<div class="toolbar">' + search('staff', 'Name, phone or role') + sel('f-role','staffrole', [['all','All roles'],['teacher','Teachers'],['accountant','Accountants'],['support','Support staff']], S.staffRole, 'Role') +
-        '<span class="spacer"></span>' + exportBtns('staff and payroll') + '<button class="btn btn-primary" data-a="staffadd">Add staff member</button></div>' +
-      table('staff', [
+    var pend = act.filter(function(u){ return u.salPending; });
+    if (!adm) rows = rows.slice().sort(function(a, b){ return (b.salPending ? 1 : 0) - (a.salPending ? 1 : 0); });
+    var cols = [
         {k:'name',label:'Name',v:function(u){ return u.name; },h:function(u){ return '<b>' + esc(u.name) + '</b>'; }},
-        {k:'role',label:'Role',v:roleLabel,h:function(u){ return pill(esc(roleLabel(u)), u.role === 'teacher' ? 'p-ok' : u.role === 'accountant' ? 'p-warn' : 'p-info'); }},
+        {k:'role',label:'Role',v:roleLabel,h:function(u){ return pill(esc(roleLabel(u)), u.role === 'teacher' ? 'p-ok' : u.role === 'accountant' || u.role === 'admin' ? 'p-warn' : 'p-info'); }},
         {k:'phone',label:'Mobile',v:function(u){ return fmtPhone(u.phone); }},
         {k:'cls',label:'Teaches',v:function(u){ return teachesOf(u).length; },h:function(u){ if (u.role !== 'teacher') return '<span class="sub">—</span>'; var t = teachesOf(u); if (!t.length) return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '">No subjects yet ▾</button>';
           var txt = t.map(function(x){ return uName(x.c) + ': ' + x.subs.join(', '); }).join(' · '); return '<button class="btn btn-sm" data-a="teachview" data-v="' + u.id + '" title="' + esc(txt) + '">' + t.reduce(function(a,x){ return a + x.subs.length; },0) + ' subjects in ' + t.length + ' class' + (t.length > 1 ? 'es' : '') + ' ▾</button>' + (ctOf(u).length ? '<div class="sub" style="margin-top:4px">Class teacher: ' + ctOf(u).map(uName).join(', ') + '</div>' : ''); }},
-        {k:'join',label:'Joined',v:function(u){ return u.joined; },h:function(u){ return ymLabel(u.joined); }},
-        {k:'sal',label:'Salary',r:1,v:curSalary,h:function(u){ return nf(curSalary(u)); }},
-        {k:'inc',label:'Last increment',v:sinceRaise,h:function(u){ var t = u.incs.length ? ymLabel(u.incs[u.incs.length-1].month) + ' (+' + nf(u.incs[u.incs.length-1].to - u.incs[u.incs.length-1].from) + ')' : 'None since joining'; return esc(t) + (sinceRaise(u) >= 12 ? ' ' + pill(sinceRaise(u) + ' mo','p-warn') : ''); }},
-        {k:'x',label:'',act:1,h:function(u){ return (u.role === 'teacher' ? '<button class="btn btn-sm" data-a="teachassign" data-v="' + u.id + '">Subjects</button>' : '') + '<button class="btn btn-sm" data-a="inc" data-v="' + u.id + '">Increment</button><button class="btn btn-sm" data-a="staffedit" data-v="' + u.id + '">Edit</button><button class="btn btn-sm btn-danger" data-a="staffdel" data-v="' + u.id + '">Remove</button>'; }}
-      ], rows);
+        {k:'join',label:'Joined',v:function(u){ return u.joined; },h:function(u){ return ymLabel(u.joined); }}
+    ];
+    if (!adm) cols.push(
+        {k:'sal',label:'Salary',r:1,v:curSalary,h:function(u){ return u.salPending ? pill('Not set','p-warn') : nf(curSalary(u)); }},
+        {k:'inc',label:'Last increment',v:sinceRaise,h:function(u){ if (u.salPending) return '<span class="sub">—</span>'; var t = u.incs.length ? ymLabel(u.incs[u.incs.length-1].month) + ' (+' + nf(u.incs[u.incs.length-1].to - u.incs[u.incs.length-1].from) + ')' : 'None since joining'; return esc(t) + (sinceRaise(u) >= 12 ? ' ' + pill(sinceRaise(u) + ' mo','p-warn') : ''); }});
+    cols.push({k:'x',label:'',act:1,h:function(u){ return (u.role === 'teacher' ? '<button class="btn btn-sm" data-a="teachassign" data-v="' + u.id + '">Subjects</button>' : '') + (adm ? '' : '<button class="btn btn-sm' + (u.salPending ? ' btn-primary' : '') + '" data-a="inc" data-v="' + u.id + '">' + (u.salPending ? 'Set salary' : 'Increment') + '</button>') + '<button class="btn btn-sm" data-a="staffedit" data-v="' + u.id + '">Edit</button>' + (u.id === (S.user && S.user.staffId) ? '' : '<button class="btn btn-sm btn-danger" data-a="staffdel" data-v="' + u.id + '">Remove</button>'); }});
+    return '<div class="kpis">' + kpi('Staff', act.length, act.filter(function(u){ return u.role === 'teacher'; }).length + ' teachers') +
+      (adm ? kpi('Support staff', act.filter(function(u){ return u.role === 'support'; }).length, 'Guards, peons, drivers') :
+        kpi('Monthly payroll', fmt(pr.total), 'Added to expenses automatically') + kpi(pend.length ? 'Salary not set' : 'Increments due', pend.length || act.filter(function(u){ return sinceRaise(u) >= 12; }).length, pend.length ? 'New staff added by the admin' : '12+ months since last raise', 'warn')) +
+      kpi('Logins', act.filter(function(u){ return u.role !== 'support'; }).length, 'Teachers on the app, office on the web') + '</div>' +
+      '<div class="toolbar">' + search('staff', 'Name, phone or role') + sel('f-role','staffrole', [['all','All roles'],['teacher','Teachers'],['admin','Admin'],['accountant','Accountants'],['support','Support staff']], S.staffRole, 'Role') +
+        '<span class="spacer"></span>' + exportBtns(adm ? 'staff list' : 'staff and payroll') + '<button class="btn btn-primary" data-a="staffadd">Add staff member</button></div>' +
+      table('staff', cols, rows);
   };
 
   VIEWS.attendance = function(){
@@ -800,20 +823,22 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function staffCount(){ return STAFF.filter(function(u){ return !u.left; }).length; }
   announcements.forEach(function(a){ a.count = parentCount(a.to, a.classes) + (a.staff ? staffCount() : 0); });
   (function seedLog(){
-    var st = function(i){ return students[i]; }, K = 'Kashif Mehmood', T = 'Tariq Hussain';
+    var st = function(i){ return students[i]; }, K = 'Kashif Mehmood', T = 'Tariq Hussain', A = 'Saima Khan';
     var L = [
+      ['2026-11-20','08:40',A,'Admin','classes','Class teacher of ' + uName('6|A') + ' changed to ' + (staffById(CT['6|A']) || {name:'Faisal Rehman'}).name,0],
+      ['2026-11-19','12:15',A,'Admin','students','Edited details of ' + st(45).name + ': new parent WhatsApp number',0],
       ['2026-11-20','09:12',K,'Accountant','fees','Collected Rs 4,600 from ' + st(30).name + ' (' + sName(st(30)) + '), receipt #' + (rcptNo - 3) + ', Cash',0],
       ['2026-11-19','15:40',K,'Accountant','fees','Undid payment: November tuition (Rs 3,800) for ' + st(61).name + ', removed from receipt #2457. Reason: Entered by mistake',1],
-      ['2026-11-19','11:05',T,'Owner','students','Concession for ' + st(130).name + ' changed from Automatic to Scholarship 25%',1],
+      ['2026-11-19','11:05',T,'Owner / Principal','students','Concession for ' + st(130).name + ' changed from Automatic to Scholarship 25%',1],
       ['2026-11-18','13:22',K,'Accountant','fees','Waived late fine of Rs 200 (October) for ' + st(77).name + '. Reason: Parent request',1],
-      ['2026-11-18','10:01',T,'Owner','staff','Increment for Sana Javed: Rs 35,000 to Rs 38,000 from Jul 2026',0],
+      ['2026-11-18','10:01',T,'Owner / Principal','staff','Increment for Sana Javed: Rs 35,000 to Rs 38,000 from Jul 2026',0],
       ['2026-11-17','12:30',K,'Accountant','expenses','Deleted expense: Printer toner (Rs 3,500, 12 Nov)',1],
       ['2026-11-16','09:45','Sana Javed','Teacher (app)','marks','Entered Mid-term marks: English, ' + uName('5|B') + ', 14 students',0],
       ['2026-11-16','08:10','Rabia Noor','Teacher (app)','attendance','Montessori attendance: 14 present, 1 absent. Absence alert sent to 1 parent',0],
-      ['2026-11-14','10:05',T,'Owner','ann','Sent announcement "Parent-teacher meeting" to all parents',0],
-      ['2026-11-13','16:20',T,'Owner','settings','Late fine changed from Rs 100 to Rs 200',1],
-      ['2026-11-12','14:00',K,'Accountant','students','Added student ' + st(students.length - 1).name + ' to ' + sName(st(students.length - 1)),0],
-      ['2026-11-11','11:11',T,'Owner','fees','Added fee "Mid-term exam fee" of Rs 800 for ' + students.length + ' students',0]
+      ['2026-11-14','10:05',T,'Owner / Principal','ann','Sent announcement "Parent-teacher meeting" to all parents',0],
+      ['2026-11-13','16:20',T,'Owner / Principal','settings','Late fine changed from Rs 100 to Rs 200',1],
+      ['2026-11-12','14:00',A,'Admin','students','Added student ' + st(students.length - 1).name + ' to ' + sName(st(students.length - 1)),0],
+      ['2026-11-11','11:11',T,'Owner / Principal','fees','Added fee "Mid-term exam fee" of Rs 800 for ' + students.length + ' students',0]
     ];
     L.forEach(function(x){ LOG.push({ id: logId++, date:x[0], time:x[1], who:x[2], role:x[3], kind:x[4], text:x[5], flag:!!x[6] }); });
   })();
@@ -1081,14 +1106,20 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function staffForm(u, e, role){
     u = u || {}; role = role || u.role || 'teacher';
     return '<form class="form" id="staff-form" data-id="' + (u.id || '') + '" data-role="' + role + '" novalidate>' +
-      '<div class="field">Role<div class="seg" role="group" aria-label="Role">' + [['teacher','Teacher'],['accountant','Accountant'],['support','Support staff']].map(function(r){ return '<button type="button" data-a="srole" data-v="' + r[0] + '" aria-pressed="' + (role === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div></div>' +
+      '<div class="field">Role<div class="seg" role="group" aria-label="Role">' + [['teacher','Teacher']].concat(isAdm() && role !== 'admin' ? [] : [['admin','Admin']], [['accountant','Accountant'],['support','Support staff']]).map(function(r){ return '<button type="button" data-a="srole" data-v="' + r[0] + '" aria-pressed="' + (role === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="fields"><label class="field" for="tf-name">Full name<input id="tf-name" value="' + esc(u.name) + '"></label><label class="field" for="tf-phone">Mobile' + (role === 'support' ? '' : ' (used to sign in to the app)') + '<input id="tf-phone" type="tel" value="' + esc(u.phone ? fmtPhone(u.phone) : '') + '" placeholder="0300 1234567"></label></div>' +
       (role === 'support' ? '<label class="field" for="tf-job">Job title<input id="tf-job" value="' + esc(u.job) + '" placeholder="Security guard, Peon, Van driver"></label>' : '') +
       (role === 'teacher' ? '<div class="field">Classes<div class="chk">' + classes.map(function(c){ return '<label><input type="checkbox" class="tf-cls" value="' + c + '"' + ((u.classes || []).indexOf(c) >= 0 ? ' checked' : '') + '>' + c + '</label>'; }).join('') + '</div></div>' : '') +
-      (u.id ? '<p class="sub">Salary changes go through <b>Increment</b>, so the history stays complete.</p>' : '<div class="fields"><label class="field" for="tf-sal">Monthly salary (Rs)<input id="tf-sal" type="number" min="1"></label><label class="field" for="tf-join">Joining month<input id="tf-join" type="month" value="' + NOW_YM + '" max="2026-12"></label></div>') +
+      (u.id ? (isAdm() ? '' : '<p class="sub">Salary changes go through <b>Increment</b>, so the history stays complete.</p>') :
+        isAdm() ? '<label class="field" for="tf-join">Joining month<input id="tf-join" type="month" value="' + NOW_YM + '" max="2026-12"></label><p class="sub">The owner sets the salary after you add them.</p>' :
+        '<div class="fields"><label class="field" for="tf-sal">Monthly salary (Rs)<input id="tf-sal" type="number" min="1"></label><label class="field" for="tf-join">Joining month<input id="tf-join" type="month" value="' + NOW_YM + '" max="2026-12"></label></div>') +
       err(e) + '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">' + (u.id ? 'Save changes' : role === 'support' ? 'Add to staff' : 'Add and create login') + '</button></div></form>';
   }
   function incForm(u, e){
+    if (u.salPending) return '<form class="form" id="inc-form" data-id="' + u.id + '" novalidate><div class="row"><b>' + esc(u.name) + ' · ' + esc(roleLabel(u)) + '</b><span class="sub">Joined ' + ymLabel(u.joined) + '</span></div>' +
+      '<p class="sub">Added by the admin. Set the starting salary; it counts in payroll from the joining month.</p>' +
+      '<label class="field" for="if-new">Monthly salary (Rs)<input id="if-new" type="number" min="1"></label>' +
+      err(e) + '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">Save salary</button></div></form>';
     return '<form class="form" id="inc-form" data-id="' + u.id + '" novalidate><div class="row"><b>' + esc(u.name) + ' · ' + esc(roleLabel(u)) + '</b><span class="num">Current ' + fmt(curSalary(u)) + '/mo</span></div>' +
       '<p class="sub">Joined ' + ymLabel(u.joined) + ' at ' + fmt(u.salary0) + '. ' + (sinceRaise(u) >= 12 ? '<b style="color:var(--warn)">' + sinceRaise(u) + ' months since the last raise.</b>' : sinceRaise(u) + ' months since the last raise.') + '</p>' +
       (u.incs.length ? table('inch', [{k:'m',label:'Effective',h:function(h){ return ymLabel(h.month); }},{k:'f',label:'From',r:1,h:function(h){ return nf(h.from); }},{k:'t',label:'To',r:1,h:function(h){ return nf(h.to); }},{k:'p',label:'Raise',r:1,h:function(h){ return '+' + Math.round((h.to-h.from)/h.from*100) + '%'; }}], u.incs.slice().reverse(), {noPage:1}) : '') +
@@ -1128,7 +1159,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   // ================= render =================
   var TITLES = { promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard','XYZ School · Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'] };
   var WEB_USERS = [
-    { email:'owner@xyzschool.pk', password:'demo1234', name:'Tariq Hussain', role:'owner', title:'Owner' },
+    { email:'owner@xyzschool.pk', password:'demo1234', name:'Tariq Hussain', role:'owner', title:'Owner / Principal' },
+    { email:'admin@xyzschool.pk', password:'demo1234', name:'Saima Khan', role:'admin', title:'Admin', staffId:13 },
     { email:'accounts@xyzschool.pk', password:'demo1234', name:'Kashif Mehmood', role:'accountant', title:'Accountant' }
   ];
   var ADMIN = WEB_USERS[0];
@@ -1137,14 +1169,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     document.getElementById('login-root').innerHTML = '<div class="login"><section class="login-art"><div class="brand" style="padding:0"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolSaathi</span></div>' +
       '<div style="display:flex;flex-direction:column;gap:16px"><h2>Your whole school, on one dashboard.</h2><p>Students, staff, fees, attendance, results, expenses and profit and loss. Teachers and accountants use the mobile app, and everything comes here.</p></div>' +
       '<ul>' + ['Full control of every record','Payroll with increments and slips','Monthly and yearly profit and loss','Export any report to PDF or Excel'].map(function(t){ return '<li>' + chk + t + '</li>'; }).join('') + '</ul></section>' +
-      '<section class="login-form"><form class="login-card" id="login-form" novalidate><div><h1>Sign in</h1><p class="sub">Owner and accounts office, XYZ School</p></div>' +
+      '<section class="login-form"><form class="login-card" id="login-form" novalidate><div><h1>Sign in</h1><p class="sub">Owner, admin and accounts office, XYZ School</p></div>' +
       '<label class="field" for="lg-email">Email<input id="lg-email" type="email" autocomplete="username" placeholder="you@school.pk" value="' + esc(S.lgEmail || '') + '"></label>' +
       '<label class="field pw" for="lg-pass">Password<input id="lg-pass" type="' + (S.showPw ? 'text' : 'password') + '" autocomplete="current-password" placeholder="Password" value="' + esc(S.lgPass || '') + '"><button type="button" data-a="pwtoggle" aria-label="' + (S.showPw ? 'Hide' : 'Show') + ' password">' + (S.showPw ? 'Hide' : 'Show') + '</button></label>' +
       '<div class="row"><label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="lg-rem" checked> Keep me signed in</label><button type="button" class="btn btn-sm" style="border:0;background:none;color:var(--brand)" data-a="forgot">Forgot password?</button></div>' +
       (S.lgErr ? '<div class="banner p-bad" role="alert">' + S.lgErr + '</div>' : '') +
       '<button class="btn btn-primary" type="submit" style="min-height:46px">Sign in</button>' +
       WEB_USERS.map(function(u, i){ return '<div class="demo-cred"><span><b>Demo: ' + u.title + '</b><br><span class="num">' + u.email + ' \u00b7 ' + u.password + '</span></span><button type="button" class="btn btn-sm" data-a="fillcred" data-v="' + i + '">Fill in</button></div>'; }).join('') +
-      '<p class="sub">The owner sees everything. The accountant sees fees, daily collection, students and expenses only. Teachers use the mobile app.</p></form></section></div>';
+      '<p class="sub">The owner / principal sees everything. The admin runs students, staff, classes, attendance and results, without salaries or profit. The accountant sees fees, daily collection, students and expenses only. Teachers use the mobile app.</p></form></section></div>';
   }
   function render(){
     var authed = !!S.authed;
@@ -1153,9 +1185,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     document.getElementById('login-root').innerHTML = '';
     charts.forEach(function(c){ c.destroy(); }); charts = [];
     document.getElementById('side').innerHTML = '<div class="brand"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolSaathi</span></div>' +
-      navFor().map(function(n){ return '<button class="navlink" data-a="go" data-v="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ico(n[2]) + n[1] + '</button>'; }).join('') +
-      '<div class="foot">' + (S.user && S.user.role === 'accountant' ? 'Accounts office \u00b7 demo with sample data. Salaries and profit are visible to the owner only.' : 'Owner web dashboard \u00b7 demo with sample data. Teachers use the mobile app.') + '</div>';
+      navFor().map(function(n){ return '<button class="navlink" data-a="go" data-v="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ico(n[2]) + (isAdm() && n[0] === 'staff' ? 'Staff' : n[1]) + '</button>'; }).join('') +
+      '<div class="foot">' + (S.user && S.user.role === 'accountant' ? 'Accounts office \u00b7 demo with sample data. Salaries and profit are visible to the owner only.' : isAdm() ? 'Admin office \u00b7 demo with sample data. Fees, salaries and profit are visible to the owner only.' : 'Owner / Principal dashboard \u00b7 demo with sample data. Teachers use the mobile app.') + '</div>';
     var t = TITLES[S.view];
+    if (isAdm() && S.view === 'staff') t = ['Staff', 'Logins, roles and classes. Salaries are set by the owner.'];
     document.getElementById('top').innerHTML = '<div><h1>' + t[0] + '</h1><p class="sub">' + t[1] + '</p></div><div class="who"><span class="demo">Demo · changes reset on reload</span><span class="avatar">' + S.user.name.split(' ').map(function(w){ return w[0]; }).join('') + '</span><span><b>' + esc(S.user.name) + '</b><br>' + S.user.title + '</span><button class="btn btn-sm" data-a="logout">Log out</button></div>';
     var ae = document.activeElement, fid = ae && ae.tagName === 'INPUT' && ae.type === 'search' ? ae.id : null;
     document.getElementById('view').innerHTML = VIEWS[S.view]();
@@ -1220,10 +1253,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'srole'){ var f = document.getElementById('staff-form'), u0 = f.dataset.id ? staffById(f.dataset.id) : null;
       var draft = { id: u0 && u0.id, name: v('tf-name'), phone: v('tf-phone').replace(/\D/g,''), job: v('tf-job'), classes: u0 ? u0.classes : [] };
       S.modal.html = staffForm(draft.id ? Object.assign({}, u0, { name: draft.name, phone: draft.phone || u0.phone }) : { name: draft.name, phone: draft.phone, job: draft.job }, '', val); renderModal(); }
-    else if (a === 'staffdel'){ var su = staffById(val); openModal('Remove staff member', confirmBox('Remove <b>' + esc(su.name) + '</b>? Salary stops from December' + (su.role !== 'support' ? ' and their app login stops working' : '') + '. Past salaries stay in your reports.', 'staffdelyes', val, 'Remove')); }
+    else if (a === 'staffdel'){ var su = staffById(val); openModal('Remove staff member', confirmBox('Remove <b>' + esc(su.name) + '</b>? ' + (isAdm() ? 'Their salary stops from December' : 'Salary stops from December') + (su.role !== 'support' ? ' and their login stops working' : '') + '.' + (isAdm() ? '' : ' Past salaries stay in your reports.'), 'staffdelyes', val, 'Remove')); }
     else if (a === 'staffdelyes'){ var gu = staffById(val); gu.left = '2026-12'; log('staff', 'Removed ' + gu.name + ' (' + roleLabel(gu) + ') from staff, salary stops from Dec 2026', true); closeModal(); render(); toast(gu.name + ' removed.'); }
-    else if (a === 'inc') openModal('Salary increment', incForm(staffById(val)), true);
-    else if (a === 'slip'){ var iu = staffById(val); openModal('Increment slip', slipHtml(iu, iu.incs[iu.incs.length-1])); }
+    else if (a === 'inc'){ if (isAdm()) return; var iu0 = staffById(val); openModal(iu0.salPending ? 'Set salary' : 'Salary increment', incForm(iu0), !iu0.salPending); }
+    else if (a === 'slip'){ if (isAdm()) return; var iu = staffById(val); openModal('Increment slip', slipHtml(iu, iu.incs[iu.incs.length-1])); }
     else if (a === 'slipsend'){ closeModal(); toast('Increment slip sent to ' + val + ' on WhatsApp.'); }
     // attendance
     else if (a === 'attview'){ S.attView = val; render(); }
@@ -1467,21 +1500,28 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       var role = f.dataset.role, uid = +f.dataset.id || null, sph = v('tf-phone').replace(/\D/g, ''), cls = Array.prototype.slice.call(document.querySelectorAll('.tf-cls')).filter(function(x){ return x.checked; }).map(function(x){ return x.value; });
       var sal = parseInt(v('tf-sal'), 10), dup = STAFF.some(function(u){ return !u.left && u.phone === sph && u.id !== uid; });
       var dr = { id: uid, name: v('tf-name').trim(), phone: sph, job: v('tf-job').trim(), classes: cls, role: role };
-      var se = !dr.name ? 'Enter the name.' : sph.length !== 11 ? 'Enter an 11-digit mobile number.' : dup ? 'Someone on your staff already uses this number.' : role === 'teacher' && !cls.length ? 'Choose at least one class.' : role === 'support' && !dr.job ? 'Enter a job title.' : !uid && !(sal > 0) ? 'Enter the monthly salary.' : !uid && !v('tf-join') ? 'Choose the joining month.' : '';
+      var se = !dr.name ? 'Enter the name.' : sph.length !== 11 ? 'Enter an 11-digit mobile number.' : dup ? 'Someone on your staff already uses this number.' : role === 'teacher' && !cls.length ? 'Choose at least one class.' : role === 'support' && !dr.job ? 'Enter a job title.' : !uid && !isAdm() && !(sal > 0) ? 'Enter the monthly salary.' : !uid && !v('tf-join') ? 'Choose the joining month.' : '';
       if (se){ S.modal.html = staffForm(uid ? Object.assign({}, staffById(uid), dr) : dr, se, role); renderModal(); return; }
       if (uid){ var u = staffById(uid); log('staff', 'Edited staff details of ' + dr.name); u.name = dr.name; u.phone = sph; u.role = role; u.classes = role === 'teacher' ? cls : []; u.job = role === 'support' ? dr.job : ''; if (role !== 'support' && !u.pin) u.pin = String(1000 + Math.floor(Math.random()*9000)); closeModal(); render(); toast('Saved changes for ' + u.name + '.'); }
       else {
-        var nu = { id: staffId++, role: role, name: dr.name, phone: sph, classes: role === 'teacher' ? cls : [], job: role === 'support' ? dr.job : '', salary0: sal, joined: v('tf-join'), incs: [] };
+        var byAdm = isAdm();
+        var nu = { id: staffId++, role: role, name: dr.name, phone: sph, classes: role === 'teacher' ? cls : [], job: role === 'support' ? dr.job : '', salary0: byAdm ? 0 : sal, joined: v('tf-join'), incs: [] };
+        if (byAdm) nu.salPending = true;
         if (role !== 'support') nu.pin = String(1000 + Math.floor(Math.random()*9000));
-        STAFF.push(nu); log('staff', 'Added ' + nu.name + ' (' + roleLabel(nu) + ') at ' + fmt(sal) + ' a month'); render();
-        if (role === 'support'){ closeModal(); toast(nu.name + ' added at ' + fmt(sal) + ' a month.'); }
-        else openModal('Login created', '<div class="slip"><div class="row"><span>Name</span><b>' + esc(nu.name) + '</b></div><div class="row"><span>Mobile</span><b class="num">' + fmtPhone(nu.phone) + '</b></div><div class="row"><span>PIN</span><b class="num" style="font-size:18px;letter-spacing:3px">' + nu.pin + '</b></div><div class="row"><span>Salary</span><b class="num">' + fmt(sal) + '/mo from ' + ymLabel(nu.joined) + '</b></div></div>' +
-          (nu.role === 'accountant' ? chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! XYZ School ke SchoolSaathi web dashboard par aap ka accounts login ban gaya hai. Pehli dafa sign in ke liye link aur password is message ke saath hai.'], 'Sent on WhatsApp. Accountants sign in on the web dashboard, not the mobile app.') : chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! XYZ School ki SchoolSaathi teacher app mein aap ka account ban gaya hai.<br>Mobile: <b>' + fmtPhone(nu.phone) + '</b><br>PIN: <b>' + nu.pin + '</b>'], 'Sent on WhatsApp. They sign in to the teacher app with this number and PIN.')) + '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="mclose">Done</button></div>');
+        STAFF.push(nu); log('staff', 'Added ' + nu.name + ' (' + roleLabel(nu) + ')' + (byAdm ? ', salary to be set by the owner' : ' at ' + fmt(sal) + ' a month')); render();
+        if (role === 'support'){ closeModal(); toast(nu.name + ' added' + (byAdm ? '. The owner sets the salary.' : ' at ' + fmt(sal) + ' a month.')); }
+        else openModal('Login created', '<div class="slip"><div class="row"><span>Name</span><b>' + esc(nu.name) + '</b></div><div class="row"><span>Mobile</span><b class="num">' + fmtPhone(nu.phone) + '</b></div><div class="row"><span>PIN</span><b class="num" style="font-size:18px;letter-spacing:3px">' + nu.pin + '</b></div>' + (byAdm ? '<div class="row"><span>Salary</span><b>Set by the owner</b></div>' : '<div class="row"><span>Salary</span><b class="num">' + fmt(sal) + '/mo from ' + ymLabel(nu.joined) + '</b></div>') + '</div>' +
+          (nu.role === 'accountant' || nu.role === 'admin' ? chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! XYZ School ke SchoolSaathi web dashboard par aap ka ' + (nu.role === 'admin' ? 'admin' : 'accounts') + ' login ban gaya hai. Pehli dafa sign in ke liye link aur password is message ke saath hai.'], 'Sent on WhatsApp. ' + (nu.role === 'admin' ? 'Admins' : 'Accountants') + ' sign in on the web dashboard, not the mobile app.') : chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! XYZ School ki SchoolSaathi teacher app mein aap ka account ban gaya hai.<br>Mobile: <b>' + fmtPhone(nu.phone) + '</b><br>PIN: <b>' + nu.pin + '</b>'], 'Sent on WhatsApp. They sign in to the teacher app with this number and PIN.')) + '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="mclose">Done</button></div>');
       }
     }
     else if (id === 'inc-form'){
+      if (isAdm()){ closeModal(); return; }
       var iu = staffById(f.dataset.id), nv = parseInt(v('if-new'), 10), im = v('if-m'), last = iu.incs.length ? iu.incs[iu.incs.length-1].month : iu.joined;
       var ie = !(nv > 0) ? 'Enter the new monthly salary.' : nv === curSalary(iu) ? 'The new salary is the same as the current one.' : !/^\d{4}-\d{2}$/.test(im) ? 'Choose the month it starts.' : im <= last ? 'Choose a month after ' + ymLabel(last) + '.' : '';
+      if (iu.salPending){
+        if (!(nv > 0)){ S.modal.html = incForm(iu, 'Enter the monthly salary.'); renderModal(); return; }
+        iu.salary0 = nv; delete iu.salPending; log('staff', 'Set salary of ' + iu.name + ' (' + roleLabel(iu) + ') at ' + fmt(nv) + ' a month from ' + ymLabel(iu.joined)); closeModal(); render(); toast('Salary set for ' + iu.name + '.'); return;
+      }
       if (ie){ S.modal.html = incForm(iu, ie); renderModal(); return; }
       log('staff', 'Increment for ' + iu.name + ': ' + fmt(curSalary(iu)) + ' to ' + fmt(nv) + ' from ' + ymLabel(im)); iu.incs.push({ month: im, from: curSalary(iu), to: nv }); render(); openModal('Increment saved', slipHtml(iu, iu.incs[iu.incs.length-1]));
     }
