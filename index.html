@@ -279,7 +279,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     </div>
     <div class="phone" role="img" aria-label="Example WhatsApp messages from a school to a parent: a fee reminder, a payment receipt and an absence alert">
       <div class="screen">
-        <div class="wa-head"><span class="av">XS</span><span><b>XYZ School</b><small>Example messages</small></span></div>
+        <div class="wa-head"><span class="av">XS</span><span><b data-school>XYZ School</b><small>Example messages</small></span></div>
         <div class="wa-body">
           <div class="bub">Assalam o Alaikum! <b>Ahmed (Class 5-A)</b> ki November fees <b>Rs 4,500</b> 10 Nov tak due hai.</div>
           <div class="bub">Pay via bank transfer or JazzCash. Payment ke baad screenshot bhej dein.</div>
@@ -418,7 +418,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     </div>
     <div class="dash" role="img" aria-label="Example owner dashboard showing fees collected, pending dues, attendance, profit and a monthly income chart">
       <div class="dash-in">
-        <div class="dash-bar"><span class="dots"><i></i><i></i><i></i></span><b>XYZ School · November</b><span style="color:var(--quiet);font-size:12px">Example data</span></div>
+        <div class="dash-bar"><span class="dots"><i></i><i></i><i></i></span><b><span data-school>XYZ School</span> · November</b><span style="color:var(--quiet);font-size:12px">Example data</span></div>
         <div class="dash-body">
           <div class="kpi"><small>Fees collected</small><b>Rs 8,64,000</b><div class="bar"><span style="width:86%"></span></div></div>
           <div class="kpi"><small>Fees pending</small><b style="color:var(--warn)">23 students</b><small>Reminders sent today</small></div>
@@ -565,6 +565,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 
 <a class="wa-float" href="https://wa.me/923158327536?text=Assalam%20o%20Alaikum!%20I%20would%20like%20a%20free%20demo%20of%20SchoolSaathi%20for%20my%20school." target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><svg aria-hidden="true" style="color:#fff"><use href="#i-wa"/></svg></a>
 
-<script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+<script>document.getElementById('yr').textContent = new Date().getFullYear();
+// ?school=Name shows the visitor's school in the samples and carries it into the demos
+(function(){ try { var n = (new URLSearchParams(location.search).get('school') || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60); if (!n) return;
+  document.querySelectorAll('[data-school]').forEach(function(el){ el.textContent = n; });
+  document.querySelectorAll('a[href^="demo/"]').forEach(function(a){ a.href = a.getAttribute('href') + '?school=' + encodeURIComponent(n); });
+} catch(e){} })();</script>
 </body>
 </html>

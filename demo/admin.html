@@ -184,6 +184,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
 <script>
 (function(){
   // ================= sample data =================
+  // School name for the demo: add ?school=Your School Name to the link. Falls back to XYZ School.
+  var SCHOOL = (function(){ try { var n = new URLSearchParams(location.search).get('school') || ''; n = n.replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60); return n || 'XYZ School'; } catch(e){ return 'XYZ School'; } })();
   var seed = 7;
   function rnd(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
   function hsh(n, salt){ return ((n * 9301 + salt * 49297 + 7) % 233280) / 233280; }
@@ -544,7 +546,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   };
   function receiptHtml(r){
     var s = byId(r.sid), left = s ? owed(s) : 0;
-    return '<div class="slip"><div class="row"><b style="font-family:var(--display);font-size:16px">XYZ School</b><span class="sub">Receipt #' + r.no + '</span></div><div class="sub" style="font-weight:700;letter-spacing:.5px">FEE RECEIPT</div>' +
+    return '<div class="slip"><div class="row"><b style="font-family:var(--display);font-size:16px">' + SCHOOL + '</b><span class="sub">Receipt #' + r.no + '</span></div><div class="sub" style="font-weight:700;letter-spacing:.5px">FEE RECEIPT</div>' +
       '<div class="row"><span>Student</span><b>' + esc(r.name) + ' · ' + uName(r.unit) + '</b></div><div class="row"><span>Date</span><b>' + dayLabel(r.date) + ' 2026, ' + r.time + '</b></div>' +
       '<div style="border-top:1px solid var(--line)"></div>' + r.items.map(function(i){ return '<div class="row"><span>' + esc(i.label) + '</span><b class="num">' + fmt(i.amount) + '</b></div>'; }).join('') +
       '<div class="row" style="border-top:1px solid var(--line);padding-top:7px"><span><b>Total paid</b></span><b class="num" style="font-size:16px">' + fmt(r.amount) + '</b></div>' +
@@ -641,7 +643,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
   function slcHtml(s){
     var L = function(l, v){ return '<div class="line"><span>' + l + '</span><b>' + v + '</b></div>'; };
-    return '<div class="cert"><div style="text-align:center"><div style="font-family:var(--display);font-size:18px;font-weight:700">XYZ School</div><div class="sub">Malir, Karachi · Registered with the Directorate of Inspection &amp; Registration of Private Institutions, Sindh</div></div>' +
+    return '<div class="cert"><div style="text-align:center"><div style="font-family:var(--display);font-size:18px;font-weight:700">' + SCHOOL + '</div><div class="sub">Malir, Karachi · Registered with the Directorate of Inspection &amp; Registration of Private Institutions, Sindh</div></div>' +
       '<h4>SCHOOL LEAVING CERTIFICATE</h4><div class="row"><span class="sub">No. ' + esc(s.slcNo) + '</span><span class="sub">Issued ' + dLong(DAYS[DAYS.length-1]) + '</span></div>' +
       L('Name of student', esc(s.name)) + L('Father’s name', esc(s.father)) + L('Admission number', 'S-' + ('00' + s.id).slice(-3)) + L('Date of admission', ymLabel(s.admitted)) +
       L('Date of birth (figures)', s.dob ? dLong(s.dob) : '—') + L('Date of birth (words)', s.dob ? dateWords(s.dob) : '—') + L('B-Form number', esc(s.bform || '—')) +
@@ -664,7 +666,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
   function challanHtml(s, m){
     var L = challanLines(s, m), tot = L.reduce(function(x,l){ return x + l[1]; }, 0), dueOn = FEESET.due + ' ' + MN[m], no = 'CH-' + p2(m + 1) + '-' + ('00' + s.id).slice(-3);
-    var copy = function(name){ return '<div class="chc"><div class="row"><h4>XYZ School</h4><b style="font-size:10.5px">' + name + '</b></div><div class="sub" style="font-size:10.5px">' + BANK + '</div>' +
+    var copy = function(name){ return '<div class="chc"><div class="row"><h4>' + SCHOOL + '</h4><b style="font-size:10.5px">' + name + '</b></div><div class="sub" style="font-size:10.5px">' + BANK + '</div>' +
       '<div class="row"><span>Challan</span><b>' + no + '</b></div><div class="row"><span>Student</span><b>' + esc(s.name) + '</b></div><div class="row"><span>Father</span><b>' + esc(s.father) + '</b></div><div class="row"><span>Class</span><b>' + sName(s) + ' · S-' + ('00' + s.id).slice(-3) + '</b></div><div class="row"><span>Fee month</span><b>' + MNL[m] + ' 2026</b></div>' +
       '<div style="border-top:1px solid var(--line);margin:3px 0"></div>' + L.map(function(l){ return '<div class="row"><span>' + esc(l[0]) + '</span><b class="num">' + (l[1] < 0 ? '−' : '') + nf(Math.abs(l[1])) + '</b></div>'; }).join('') +
       '<div class="row" style="border-top:1px solid var(--line);padding-top:4px"><span><b style="color:var(--ink)">Pay by ' + dueOn + '</b></span><b class="num" style="font-size:13px">Rs ' + nf(tot) + '</b></div>' +
@@ -933,7 +935,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   };
 
   var TEMPLATES = [
-    ['Holiday', 'School closed', 'Assalam o Alaikum! XYZ School will remain closed on [day, date] due to [reason]. Classes resume on [day]. Shukriya.'],
+    ['Holiday', 'School closed', 'Assalam o Alaikum! ' + SCHOOL + ' will remain closed on [day, date] due to [reason]. Classes resume on [day]. Shukriya.'],
     ['Parent-teacher meeting', 'Parent-teacher meeting', 'Assalam o Alaikum! A parent-teacher meeting will be held on Saturday, [date], from 9 am to 12 pm. Please meet your child’s class teacher to discuss progress.'],
     ['Exam schedule', 'Final exams schedule', 'Assalam o Alaikum! Final exams start on [date]. The date sheet is attached. Please make sure your child prepares well and is on time.'],
     ['Fee reminder', 'Fee due date', 'Assalam o Alaikum! A reminder that this month’s fee is due by the 10th. You can pay at the school office, by bank transfer or JazzCash.'],
@@ -1271,7 +1273,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
   function slipHtml(u, inc){
     var raise = inc.to - inc.from, first = u.name.split(' ')[0];
-    return '<div class="slip"><div class="row"><b style="font-family:var(--display);font-size:16px">XYZ School</b><span class="sub">Ref INC-' + ymIdx(inc.month) + '-' + u.id + '</span></div><div class="sub" style="font-weight:700;letter-spacing:.5px">SALARY INCREMENT SLIP</div>' +
+    return '<div class="slip"><div class="row"><b style="font-family:var(--display);font-size:16px">' + SCHOOL + '</b><span class="sub">Ref INC-' + ymIdx(inc.month) + '-' + u.id + '</span></div><div class="sub" style="font-weight:700;letter-spacing:.5px">SALARY INCREMENT SLIP</div>' +
       '<div class="row"><span>Name</span><b>' + esc(u.name) + '</b></div><div class="row"><span>Designation</span><b>' + esc(roleLabel(u)) + '</b></div><div class="row"><span>Joined</span><b>' + ymLabel(u.joined) + '</b></div>' +
       '<div class="row"><span>Previous salary</span><b class="num">' + fmt(inc.from) + '</b></div><div class="row"><span>Increment</span><b class="num" style="color:var(--ok)">+' + fmt(raise) + ' (' + (Math.round(raise/inc.from*1000)/10) + '%)</b></div>' +
       '<div class="row"><span>New monthly salary</span><b class="num" style="font-size:16px">' + fmt(inc.to) + '</b></div><div class="row"><span>Effective from</span><b>' + ymLabel(inc.month) + '</b></div>' +
@@ -1300,7 +1302,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function v(id){ var el = document.getElementById(id); return el ? el.value : ''; }
 
   // ================= render =================
-  var TITLES = { promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard','XYZ School · Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','Fee due date, late fine and discounts. Only the owner can change these.'] };
+  var TITLES = { promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard','' + SCHOOL + ' · Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','Fee due date, late fine and discounts. Only the owner can change these.'] };
   var WEB_USERS = [
     { email:'owner@xyzschool.pk', password:'demo1234', name:'Tariq Hussain', role:'owner', title:'Owner / Principal' },
     { email:'admin@xyzschool.pk', password:'demo1234', name:'Saima Khan', role:'admin', title:'Admin', staffId:13 },
@@ -1312,7 +1314,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     document.getElementById('login-root').innerHTML = '<div class="login"><section class="login-art"><div class="brand" style="padding:0"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolSaathi</span></div>' +
       '<div style="display:flex;flex-direction:column;gap:16px"><h2>Your whole school, on one dashboard.</h2><p>Students, staff, fees, attendance, results, expenses and profit and loss. Teachers and accountants use the mobile app, and everything comes here.</p></div>' +
       '<ul>' + ['Full control of every record','Payroll with increments and slips','Monthly and yearly profit and loss','Export any report to PDF or Excel'].map(function(t){ return '<li>' + chk + t + '</li>'; }).join('') + '</ul></section>' +
-      '<section class="login-form"><form class="login-card" id="login-form" novalidate><div><h1>Sign in</h1><p class="sub">Owner, admin and accounts office, XYZ School</p></div>' +
+      '<section class="login-form"><form class="login-card" id="login-form" novalidate><div><h1>Sign in</h1><p class="sub">Owner, admin and accounts office, ' + SCHOOL + '</p></div>' +
       '<label class="field" for="lg-email">Email<input id="lg-email" type="email" autocomplete="username" placeholder="you@school.pk" value="' + esc(S.lgEmail || '') + '"></label>' +
       '<label class="field pw" for="lg-pass">Password<input id="lg-pass" type="' + (S.showPw ? 'text' : 'password') + '" autocomplete="current-password" placeholder="Password" value="' + esc(S.lgPass || '') + '"><button type="button" data-a="pwtoggle" aria-label="' + (S.showPw ? 'Hide' : 'Show') + ' password">' + (S.showPw ? 'Hide' : 'Show') + '</button></label>' +
       '<div class="row"><label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="lg-rem" checked> Keep me signed in</label><button type="button" class="btn btn-sm" style="border:0;background:none;color:var(--brand)" data-a="forgot">Forgot password?</button></div>' +
@@ -1415,7 +1417,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       var e0 = S.resExam, rl = students.filter(function(s){ return uOf(s) === S.resClass && pctOf(s, e0) !== null; }).sort(function(x, y){ return pctOf(y, e0) - pctOf(x, e0); });
       var s1 = rl[0], o = OUT(e0), miss = rl.filter(function(s){ return entered(s, e0).length < subjectsOf(gOf(S.resClass)).length; }).length;
       openModal('Send ' + e0 + ' result cards', (miss ? '<div class="banner p-warn">' + miss + ' students are missing some subject marks. Their cards show — for those subjects.</div>' : '') +
-        '<div class="slip"><div class="row"><b style="font-family:var(--display);font-size:16px">XYZ School</b><span class="pill p-info">' + uName(S.resClass) + ' · ' + e0 + '</span></div><div class="sub" style="font-weight:700;letter-spacing:.5px">RESULT CARD</div><div class="row"><span>Student</span><b>' + esc(s1.name) + '</b></div><div class="row"><span>Position in class</span><b>1 of ' + rl.length + '</b></div>' +
+        '<div class="slip"><div class="row"><b style="font-family:var(--display);font-size:16px">' + SCHOOL + '</b><span class="pill p-info">' + uName(S.resClass) + ' · ' + e0 + '</span></div><div class="sub" style="font-weight:700;letter-spacing:.5px">RESULT CARD</div><div class="row"><span>Student</span><b>' + esc(s1.name) + '</b></div><div class="row"><span>Position in class</span><b>1 of ' + rl.length + '</b></div>' +
         subjectsOf(gOf(S.resClass)).map(function(x){ var m = mk(s1, e0, x); return '<div class="row"><span>' + x + '</span><b class="num">' + (m === null ? '—' : m + ' / ' + o) + '</b></div>'; }).join('') +
         '<div class="row" style="border-top:1px solid var(--line);padding-top:7px"><span>Total</span><b class="num">' + tot(s1, e0) + ' / ' + entered(s1, e0).length * o + ' · ' + Math.round(pctOf(s1, e0)*100) + '% · Grade ' + grade(pctOf(s1, e0)) + '</b></div></div>' +
         chat(['<b>' + esc(s1.name) + '</b> ka ' + e0 + ' result. Mubarak ho!<div class="pdf"><i>PDF</i><b style="font-size:12px">Result_Card_' + esc(s1.name.split(' ')[0]) + '.pdf</b></div>'], 'One card per student with all subjects. Each parent gets their own child’s card.') +
@@ -1450,7 +1452,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'anntpl'){ var dt = annDraft(), tp = TEMPLATES[+val]; dt.title = tp[1]; dt.body = tp[2]; S.annErr = ''; render(); var ab = document.getElementById('an-body'); if (ab) ab.focus(); }
     else if (a === 'anto'){ var dto = annDraft(); dto.to = val; render(); }
     else if (a === 'anwhen'){ var dw = annDraft(); dw.when = val; render(); }
-    else if (a === 'annprev'){ var dp = annDraft(); openModal('Preview', chat(['<b>' + esc(dp.title || 'No title') + '</b><br>' + esc(dp.body || '').replace(/\n/g, '<br>') + '<br><br><span class="sub">XYZ School</span>'], 'This is how it looks on a parent\u2019s WhatsApp.')); }
+    else if (a === 'annprev'){ var dp = annDraft(); openModal('Preview', chat(['<b>' + esc(dp.title || 'No title') + '</b><br>' + esc(dp.body || '').replace(/\n/g, '<br>') + '<br><br><span class="sub">' + SCHOOL + '</span>'], 'This is how it looks on a parent\u2019s WhatsApp.')); }
     else if (a === 'annview'){ var av = announcements.filter(function(x){ return x.id === +val; })[0]; openModal(esc(av.title), '<p class="sub">' + dayLabel(av.date) + ', ' + av.time + ' \u00b7 ' + audienceText(av) + ' \u00b7 ' + av.count + ' numbers \u00b7 ' + av.status + '</p>' + chat(['<b>' + esc(av.title) + '</b><br>' + esc(av.body).replace(/\n/g, '<br>')])); }
     else if (a === 'anncancel'){ log('ann', 'Cancelled a scheduled announcement'); announcements = announcements.filter(function(x){ return x.id !== +val; }); render(); toast('Scheduled announcement cancelled.'); }
     else if (a === 'annreuse'){ var ar = announcements.filter(function(x){ return x.id === +val; })[0]; S.ann = { title: ar.title, body: ar.body, to: ar.to, classes: ar.classes.slice(), staff: ar.staff, when:'now', at:'2026-11-21T08:00' }; render(); window.scrollTo(0, 0); toast('Copied into the form. Edit it and send.'); }
@@ -1666,7 +1668,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         STAFF.push(nu); log('staff', 'Added ' + nu.name + ' (' + roleLabel(nu) + ')' + (byAdm ? ', salary to be set by the owner' : ' at ' + fmt(sal) + ' a month')); render();
         if (role === 'support'){ closeModal(); toast(nu.name + ' added' + (byAdm ? '. The owner sets the salary.' : ' at ' + fmt(sal) + ' a month.')); }
         else openModal('Login created', '<div class="slip"><div class="row"><span>Name</span><b>' + esc(nu.name) + '</b></div><div class="row"><span>Mobile</span><b class="num">' + fmtPhone(nu.phone) + '</b></div><div class="row"><span>PIN</span><b class="num" style="font-size:18px;letter-spacing:3px">' + nu.pin + '</b></div>' + (byAdm ? '<div class="row"><span>Salary</span><b>Set by the owner</b></div>' : '<div class="row"><span>Salary</span><b class="num">' + fmt(sal) + '/mo from ' + ymLabel(nu.joined) + '</b></div>') + '</div>' +
-          (nu.role === 'accountant' || nu.role === 'admin' ? chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! XYZ School ke SchoolSaathi web dashboard par aap ka ' + (nu.role === 'admin' ? 'admin' : 'accounts') + ' login ban gaya hai. Pehli dafa sign in ke liye link aur password is message ke saath hai.'], 'Sent on WhatsApp. ' + (nu.role === 'admin' ? 'Admins' : 'Accountants') + ' sign in on the web dashboard, not the mobile app.') : chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! XYZ School ki SchoolSaathi teacher app mein aap ka account ban gaya hai.<br>Mobile: <b>' + fmtPhone(nu.phone) + '</b><br>PIN: <b>' + nu.pin + '</b>'], 'Sent on WhatsApp. They sign in to the teacher app with this number and PIN.')) + '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="mclose">Done</button></div>');
+          (nu.role === 'accountant' || nu.role === 'admin' ? chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! ' + SCHOOL + ' ke SchoolSaathi web dashboard par aap ka ' + (nu.role === 'admin' ? 'admin' : 'accounts') + ' login ban gaya hai. Pehli dafa sign in ke liye link aur password is message ke saath hai.'], 'Sent on WhatsApp. ' + (nu.role === 'admin' ? 'Admins' : 'Accountants') + ' sign in on the web dashboard, not the mobile app.') : chat(['Assalam o Alaikum ' + esc(nu.name.split(' ')[0]) + '! ' + SCHOOL + ' ki SchoolSaathi teacher app mein aap ka account ban gaya hai.<br>Mobile: <b>' + fmtPhone(nu.phone) + '</b><br>PIN: <b>' + nu.pin + '</b>'], 'Sent on WhatsApp. They sign in to the teacher app with this number and PIN.')) + '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="mclose">Done</button></div>');
       }
     }
     else if (id === 'inc-form'){
