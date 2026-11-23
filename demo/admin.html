@@ -392,7 +392,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function concText(c){ return c.type === 'auto' ? 'Automatic' : c.type === 'none' ? 'None' : c.type === 'staff' ? 'Staff child' : c.type === 'sch' ? 'Scholarship ' + c.pct + '%' : 'Rs ' + nf(c.amt) + ' off'; }
   var LOG = [], logId = 1;
   var KINDS = { fees:'Fees', students:'Students', staff:'Staff', marks:'Marks', attendance:'Attendance', expenses:'Expenses', settings:'Settings', ann:'Announcements', classes:'Classes', promotion:'Promotion' };
-  function log(kind, text, flag){ LOG.unshift({ id: logId++, date: DAYS[DAYS.length-1], time: nowTime(), who: S.user ? S.user.name : 'Tariq Hussain', role: S.user ? S.user.title : 'Owner / Principal', kind: kind, text: text, flag: !!flag }); }
+  function log(kind, text, flag, d){ LOG.unshift({ id: logId++, d: d || null, date: DAYS[DAYS.length-1], time: nowTime(), who: S.user ? S.user.name : 'Tariq Hussain', role: S.user ? S.user.title : 'Owner / Principal', kind: kind, text: text, flag: !!flag }); }
   function feeItems(s){
     var it = [];
     s.tu.slice().sort(function(a,b){ return a.m - b.m; }).forEach(function(t){ var c = concOf(s);
@@ -487,7 +487,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   var VIEWS = {};
   function admDashboard(){
     var ta = todayAtt(), act = STAFF.filter(function(u){ return !u.left; }), U = units(), noCT = U.filter(function(k){ return !CT[k]; }).length;
-    var vl = visibleLog(), flagged = vl.filter(function(l){ return l.flag; }).length;
+    var vl = visibleLog(), flagged = vl.filter(needsLook).length;
     return '<div class="kpis">' + kpi('Students', students.length, classes.length + ' classes, ' + U.length + ' sections') + kpi('Staff', act.length, act.filter(function(u){ return u.role === 'teacher'; }).length + ' teachers') +
       kpi('Attendance today', Math.round(ta.p/ta.n*100) + '%', ta.a + ' absent · ' + ta.l + ' leave') + kpi('Sections without a class teacher', noCT, noCT ? 'Assign in Class teachers' : 'All assigned', noCT ? 'warn' : 'ok') + '</div>' +
       (flagged ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + flagged + ' changes this month need a look</b><div class="sub">Deleted records, changed concessions and removed sections.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : '') +
@@ -504,7 +504,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     return '<div class="kpis">' + kpi('Students', students.length, classes.length + ' classes, ' + units().length + ' sections') + kpi('Staff', STAFF.filter(function(u){ return !u.left; }).length, 'Payroll ' + fmt(payroll(CUR).total) + '/mo') +
       kpi('Fees collected (Nov)', fmt(col), Math.round(col/(col+pend)*100) + '% of ' + fmt(col+pend)) + kpi('Fees pending', fmt(pend), defs.length + ' students', 'warn') +
       kpi('Attendance today', Math.round(ta.p/ta.n*100) + '%', ta.a + ' absent · ' + ta.l + ' leave') + kpi('Profit (Nov so far)', fmt(inc - ex), 'Income ' + fmt(inc) + ' · expenses ' + fmt(ex), inc - ex >= 0 ? 'ok' : 'bad') + '</div>' +
-      (function(){ var n = visibleLog().filter(function(l){ return l.flag; }).length; return n ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + n + ' changes this month need a look</b><div class="sub">Undone payments, waived fines, changed concessions and deleted records.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : ''; })() +
+      (function(){ var n = visibleLog().filter(needsLook).length; return n ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + n + ' changes this month need a look</b><div class="sub">Undone payments, waived fines, changed concessions and deleted records.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : ''; })() +
       '<div class="grid2"><div class="panel"><div class="row"><h2>Income vs expenses, 2026</h2><button class="btn btn-sm" data-a="go" data-v="finance">Finance</button></div><div class="chartbox"><canvas id="ch-ie" aria-label="Income and expenses by month" role="img"></canvas></div></div>' +
       '<div class="panel"><div class="row"><h2>Fees collected by class (Nov)</h2><button class="btn btn-sm" data-a="go" data-v="fees">Fees</button></div><div class="chartbox"><canvas id="ch-fc" aria-label="Fee collection percentage by class" role="img"></canvas></div></div></div>' +
       '<div class="grid2"><div class="panel"><div class="row"><h2>Top defaulters</h2><button class="btn btn-sm" data-a="go" data-v="fees">Collect fees</button></div>' +
@@ -758,13 +758,89 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var what = Object.keys(t.q).map(function(k){ return t.q[k]; })[0];
     toast('Opened ' + (TITLES[t.v] ? TITLES[t.v][0] : t.v) + (what ? ', filtered to ' + esc(what) : '') + '.');
   }
-  function logRowAttr(l){ var t = logTarget(l); return t ? ' class="clickrow" data-a="actgo" data-v="' + l.id + '" tabindex="0" title="Open in ' + esc(TITLES[t.v] ? TITLES[t.v][0] : t.v) + '"' : ''; }
+  function logRowAttr(l){ return ' class="clickrow" data-a="actinfo" data-v="' + l.id + '" tabindex="0" title="Show details"'; }
+  // ---- activity details: what happened, the record as it is now, and what the owner can do about it ----
+  function needsLook(l){ return l.flag && !l.checked; }
+  function snap(o){ return JSON.parse(JSON.stringify(o)); }
+  function tuOf(sid, m){ var s = byId(sid); return s ? s.tu.filter(function(t){ return t.m === m; })[0] : null; }
+  function conc0(s){ return s.conc || { type:'auto' }; }
+  var RULE_NAMES = { due:'Due day', fine:'Late fine', sib:'Sibling discount', staff:'Staff child discount' };
+  function ruleText(k, v){ return k === 'due' ? ordinal(v) + ' of the month' : k === 'fine' ? 'Rs ' + nf(v) : v + '%'; }
+  var ACTS = {
+    restoreStudent: { label:'Restore record',
+      now: function(d){ return students.some(function(s){ return s.id === d.snap.id; }) ? 'The record is back in Students.' : 'The record is deleted. Restoring brings back the student with their fees, attendance and marks.'; },
+      can: function(d){ return !students.some(function(s){ return s.id === d.snap.id; }); },
+      run: function(d){ students.push(snap(d.snap)); return 'Restored the record of ' + d.snap.name + ' (' + sName(d.snap) + ')'; } },
+    restoreStaff: { label:'Bring back on staff',
+      now: function(d){ var u = staffById(d.uid); return u && u.left ? 'Removed. Salary stops from December and the login is off.' : 'Back on staff.'; },
+      can: function(d){ var u = staffById(d.uid); return !!(u && u.left); },
+      run: function(d){ var u = staffById(d.uid); delete u.left; return 'Brought ' + u.name + ' back on staff'; } },
+    restoreExpense: { label:'Restore expense',
+      now: function(d){ return expenses.some(function(x){ return x.id === d.snap.id; }) ? 'The expense is back in Expenses.' : 'The expense is deleted and not counted in profit and loss.'; },
+      can: function(d){ return !expenses.some(function(x){ return x.id === d.snap.id; }); },
+      run: function(d){ expenses.push(snap(d.snap)); return 'Restored expense: ' + d.snap.desc + ' (' + fmt(d.snap.amount) + ')'; } },
+    restoreCharge: { label:'Restore fee',
+      now: function(d){ var s = byId(d.sid); return s && s.charges.some(function(c){ return c.cid === d.snap.cid; }) ? 'The fee is back on ' + s.name + '’s account.' : 'The fee is deleted from ' + (s ? s.name : 'the student') + '’s account.'; },
+      can: function(d){ var s = byId(d.sid); return !!s && !s.charges.some(function(c){ return c.cid === d.snap.cid; }); },
+      run: function(d){ var s = byId(d.sid); s.charges.push(snap(d.snap)); return 'Restored fee "' + d.snap.label + '" (' + fmt(d.snap.amount) + ') for ' + s.name; } },
+    unwaive: { label:'Charge the fine again',
+      now: function(d){ var t = tuOf(d.sid, d.m); return !t ? 'This fee month is no longer on the account.' : t.waived ? 'The fine is waived. The parent does not pay it.' : t.finePaid ? 'The fine has been paid.' : 'The fine of ' + fmt(FEESET.fine) + ' is due again.'; },
+      can: function(d){ var t = tuOf(d.sid, d.m); return !!(t && t.waived); },
+      run: function(d){ var t = tuOf(d.sid, d.m), s = byId(d.sid); t.waived = false; return 'Charged the ' + MNL[d.m] + ' late fine again for ' + s.name; } },
+    revertStudent: { label:'Change back',
+      now: function(d){ var s = byId(d.sid); return s ? 'Now: concession ' + concText(conc0(s)) + ', monthly fee ' + fmt(s.fee) + '.' : 'The student is no longer on the list.'; },
+      can: function(d){ var s = byId(d.sid); return !!s && (concText(conc0(s)) !== concText(d.conc) || s.fee !== d.fee); },
+      run: function(d){ var s = byId(d.sid); s.conc = snap(d.conc); s.fee = d.fee; return 'Changed ' + s.name + ' back to concession ' + concText(d.conc) + ', fee ' + fmt(d.fee); } },
+    revertRules: { label:'Change back',
+      now: function(d){ return 'Now: ' + Object.keys(d.old).map(function(k){ return RULE_NAMES[k] + ' ' + ruleText(k, FEESET[k]); }).join(', ') + '.'; },
+      can: function(d){ return Object.keys(d.old).some(function(k){ return FEESET[k] !== d.old[k]; }); },
+      run: function(d){ var ch = Object.keys(d.old).filter(function(k){ return FEESET[k] !== d.old[k]; }).map(function(k){ var t = RULE_NAMES[k] + ' ' + ruleText(k, FEESET[k]) + ' → ' + ruleText(k, d.old[k]); FEESET[k] = d.old[k]; return t; }); return 'Fee rules changed back: ' + ch.join(', '); } },
+    revertMark: { label:'Change back',
+      now: function(d){ var s = byId(d.sid), m = s ? mk(s, d.e, d.x) : null; return s ? 'Now: ' + (m === null ? 'blank' : m + ' / ' + OUT(d.e)) + '.' : 'The student is no longer on the list.'; },
+      can: function(d){ var s = byId(d.sid); return !!s && s.marks[d.e] && mk(s, d.e, d.x) !== d.old; },
+      run: function(d){ var s = byId(d.sid); if (d.old === null) delete s.marks[d.e][d.x]; else s.marks[d.e][d.x] = d.old; return 'Changed ' + d.e + ' ' + d.x + ' mark for ' + s.name + ' back to ' + (d.old === null ? 'blank' : d.old); } },
+    revertAtt: { label:'Change back',
+      now: function(d){ var s = byId(d.sid); return s ? 'Now: ' + ({ P:'Present', A:'Absent', L:'Leave' })[attOf(s, d.day)] + '.' : 'The student is no longer on the list.'; },
+      can: function(d){ var s = byId(d.sid); return !!s && attOf(s, d.day) !== d.old; },
+      run: function(d){ var s = byId(d.sid); attOverride[d.day + ':' + d.sid] = d.old; return 'Changed ' + s.name + ' on ' + dayLabel(d.day) + ' back to ' + d.old; } },
+    revertCharge: { label:'Change back',
+      now: function(d){ var s = byId(d.sid), c = s && s.charges.filter(function(x){ return x.cid === d.cid; })[0]; return c ? 'Now: ' + fmt(c.amount) + (c.paid ? ', paid.' : ', due.') : 'The fee is no longer on the account.'; },
+      can: function(d){ var s = byId(d.sid), c = s && s.charges.filter(function(x){ return x.cid === d.cid; })[0]; return !!c && !c.paid && c.amount !== d.old; },
+      run: function(d){ var s = byId(d.sid), c = s.charges.filter(function(x){ return x.cid === d.cid; })[0]; c.amount = d.old; return 'Changed "' + c.label + '" for ' + s.name + ' back to ' + fmt(d.old); } },
+    payment: { label: null,
+      now: function(d){ var s = byId(d.sid), it = s && feeItems(s).filter(function(i){ return i.key === d.key; })[0]; return !it ? 'This fee item is no longer on the account.' : it.paid ? 'It has been paid again.' : 'It shows as due on ' + s.name + '’s account. Collect it again from Fees or Daily collection.'; } }
+  };
+  function nowStamp(){ return dayLabel(DAYS[DAYS.length-1]) + ', ' + nowTime(); }
+  function logDetailsHtml(l){
+    var d = l.d || {}, A = d.act ? ACTS[d.act] : null, t = logTarget(l), owner = S.user && S.user.role === 'owner';
+    var R = function(k, v){ return '<div class="row"><span>' + k + '</span><b style="text-align:right;white-space:normal">' + v + '</b></div>'; };
+    var before = d.before !== undefined ? d.before : null, after = d.after !== undefined ? d.after : null;
+    var status = l.resolved ? pill('Undone', 'p-info') + ' <span class="sub">' + esc(l.resolved.text) + ' · ' + esc(l.resolved.by) + ', ' + esc(l.resolved.at) + '</span>'
+      : l.checked ? pill('Checked', 'p-ok') + ' <span class="sub">by ' + esc(l.checked.by) + ', ' + esc(l.checked.at) + '</span>'
+      : l.flag ? pill('Needs a look', 'p-warn') : '<span class="sub">Routine change</span>';
+    var canAct = owner && A && A.label && A.can && A.can(d) && !l.resolved;
+    return '<div class="slip">' + R('When', dayLabel(l.date) + ' ' + l.date.slice(0,4) + ', ' + l.time) + R('Who', esc(l.who) + ' <span class="sub">· ' + esc(l.role) + '</span>') + R('Area', esc(KINDS[l.kind])) +
+        (before !== null ? R('Before', esc(String(before))) + R('After', esc(String(after))) : '') +
+        (d.rows || []).map(function(r){ return R(esc(r[0]), esc(String(r[1]))); }).join('') +
+        (d.reason ? R('Reason', esc(d.reason)) : '') + '</div>' +
+      '<p style="margin:12px 0 4px"><b>What changed</b></p><p>' + esc(l.text) + '</p>' +
+      (A && A.now ? '<p style="margin:12px 0 4px"><b>Right now</b></p><p>' + A.now(d) + '</p>' : '') +
+      '<p style="margin:12px 0 4px"><b>Review</b></p><p>' + status + '</p>' +
+      (!owner && A && A.label && A.can && A.can(d) && !l.resolved ? '<p class="sub">Only the owner can undo this.</p>' : '') +
+      '<div class="row" style="justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:12px">' +
+        (t ? '<button class="btn" data-a="actgo" data-v="' + l.id + '">Open ' + esc(TITLES[t.v] ? TITLES[t.v][0] : t.v) + ' ›</button>' : '') +
+        (owner && needsLook(l) ? '<button class="btn" data-a="actok" data-v="' + l.id + '">Checked, it’s fine</button>' : '') +
+        (canAct ? '<button class="btn btn-primary" data-a="actundo" data-v="' + l.id + '">' + A.label + '</button>' : '') +
+      '</div>';
+  }
+  function logById(id){ return LOG.filter(function(x){ return x.id === +id; })[0]; }
+  function openLogDetails(id){ var l = logById(id); if (!l) return; openModal('Activity details', logDetailsHtml(l), false, function(){ return logDetailsHtml(l); }); }
   VIEWS.activity = function(){
     var VL = visibleLog(), kinds = Object.keys(KINDS).filter(function(k){ return !isAdm() || ['fees','expenses','settings'].indexOf(k) < 0; });
     var whos = VL.map(function(l){ return l.who; }).filter(function(w, i, a){ return a.indexOf(w) === i; });
-    var rows = VL.filter(function(l){ return (S.actWho === 'all' || l.who === S.actWho) && (S.actKind === 'all' || l.kind === S.actKind) && (!S.actFlag || l.flag) && match('act', l.text + ' ' + l.who); });
+    var rows = VL.filter(function(l){ return (S.actWho === 'all' || l.who === S.actWho) && (S.actKind === 'all' || l.kind === S.actKind) && (!S.actFlag || needsLook(l)) && match('act', l.text + ' ' + l.who); });
     var today = VL.filter(function(l){ return l.date === DAYS[DAYS.length-1]; }).length;
-    return '<div class="kpis">' + kpi('Changes today', today) + kpi('Need a look', VL.filter(function(l){ return l.flag; }).length, 'This month', 'warn') + (isAdm() ? kpi('Records deleted', VL.filter(function(l){ return /^Deleted the record|^Removed /.test(l.text); }).length, 'This month', 'bad') : kpi('Payments undone', VL.filter(function(l){ return /^Undid payment/.test(l.text); }).length, 'This month', 'bad')) + kpi('People', whos.length, 'Made changes this month') + '</div>' +
+    return '<div class="kpis">' + kpi('Changes today', today) + kpi('Need a look', VL.filter(needsLook).length, 'This month', 'warn') + (isAdm() ? kpi('Records deleted', VL.filter(function(l){ return /^Deleted the record|^Removed /.test(l.text); }).length, 'This month', 'bad') : kpi('Payments undone', VL.filter(function(l){ return /^Undid payment/.test(l.text); }).length, 'This month', 'bad')) + kpi('People', whos.length, 'Made changes this month') + '</div>' +
       (isAdm() ? '<p class="sub">Fee, expense and salary changes are visible to the owner only.</p>' : '') +
       '<div class="toolbar">' + search('act', 'What changed') + sel('f-actw','actwho', [['all','Everyone']].concat(whos.map(function(w){ return [w, w]; })), S.actWho, 'Who') + sel('f-actk','actkind', [['all','All areas']].concat(kinds.map(function(k){ return [k, KINDS[k]]; })), S.actKind, 'Area') +
         '<div class="field">Show<div class="seg" role="group" aria-label="Show"><button data-a="actflag" data-v="0" aria-pressed="' + !S.actFlag + '">Everything</button><button data-a="actflag" data-v="1" aria-pressed="' + S.actFlag + '">Needs a look</button></div></div><span class="spacer"></span>' + exportBtns('activity log') + '</div>' +
@@ -773,7 +849,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'w',label:'Who',v:function(l){ return l.who; },h:function(l){ return '<b>' + esc(l.who) + '</b><div class="sub">' + esc(l.role) + '</div>'; }},
         {k:'k',label:'Area',v:function(l){ return KINDS[l.kind]; },h:function(l){ return pill(KINDS[l.kind], 'p-info'); }},
         {k:'t',label:'What changed',v:function(l){ return l.text; },h:function(l){ return '<span style="white-space:normal;display:block;min-width:280px">' + esc(l.text) + '</span>'; }},
-        {k:'f',label:'',v:function(l){ return l.flag ? 1 : 0; },h:function(l){ var t = logTarget(l); return (l.flag ? pill('Needs a look','p-warn') + ' ' : '') + (t ? '<button class="btn btn-sm" data-a="actgo" data-v="' + l.id + '">Open ›</button>' : ''); }}
+        {k:'f',label:'',v:function(l){ return needsLook(l) ? 2 : l.flag ? 1 : 0; },h:function(l){ return (l.resolved ? pill('Undone','p-info') : needsLook(l) ? pill('Needs a look','p-warn') : l.checked ? pill('Checked','p-ok') : '') + ' <button class="btn btn-sm" data-a="actinfo" data-v="' + l.id + '">Details</button>'; }}
       ], rows, { empty:'Nothing matches these filters.', rowAttr: logRowAttr });
   };
 
@@ -873,23 +949,29 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   announcements.forEach(function(a){ a.count = parentCount(a.to, a.classes) + (a.staff ? staffCount() : 0); });
   (function seedLog(){
     var st = function(i){ return students[i]; }, K = 'Kashif Mehmood', T = 'Tariq Hussain', A = 'Saima Khan';
+    // make the sample data match the entries below, so their details and undo buttons are real
+    var unpaid = st(61), ut = unpaid.tu.filter(function(t){ return t.m === CUR; })[0]; if (ut){ ut.paid = false; delete ut.amt; undoItem('t' + unpaid.id + '-' + CUR); }
+    var concS = byId(131) || st(130);
+    var waivS = st(77), wt = waivS.tu.filter(function(t){ return t.m === 9; })[0]; if (wt){ wt.late = true; wt.waived = true; } else waivS.tu.push({ m: 9, paid: true, late: true, waived: true });
+    var toner = { id: 9001, m: CUR, date: '2026-11-12', cat: 'supplies', desc: 'Printer toner', amount: 3500, method: 'Cash' };
+    var col = st(30), ct6 = (staffById(CT['6|A']) || { name:'Faisal Rehman' }).name, added = st(students.length - 1);
     var L = [
-      ['2026-11-20','08:40',A,'Admin','classes','Class teacher of ' + uName('6|A') + ' changed to ' + (staffById(CT['6|A']) || {name:'Faisal Rehman'}).name,0],
-      ['2026-11-19','12:15',A,'Admin','students','Edited details of ' + st(45).name + ': new parent WhatsApp number',0],
-      ['2026-11-20','09:12',K,'Accountant','fees','Collected Rs 4,600 from ' + st(30).name + ' (' + sName(st(30)) + '), receipt #' + (rcptNo - 3) + ', Cash',0],
-      ['2026-11-19','15:40',K,'Accountant','fees','Undid payment: November tuition (Rs 3,800) for ' + st(61).name + ', removed from receipt #2457. Reason: Entered by mistake',1],
-      ['2026-11-19','11:05',T,'Owner / Principal','students','Concession for ' + st(130).name + ' changed from Automatic to Scholarship 25%',1],
-      ['2026-11-18','13:22',K,'Accountant','fees','Waived late fine of Rs 200 (October) for ' + st(77).name + '. Reason: Parent request',1],
-      ['2026-11-18','10:01',T,'Owner / Principal','staff','Increment for Sana Javed: Rs 35,000 to Rs 38,000 from Jul 2026',0],
-      ['2026-11-17','12:30',K,'Accountant','expenses','Deleted expense: Printer toner (Rs 3,500, 12 Nov)',1],
-      ['2026-11-16','09:45','Ayesha Siddiqui','Teacher (app)','marks','Entered Mid-term marks: English, ' + uName('5|B') + ', 14 students',0],
-      ['2026-11-16','08:10','Rabia Noor','Teacher (app)','attendance','Montessori attendance: 14 present, 1 absent. Absence alert sent to 1 parent',0],
-      ['2026-11-14','10:05',T,'Owner / Principal','ann','Sent announcement "Parent-teacher meeting" to all parents',0],
-      ['2026-11-13','16:20',T,'Owner / Principal','settings','Late fine changed from Rs 100 to Rs 200',1],
-      ['2026-11-12','14:00',A,'Admin','students','Added student ' + st(students.length - 1).name + ' to ' + sName(st(students.length - 1)),0],
-      ['2026-11-11','11:11',T,'Owner / Principal','fees','Added fee "Mid-term exam fee" of Rs 800 for ' + students.length + ' students',0]
+      ['2026-11-20','08:40',A,'Admin','classes','Class teacher of ' + uName('6|A') + ' changed to ' + ct6,0, { rows:[['Section', uName('6|A')], ['New class teacher', ct6]] }],
+      ['2026-11-19','12:15',A,'Admin','students','Edited details of ' + st(45).name + ': new parent WhatsApp number',0, { rows:[['Student', st(45).name + ' (' + sName(st(45)) + ')']], before: '0300-1234567', after: st(45).parent }],
+      ['2026-11-20','09:12',K,'Accountant','fees','Collected Rs 4,600 from ' + col.name + ' (' + sName(col) + '), receipt #' + (rcptNo - 3) + ', Cash',0, { rows:[['Receipt', '#' + (rcptNo - 3)], ['Amount', 'Rs 4,600'], ['Paid by', 'Cash']] }],
+      ['2026-11-19','15:40',K,'Accountant','fees','Undid payment: November tuition (' + fmt(netFee(unpaid)) + ') for ' + unpaid.name + ', removed from receipt #2457. Reason: Entered by mistake',1, { act:'payment', sid: unpaid.id, key: 't' + unpaid.id + '-' + CUR, reason: 'Entered by mistake', rows:[['Fee item', 'November tuition'], ['Amount', fmt(netFee(unpaid))], ['Receipt', '#2457']] }],
+      ['2026-11-19','11:05',T,'Owner / Principal','students','Concession for ' + concS.name + ' changed from Automatic to Scholarship 25%',1, { act:'revertStudent', sid: concS.id, conc: { type:'auto' }, fee: concS.fee, before: 'Concession Automatic', after: 'Concession Scholarship 25%' }],
+      ['2026-11-18','13:22',K,'Accountant','fees','Waived late fine of Rs 200 (October) for ' + waivS.name + '. Reason: Parent request',1, { act:'unwaive', sid: waivS.id, m: 9, reason: 'Parent request', rows:[['Student', waivS.name + ' (' + sName(waivS) + ')'], ['Fine', 'Rs 200, October']] }],
+      ['2026-11-18','10:01',T,'Owner / Principal','staff','Increment for Sana Javed: Rs 35,000 to Rs 38,000 from Jul 2026',0, { before: 'Rs 35,000 a month', after: 'Rs 38,000 a month from Jul 2026' }],
+      ['2026-11-17','12:30',K,'Accountant','expenses','Deleted expense: Printer toner (Rs 3,500, 12 Nov)',1, { act:'restoreExpense', snap: toner, rows:[['Amount', 'Rs 3,500'], ['Date', 'Thu 12 Nov'], ['Paid by', 'Cash']] }],
+      ['2026-11-16','09:45','Ayesha Siddiqui','Teacher (app)','marks','Entered Mid-term marks: English, ' + uName('5|B') + ', 14 students',0, { rows:[['Exam', 'Mid-term'], ['Subject', 'English'], ['Section', uName('5|B')], ['Students', '14']] }],
+      ['2026-11-16','08:10','Rabia Noor','Teacher (app)','attendance','Montessori attendance: 14 present, 1 absent. Absence alert sent to 1 parent',0, { rows:[['Section', 'Montessori'], ['Present', '14'], ['Absent', '1'], ['WhatsApp alerts', '1 parent']] }],
+      ['2026-11-14','10:05',T,'Owner / Principal','ann','Sent announcement "Parent-teacher meeting" to all parents',0, { rows:[['Sent to', 'All parents']] }],
+      ['2026-11-13','16:20',T,'Owner / Principal','settings','Late fine changed from Rs 100 to Rs 200',1, { act:'revertRules', old: { fine: 100 }, before: 'Late fine Rs 100', after: 'Late fine Rs 200' }],
+      ['2026-11-12','14:00',A,'Admin','students','Added student ' + added.name + ' to ' + sName(added),0, { rows:[['Class', sName(added)], ['Father', added.father], ['Monthly fee', fmt(added.fee)]] }],
+      ['2026-11-11','11:11',T,'Owner / Principal','fees','Added fee "Mid-term exam fee" of Rs 800 for ' + students.length + ' students',0, { rows:[['Amount per student', 'Rs 800'], ['Students', String(students.length)]] }]
     ];
-    L.forEach(function(x){ LOG.push({ id: logId++, date:x[0], time:x[1], who:x[2], role:x[3], kind:x[4], text:x[5], flag:!!x[6] }); });
+    L.forEach(function(x){ LOG.push({ id: logId++, d: x[7] || null, date:x[0], time:x[1], who:x[2], role:x[3], kind:x[4], text:x[5], flag:!!x[6] }); });
   })();
   function audienceText(a){ return (a.to === 'all' ? 'All parents' : 'Parents of ' + a.classes.map(cn).join(', ')) + (a.staff ? ' + staff' : ''); }
   function annCountHtml(d){ var n = parentCount(d.to, d.classes) + (d.staff ? staffCount() : 0); return 'Goes to <b style="color:var(--ink)">' + n + '</b> WhatsApp numbers (one message per family, even with several children)'; }
@@ -1279,7 +1361,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'stuadd') openModal('Add student', studentForm(null));
     else if (a === 'stuedit') openModal('Edit student', studentForm(byId(val)));
     else if (a === 'studel'){ var st = byId(val); openModal('Delete student', confirmBox('Delete <b>' + esc(st.name) + '</b> (' + sName(st) + ') completely? Their fees, attendance and marks are removed too. Use this only for a record entered by mistake. If the student is leaving, use <b>Leaves school</b> instead to keep the record and issue a certificate.', 'studelyes', val, 'Delete')); }
-    else if (a === 'studelyes'){ var gone = byId(val); students = students.filter(function(s){ return s.id !== +val; }); log('students', 'Deleted the record of ' + gone.name + ' (' + sName(gone) + ')', true); closeModal(); render(); toast(gone.name + ' deleted.'); }
+    else if (a === 'studelyes'){ var gone = byId(val); students = students.filter(function(s){ return s.id !== +val; }); log('students', 'Deleted the record of ' + gone.name + ' (' + sName(gone) + ')', true, { act:'restoreStudent', snap: snap(gone), rows:[['Class', sName(gone)], ['Father', gone.father], ['Dues at the time', fmt(owed(gone))]] }); closeModal(); render(); toast(gone.name + ' deleted.'); }
     else if (a === 'profile'){ var ps = byId(val); openModal('Student profile', profileHtml(ps), true); }
     else if (a === 'stuleave'){ var ls = byId(val); openModal('Leaves school · ' + esc(ls.name), leaveForm(ls), true); }
     else if (a === 'slcview'){ openModal('School leaving certificate', slcHtml(byId(val)), true); }
@@ -1296,7 +1378,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'feeset') go('settings');
     else if (a === 'waive'){ var wi = allItems().filter(function(i){ return i.key === val; })[0];
       openModal('Waive late fine', '<p>Waive the <b>' + esc(wi.label) + '</b> (' + fmt(wi.amount) + ') for <b>' + esc(wi.s.name) + '</b>?</p><label class="field" for="wv-r">Reason<select id="wv-r"><option>Parent request</option><option>Delay was the school’s fault</option><option>Owner approved</option><option>Other</option></select></label><p class="sub">Saved in the activity log with your name.</p><div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" data-a="waiveyes" data-v="' + val + '">Waive fine</button></div>'); }
-    else if (a === 'waiveyes'){ var wy = allItems().filter(function(i){ return i.key === val; })[0], wr = v('wv-r'); wy.t.waived = true; log('fees', 'Waived ' + wy.label + ' (' + fmt(wy.amount) + ') for ' + wy.s.name + '. Reason: ' + wr, true); closeModal(); render(); toast('Fine waived. Saved in the activity log.'); }
+    else if (a === 'waiveyes'){ var wy = allItems().filter(function(i){ return i.key === val; })[0], wr = v('wv-r'); wy.t.waived = true; log('fees', 'Waived ' + wy.label + ' (' + fmt(wy.amount) + ') for ' + wy.s.name + '. Reason: ' + wr, true, { act:'unwaive', sid: wy.s.id, m: wy.t.m, reason: wr, rows:[['Student', wy.s.name + ' (' + sName(wy.s) + ')'], ['Fine', fmt(wy.amount)]] }); closeModal(); render(); toast('Fine waived. Saved in the activity log.'); }
     else if (a === 'propick'){ S.proFrom = val; S.proHeld = {}; render(); window.scrollTo(0, 0); }
     else if (a === 'proyes'){ var pc = S.proFrom, pn = nextCls(pc), pl = students.filter(function(s){ return s.cls === pc; }), pm = pl.filter(function(s){ return !proHeld(s); });
       openModal('Confirm promotion', confirmBox((pn ? 'Move <b>' + pm.length + '</b> students from ' + cn(pc) + ' to ' + cn(pn) : 'Mark <b>' + pm.length + '</b> students of ' + cn(pc) + ' as passed out') + (pl.length - pm.length ? ' and hold back <b>' + (pl.length - pm.length) + '</b>' : '') + '? ' + (pn ? 'Their marks start fresh for the new session. Past results stay in the reports.' : 'They move to Left or passed out, and you can issue their certificates from there.'), 'proyes2', pc, pn ? 'Promote' : 'Mark passed out').replace('background:var(--bad);border-color:var(--bad)', 'background:var(--brand);border-color:var(--brand)')); }
@@ -1306,7 +1388,12 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         else { students = students.filter(function(x){ return x !== s; }); s.status = 'passed'; s.leftOn = DAYS[DAYS.length-1]; s.reason = 'Passed out (Matric)'; s.conduct = 'Good'; s.lastClass = sName(s); s.writeOff = 0; alumni.push(s); } });
       PROMO[qc] = { moved: mv, held: hb }; log('promotion', qn ? 'Promoted ' + mv + ' students from ' + cn(qc) + ' to ' + cn(qn) + (hb ? ', held back ' + hb : '') : mv + ' students of ' + cn(qc) + ' marked as passed out' + (hb ? ', ' + hb + ' held back' : ''));
       var prev = classes[classes.indexOf(qc) - 1]; if (prev) S.proFrom = prev; S.proHeld = {}; closeModal(); render(); window.scrollTo(0, 0); toast(qn ? mv + ' students are now in ' + cn(qn) + '.' : mv + ' students marked as passed out.'); }
-    else if (a === 'actgo') openLog(val);
+    else if (a === 'actinfo') openLogDetails(val);
+    else if (a === 'actgo'){ closeModal(); openLog(val); }
+    else if (a === 'actok'){ var lk = logById(val); if (!lk || !S.user || S.user.role !== 'owner') return; lk.checked = { by: S.user.name, at: nowStamp() }; render(); openLogDetails(val); toast('Marked as checked.'); }
+    else if (a === 'actundo'){ var lu = logById(val), da = lu && lu.d, ac = da && ACTS[da.act]; if (!ac || !ac.can(da) || lu.resolved || !S.user || S.user.role !== 'owner') return;
+      var msg = ac.run(da); lu.resolved = { text: msg, by: S.user.name, at: nowStamp() }; if (!lu.checked) lu.checked = { by: S.user.name, at: nowStamp() };
+      log(lu.kind, msg + ' (undone from the activity log)'); render(); openLogDetails(val); toast(esc(msg) + '.'); }
     else if (a === 'actflag'){ S.actFlag = val === '1'; render(); }
     else if (a === 'actcheck'){ S.actFlag = true; go('activity'); }
     // staff
@@ -1316,13 +1403,13 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       var draft = { id: u0 && u0.id, name: v('tf-name'), phone: v('tf-phone').replace(/\D/g,''), job: v('tf-job'), classes: u0 ? u0.classes : [] };
       S.modal.html = staffForm(draft.id ? Object.assign({}, u0, { name: draft.name, phone: draft.phone || u0.phone }) : { name: draft.name, phone: draft.phone, job: draft.job }, '', val); renderModal(); }
     else if (a === 'staffdel'){ var su = staffById(val); openModal('Remove staff member', confirmBox('Remove <b>' + esc(su.name) + '</b>? ' + (isAdm() ? 'Their salary stops from December' : 'Salary stops from December') + (su.role !== 'support' ? ' and their login stops working' : '') + '.' + (isAdm() ? '' : ' Past salaries stay in your reports.'), 'staffdelyes', val, 'Remove')); }
-    else if (a === 'staffdelyes'){ var gu = staffById(val); gu.left = '2026-12'; log('staff', 'Removed ' + gu.name + ' (' + roleLabel(gu) + ') from staff, salary stops from Dec 2026', true); closeModal(); render(); toast(gu.name + ' removed.'); }
+    else if (a === 'staffdelyes'){ var gu = staffById(val); gu.left = '2026-12'; log('staff', 'Removed ' + gu.name + ' (' + roleLabel(gu) + ') from staff, salary stops from Dec 2026', true, { act:'restoreStaff', uid: gu.id, rows:[['Role', roleLabel(gu)], ['Mobile', fmtPhone(gu.phone)]] }); closeModal(); render(); toast(gu.name + ' removed.'); }
     else if (a === 'inc'){ if (isAdm()) return; var iu0 = staffById(val); openModal(iu0.salPending ? 'Set salary' : 'Salary increment', incForm(iu0), !iu0.salPending, function(){ return incForm(iu0); }); }
     else if (a === 'slip'){ if (isAdm()) return; var iu = staffById(val); openModal('Increment slip', slipHtml(iu, iu.incs[iu.incs.length-1])); }
     else if (a === 'slipsend'){ closeModal(); toast('Increment slip sent to ' + val + ' on WhatsApp.'); }
     // attendance
     else if (a === 'attview'){ S.attView = val; render(); }
-    else if (a === 'att'){ var as0 = byId(val), was = attOf(as0, S.attDay); attOverride[S.attDay + ':' + val] = el.dataset.s; if (was !== el.dataset.s) log('attendance', 'Changed ' + as0.name + ' (' + sName(as0) + ') on ' + dayLabel(S.attDay) + ' from ' + was + ' to ' + el.dataset.s); render(); toast('Attendance updated' + (el.dataset.s === 'A' ? '. The parent gets an absence alert.' : '.')); }
+    else if (a === 'att'){ var as0 = byId(val), was = attOf(as0, S.attDay); attOverride[S.attDay + ':' + val] = el.dataset.s; if (was !== el.dataset.s) log('attendance', 'Changed ' + as0.name + ' (' + sName(as0) + ') on ' + dayLabel(S.attDay) + ' from ' + was + ' to ' + el.dataset.s, false, { act:'revertAtt', sid: as0.id, day: S.attDay, old: was, before: was, after: el.dataset.s }); render(); toast('Attendance updated' + (el.dataset.s === 'A' ? '. The parent gets an absence alert.' : '.')); }
     // results
     else if (a === 'sendres'){
       var e0 = S.resExam, rl = students.filter(function(s){ return uOf(s) === S.resClass && pctOf(s, e0) !== null; }).sort(function(x, y){ return pctOf(y, e0) - pctOf(x, e0); });
@@ -1341,7 +1428,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       openModal('Undo payment', '<p>Undo <b>' + esc(iu1.label) + '</b> (' + fmt(iu1.amount) + ') for <b>' + esc(iu1.s.name) + '</b>?' + (rp ? ' It is removed from receipt #' + rp.no + '.' : '') + ' It shows as due again.</p><label class="field" for="un-r">Reason<select id="un-r"><option>Entered by mistake</option><option>Wrong student selected</option><option>Cheque bounced</option><option>Refunded to parent</option><option>Other</option></select></label><p class="sub">Saved in the activity log with your name. The owner sees it.</p><div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" style="background:var(--bad);border-color:var(--bad);color:#fff" data-a="unpayyes" data-v="' + val + '">Undo payment</button></div>'); }
     else if (a === 'unpayyes'){ var iu2 = allItems().filter(function(i){ return i.key === val; })[0], rp2 = payments.filter(function(r){ return r.items.some(function(x){ return x.key === val; }); })[0], ur = v('un-r');
       if (iu2.type === 'tuition'){ iu2.t.paid = false; delete iu2.t.amt; } else if (iu2.fine){ iu2.t.finePaid = false; } else iu2.c.paid = false; undoItem(val);
-      log('fees', 'Undid payment: ' + iu2.label + ' (' + fmt(iu2.amount) + ') for ' + iu2.s.name + (rp2 ? ', removed from receipt #' + rp2.no : '') + '. Reason: ' + ur, true); closeModal(); render(); toast('Payment undone. Saved in the activity log.'); }
+      log('fees', 'Undid payment: ' + iu2.label + ' (' + fmt(iu2.amount) + ') for ' + iu2.s.name + (rp2 ? ', removed from receipt #' + rp2.no : '') + '. Reason: ' + ur, true, { act:'payment', sid: iu2.s.id, key: val, reason: ur, rows:[['Fee item', iu2.label], ['Amount', fmt(iu2.amount)], ['Receipt', rp2 ? '#' + rp2.no : '—']] }); closeModal(); render(); toast('Payment undone. Saved in the activity log.'); }
     else if (a === 'dues'){
       var ds = byId(val), du = feeItems(ds).filter(function(i){ return !i.paid; }), pd = feeItems(ds).filter(function(i){ return i.paid; });
       var last = payments.filter(function(r){ return r.sid === ds.id; }).slice(-1)[0];
@@ -1386,7 +1473,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'feeadd') openModal('Add a fee', feeForm());
     else if (a === 'chedit'){ var ci = allItems().filter(function(i){ return i.key === val; })[0]; openModal('Edit fee', chargeForm(ci)); }
     else if (a === 'chdel'){ var cd = allItems().filter(function(i){ return i.key === val; })[0]; openModal('Delete fee', confirmBox('Delete <b>' + esc(cd.label) + '</b> (' + fmt(cd.amount) + ') for ' + esc(cd.s.name) + '?', 'chdelyes', val, 'Delete')); }
-    else if (a === 'chdelyes'){ var cdi = allItems().filter(function(i){ return i.key === val; })[0]; log('fees', 'Deleted fee "' + cdi.label + '" (' + fmt(cdi.amount) + ') for ' + cdi.s.name, true); cdi.s.charges = cdi.s.charges.filter(function(c){ return c !== cdi.c; }); closeModal(); render(); toast('Fee deleted.'); }
+    else if (a === 'chdelyes'){ var cdi = allItems().filter(function(i){ return i.key === val; })[0]; log('fees', 'Deleted fee "' + cdi.label + '" (' + fmt(cdi.amount) + ') for ' + cdi.s.name, true, { act:'restoreCharge', sid: cdi.s.id, snap: snap(cdi.c), rows:[['Student', cdi.s.name + ' (' + sName(cdi.s) + ')'], ['Amount', fmt(cdi.amount)]] }); cdi.s.charges = cdi.s.charges.filter(function(c){ return c !== cdi.c; }); closeModal(); render(); toast('Fee deleted.'); }
     else if (a === 'remind'){
       var dl = students.filter(function(s){ return owed(s, S.feeType) > 0 && inCls(s, S.feeClass); }), s0 = dl.slice().sort(function(x, y){ return owed(y, S.feeType) - owed(x, S.feeType); })[0];
       var lines = feeItems(s0).filter(function(i){ return !i.paid && (S.feeType === 'all' || i.type === S.feeType); }).map(function(i){ return '• ' + esc(i.label) + ': ' + fmt(i.amount); }).join('<br>');
@@ -1398,7 +1485,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'expadd') openModal('Add expense', expForm(null));
     else if (a === 'expedit') openModal('Edit expense', expForm(expenses.filter(function(x){ return x.id === +val; })[0]));
     else if (a === 'expdel'){ var xe = expenses.filter(function(x){ return x.id === +val; })[0]; openModal('Delete expense', confirmBox('Delete <b>' + esc(xe.desc) + '</b> (' + fmt(xe.amount) + ')? It is removed from profit and loss.', 'expdelyes', val, 'Delete')); }
-    else if (a === 'expdelyes'){ var xd = expenses.filter(function(x){ return x.id === +val; })[0]; log('expenses', 'Deleted expense: ' + xd.desc + ' (' + fmt(xd.amount) + ', ' + dayLabel(xd.date) + ')', true); expenses = expenses.filter(function(x){ return x.id !== +val; }); closeModal(); render(); toast('Expense deleted.'); }
+    else if (a === 'expdelyes'){ var xd = expenses.filter(function(x){ return x.id === +val; })[0]; log('expenses', 'Deleted expense: ' + xd.desc + ' (' + fmt(xd.amount) + ', ' + dayLabel(xd.date) + ')', true, { act:'restoreExpense', snap: snap(xd), rows:[['Amount', fmt(xd.amount)], ['Date', dayLabel(xd.date)], ['Paid by', xd.method || '—']] }); expenses = expenses.filter(function(x){ return x.id !== +val; }); closeModal(); render(); toast('Expense deleted.'); }
     else if (a === 'payview'){ var pr = payroll(S.expMonth); var pvH = function(){ return '<p class="sub">From each person’s salary and increments in Staff & payroll.</p>' + table('payv', [{k:'n',label:'Name',h:function(r){ return esc(r.u.name); }},{k:'r',label:'Role',h:function(r){ return esc(roleLabel(r.u)); }},{k:'a',label:'Salary',r:1,h:function(r){ return nf(r.amt); }}], pr.rows, {foot:'<tfoot><tr><td>Total</td><td>' + pr.rows.length + ' staff</td><td class="r num">' + nf(pr.total) + '</td></tr></tfoot>'}); }; openModal('Salaries · ' + MNL[S.expMonth] + ' 2026', pvH(), false, pvH); }
     // finance
     else if (a === 'plper'){ S.plPer = val; render(); }
@@ -1441,9 +1528,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'expm'){ S.expMonth = +el.value; S.page.exp = 1; render(); }
     else if (a === 'expc'){ S.expCat = el.value; S.page.exp = 1; render(); }
     else if (a === 'plm'){ S.plMonth = +el.value; render(); }
-    else if (a === 'mark'){ var s = byId(el.dataset.v), o = OUT(S.resExam);
+    else if (a === 'mark'){ var s = byId(el.dataset.v), o = OUT(S.resExam), mOld = mk(s, S.resExam, el.dataset.s);
       if (el.value === '') delete s.marks[S.resExam][el.dataset.s]; else s.marks[S.resExam][el.dataset.s] = Math.max(0, Math.min(o, parseInt(el.value, 10) || 0));
-      log('marks', 'Changed ' + S.resExam + ' ' + el.dataset.s + ' mark for ' + s.name + ' (' + sName(s) + ') to ' + (el.value === '' ? 'blank' : s.marks[S.resExam][el.dataset.s]));
+      log('marks', 'Changed ' + S.resExam + ' ' + el.dataset.s + ' mark for ' + s.name + ' (' + sName(s) + ') to ' + (el.value === '' ? 'blank' : s.marks[S.resExam][el.dataset.s]), false, { act:'revertMark', sid: s.id, e: S.resExam, x: el.dataset.s, old: mOld, before: mOld === null ? 'blank' : mOld, after: el.value === '' ? 'blank' : s.marks[S.resExam][el.dataset.s] });
       render(); toast(el.dataset.s + ' mark saved for ' + s.name + '.'); }
   });
   document.addEventListener('input', function(e){
@@ -1453,7 +1540,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (el.dataset.a === 'q'){ S.q[el.dataset.k] = el.value; S.page[el.dataset.k] = 1; render(); }
   });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.modal) closeModal();
-    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('clickrow')) openLog(e.target.dataset.v); });
+    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('clickrow')) openLogDetails(e.target.dataset.v); });
   document.addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target, id = f.id;
@@ -1540,8 +1627,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       if (fe){ if (S.view === 'settings' && !S.modal){ S.fsErr = fe; render(); } else { S.modal.html = feeSetHtml(fe); renderModal(); } return; }
       S.fsErr = '';
       var chg = []; if (nd !== FEESET.due) chg.push('due day ' + FEESET.due + ' → ' + nd); if (nfine !== FEESET.fine) chg.push('late fine Rs ' + FEESET.fine + ' → Rs ' + nfine); if (nsib !== FEESET.sib) chg.push('sibling discount ' + FEESET.sib + '% → ' + nsib + '%'); if (nst !== FEESET.staff) chg.push('staff child discount ' + FEESET.staff + '% → ' + nst + '%');
+      var fsOld = {}; [['due', nd], ['fine', nfine], ['sib', nsib], ['staff', nst]].forEach(function(p){ if (FEESET[p[0]] !== p[1]) fsOld[p[0]] = FEESET[p[0]]; });
       FEESET.due = nd; FEESET.fine = nfine; FEESET.sib = nsib; FEESET.staff = nst;
-      if (chg.length) log('settings', 'Fee rules changed: ' + chg.join(', '), true);
+      if (chg.length) log('settings', 'Fee rules changed: ' + chg.join(', '), true, { act:'revertRules', old: fsOld, before: Object.keys(fsOld).map(function(k){ return RULE_NAMES[k] + ' ' + ruleText(k, fsOld[k]); }).join(', '), after: Object.keys(fsOld).map(function(k){ return RULE_NAMES[k] + ' ' + ruleText(k, FEESET[k]); }).join(', ') });
       closeModal(); render(); toast(chg.length ? 'Fee rules saved.' : 'No changes.'); return;
     }
     if (id === 'stu-form'){
@@ -1555,9 +1643,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       if (er){ S.modal.html = studentForm(d, er); renderModal(); return; }
       var phone = ph.slice(0,4) + '-' + ph.slice(4), idf = function(x){ return x ? x.slice(0,5) + '-' + x.slice(5,12) + '-' + x.slice(12) : ''; };
       var rec = { name: d.name, father: d.father, cls: d.cls, sec: d.sec, girl: d.girl, parent: phone, fee: fee, dob: d.dob, bform: idf(bf), fcnic: idf(cn2), emerg: em ? em.slice(0,4) + '-' + em.slice(4) : '', address: d.address, conc: conc };
-      if (d.id){ var s = byId(d.id), oldC = concText(s.conc || { type:'auto' }), oldF = s.fee, oldU = sName(s); Object.keys(rec).forEach(function(k){ s[k] = rec[k]; });
+      if (d.id){ var s = byId(d.id), oldC = concText(s.conc || { type:'auto' }), oldF = s.fee, oldU = sName(s), oldCO = snap(s.conc || { type:'auto' }); Object.keys(rec).forEach(function(k){ s[k] = rec[k]; });
         var ch = []; if (oldC !== concText(conc)) ch.push('concession ' + oldC + ' → ' + concText(conc)); if (oldF !== fee) ch.push('fee ' + nf(oldF) + ' → ' + nf(fee)); if (oldU !== sName(s)) ch.push(oldU + ' → ' + sName(s));
-        log('students', 'Edited ' + s.name + (ch.length ? ': ' + ch.join(', ') : ''), oldC !== concText(conc) || oldF !== fee); toast('Saved changes for ' + s.name + '.'); }
+        log('students', 'Edited ' + s.name + (ch.length ? ': ' + ch.join(', ') : ''), oldC !== concText(conc) || oldF !== fee, oldC !== concText(conc) || oldF !== fee ? { act:'revertStudent', sid: s.id, conc: oldCO, fee: oldF, before: 'Concession ' + oldC + ', fee ' + fmt(oldF), after: 'Concession ' + concText(conc) + ', fee ' + fmt(fee) } : null); toast('Saved changes for ' + s.name + '.'); }
       else { var ns = Object.assign({ id: sid++, paid: false, monthsDue: 1, tu: [{ m: CUR, paid: false }], admitted: NOW_YM, marks: { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }, charges: [] }, rec);
         if (document.getElementById('sf-adm') && document.getElementById('sf-adm').checked) ns.charges.push({ cid: cid++, type:'admission', label:'New admission fee', amount:5000, paid:false });
         students.push(ns); log('students', 'Added student ' + ns.name + ' to ' + sName(ns) + (concOf(ns) ? ', ' + concOf(ns).label + ' off' : '')); toast(d.name + ' added to ' + sName(ns) + '.'); }
@@ -1590,7 +1678,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         iu.salary0 = nv; delete iu.salPending; log('staff', 'Set salary of ' + iu.name + ' (' + roleLabel(iu) + ') at ' + fmt(nv) + ' a month from ' + ymLabel(iu.joined)); closeModal(); render(); toast('Salary set for ' + iu.name + '.'); return;
       }
       if (ie){ S.modal.html = incForm(iu, ie); renderModal(); return; }
-      log('staff', 'Increment for ' + iu.name + ': ' + fmt(curSalary(iu)) + ' to ' + fmt(nv) + ' from ' + ymLabel(im)); iu.incs.push({ month: im, from: curSalary(iu), to: nv }); render(); openModal('Increment saved', slipHtml(iu, iu.incs[iu.incs.length-1]));
+      log('staff', 'Increment for ' + iu.name + ': ' + fmt(curSalary(iu)) + ' to ' + fmt(nv) + ' from ' + ymLabel(im), false, { before: fmt(curSalary(iu)) + ' a month', after: fmt(nv) + ' a month from ' + ymLabel(im) }); iu.incs.push({ month: im, from: curSalary(iu), to: nv }); render(); openModal('Increment saved', slipHtml(iu, iu.incs[iu.incs.length-1]));
     }
     else if (id === 'fee-form'){
       var fd = { type: v('ff-type'), label: v('ff-label').trim(), amount: v('ff-amt'), to: v('ff-to') }, amt = parseInt(fd.amount, 10);
@@ -1602,7 +1690,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (id === 'ch-form'){
       var it = allItems().filter(function(i){ return i.key === f.dataset.k; })[0], ca = parseInt(v('cf-amt'), 10);
       if (!(ca > 0)){ S.modal.html = chargeForm(it, 'Enter the amount.'); renderModal(); return; }
-      if (ca !== it.c.amount) log('fees', 'Changed "' + it.c.label + '" for ' + it.s.name + ' from ' + fmt(it.c.amount) + ' to ' + fmt(ca), true); it.c.amount = ca; it.c.label = v('cf-label').trim() || it.c.label; closeModal(); render(); toast('Fee updated.');
+      if (ca !== it.c.amount) log('fees', 'Changed "' + it.c.label + '" for ' + it.s.name + ' from ' + fmt(it.c.amount) + ' to ' + fmt(ca), true, { act:'revertCharge', sid: it.s.id, cid: it.c.cid, old: it.c.amount, before: fmt(it.c.amount), after: fmt(ca) }); it.c.amount = ca; it.c.label = v('cf-label').trim() || it.c.label; closeModal(); render(); toast('Fee updated.');
     }
     else if (id === 'exp-form'){
       var xid = +f.dataset.id || null, x = { id: xid, cat: v('xf-cat'), desc: v('xf-desc').trim(), amount: v('xf-amt'), date: v('xf-date'), method: v('xf-meth') }, xa = parseInt(x.amount, 10), xm = x.date ? +x.date.slice(5,7) - 1 : -1;
