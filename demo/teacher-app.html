@@ -150,6 +150,8 @@ button{cursor:pointer}
   // ================= sample data =================
   // School name for the demo: add ?school=Your School Name to the link. Falls back to XYZ School.
   var SCHOOL = (function(){ try { var n = new URLSearchParams(location.search).get('school') || ''; n = n.replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60); return n || 'XYZ School'; } catch(e){ return 'XYZ School'; } })();
+  // Owner / principal name for the demo: add ?principal=Name to the link. Falls back to Tariq Hussain.
+  var OWNER = (function(){ try { var n = new URLSearchParams(location.search).get('principal') || ''; n = n.replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40); return n || 'Tariq Hussain'; } catch(e){ return 'Tariq Hussain'; } })();
   var seed = 7;
   function rnd(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
   function hsh(n, salt){ return ((n * 9301 + salt * 49297 + 7) % 233280) / 233280; }
@@ -157,10 +159,10 @@ button{cursor:pointer}
   var girls = ['Ayesha','Sara','Fatima','Hira','Maryam','Zoya','Aleena','Mahnoor','Iqra','Hafsa','Areeba','Anaya','Eman','Laiba','Noor'];
   var lasts = ['Khan','Raza','Ahmed','Siddiqui','Qureshi','Sheikh','Ansari','Baig','Malik','Hussain','Javed','Iqbal'];
   var fathers = ['Imran','Kamran','Asif','Nadeem','Shahid','Tahir','Waseem','Junaid','Rizwan','Farhan','Adnan','Naveed'];
-  var classes = ['Montessori','KG-1','KG-2','1','2','3','4','5','6','7','8','9','10'];
+  var classes = ['Nursery','KG','1','2','3','4','5','6','7','8','9','10'];
   function cn(c){ return /^\d/.test(c) ? 'Class ' + c : c; }
   // sections: a big class is split into A, B... Subjects belong to the class; teachers, attendance and results go by section
-  var SECTIONS = {}; classes.forEach(function(c){ SECTIONS[c] = (c === '1' || c === '5' || c === '9') ? ['A','B'] : ['A']; });
+  var SECTIONS = {}; classes.forEach(function(c){ SECTIONS[c] = ['KG','1','2','3','4','5','9'].indexOf(c) >= 0 ? ['A','B'] : ['A']; });
   function gOf(k){ return k.split('|')[0]; }
   function secOf(k){ return k.split('|')[1]; }
   function units(){ var o = []; classes.forEach(function(c){ SECTIONS[c].forEach(function(x){ o.push(c + '|' + x); }); }); return o; }
@@ -172,7 +174,7 @@ button{cursor:pointer}
   function p2(n){ return ('0' + n).slice(-2); }
   var SUBJ = {}, SUBT = {};
   classes.forEach(function(c){
-    SUBJ[c] = /^(Montessori|KG)/.test(c) ? ['English','Urdu','Maths','General Knowledge']
+    SUBJ[c] = /^(Nursery|KG)/.test(c) ? ['English','Urdu','Maths','General Knowledge']
       : +c <= 5 ? ['English','Urdu','Maths','Science','Islamiat','Social Studies']
       : +c <= 8 ? ['English','Urdu','Maths','Science','Islamiat','Social Studies','Computer']
       : ['English','Urdu','Maths','Physics','Chemistry','Biology','Islamiat','Pak Studies'];
@@ -187,12 +189,12 @@ button{cursor:pointer}
   var CUR = 10, NOW_YM = '2026-11';
   var students = [], sid = 1, cid = 1;
   classes.forEach(function(c, ci){
-    var n = SECTIONS[c].length > 1 ? 26 + Math.floor(rnd()*6) : 12 + Math.floor(rnd()*6);
+    var n = SECTIONS[c].length > 1 ? 46 + Math.floor(rnd()*7) : 31 + Math.floor(rnd()*8);
     for (var i=0;i<n;i++){
       var g = rnd() < .5, f = g ? girls[Math.floor(rnd()*girls.length)] : boys[Math.floor(rnd()*boys.length)], ln = lasts[Math.floor(rnd()*lasts.length)];
       var paid = rnd() < .8, marks = { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} };
       subjectsOf(c).forEach(function(x){ marks['Mid-term'][x] = 55 + Math.floor(rnd()*44); marks['Monthly test'][x] = 12 + Math.floor(rnd()*14); });
-      students.push({ id: sid++, name: f + ' ' + ln, father: fathers[Math.floor(rnd()*fathers.length)] + ' ' + ln, cls: c, sec: SECTIONS[c][i % SECTIONS[c].length], fee: 3000 + ci*400, paid: paid,
+      students.push({ id: sid++, name: f + ' ' + ln, father: fathers[Math.floor(rnd()*fathers.length)] + ' ' + ln, cls: c, sec: SECTIONS[c][i % SECTIONS[c].length], fee: 1800 + Math.round(ci*1.4)*100, paid: paid,
         monthsDue: paid ? 0 : 1 + Math.floor(rnd()*3), parent: '03' + (10 + Math.floor(rnd()*40)) + '-' + (1000000 + Math.floor(rnd()*8999999)),
         girl: g, admitted: (2019 + Math.floor(rnd()*8)) + '-' + ('0' + (1 + Math.floor(rnd()*12))).slice(-2), marks: marks, charges: [] });
     }
@@ -200,11 +202,11 @@ button{cursor:pointer}
   students.forEach(function(s){
     s.tu = s.paid ? [{ m: CUR, paid: true }] : [];
     for (var k = s.monthsDue - 1; k >= 0 && !s.paid; k--) s.tu.push({ m: CUR - k, paid: false, late: true });
-    s.charges.push({ cid: cid++, type:'exam', label:'Mid-term exam fee', amount:800, paid: hsh(s.id, 31) < .7 });
+    s.charges.push({ cid: cid++, type:'exam', label:'Mid-term exam fee', amount:500, paid: hsh(s.id, 31) < .7 });
     if (s.cls === '9' || s.cls === '10') s.charges.push({ cid: cid++, type:'board', label:'Matric board exam registration', amount:3500, paid: hsh(s.id, 37) < .5 });
-    if (hsh(s.id, 41) < .07) s.charges.push({ cid: cid++, type:'admission', label:'New admission fee', amount:5000, paid: hsh(s.id, 43) < .6 });
-    s.charges.push({ cid: cid++, type:'annual', label:'Annual charges 2026–27', amount:2000, paid: hsh(s.id, 47) < .75 });
-    if (['7','8','9','10'].indexOf(s.cls) >= 0) s.charges.push({ cid: cid++, type:'other', label:'Study trip fee', amount:1500, paid: hsh(s.id, 53) < .45 });
+    if (hsh(s.id, 41) < .07) s.charges.push({ cid: cid++, type:'admission', label:'New admission fee', amount:3000, paid: hsh(s.id, 43) < .6 });
+    s.charges.push({ cid: cid++, type:'annual', label:'Annual charges 2026–27', amount:1500, paid: hsh(s.id, 47) < .75 });
+    if (['7','8','9','10'].indexOf(s.cls) >= 0) s.charges.push({ cid: cid++, type:'other', label:'Study trip fee', amount:1000, paid: hsh(s.id, 53) < .45 });
   });
   var AREAS = ['Malir', 'Malir Cantt', 'Saudabad', 'Model Colony', 'Shah Faisal Colony', 'Gulistan-e-Jauhar', 'Jaffar-e-Tayyar'];
   function idNum(s, salt, gender){ return '42201-' + (1000000 + Math.floor(hsh(s.id, salt) * 8999999)) + '-' + (gender === 'g' ? 2 + 2 * Math.floor(hsh(s.id, salt + 1) * 4) : 1 + 2 * Math.floor(hsh(s.id, salt + 1) * 4)); }
@@ -237,7 +239,7 @@ button{cursor:pointer}
     { id:1, role:'accountant', name:'Kashif Mehmood', phone:'03002222222', pin:'2222', classes:[], salary0:37000, joined:'2022-03', incs:[{ month:'2026-01', from:37000, to:40000 }] },
     { id:2, role:'teacher', name:'Sana Javed', phone:'03003333333', pin:'3333', subject:'English', classes:['6','7','8','9','10'], salary0:32000, joined:'2023-04', incs:[{ month:'2024-07', from:32000, to:35000 },{ month:'2026-07', from:35000, to:38000 }] },
     { id:3, role:'teacher', name:'Imran Ali', phone:'03004444444', pin:'4444', subject:'Maths', classes:['6','7','8','9','10'], salary0:33000, joined:'2021-08', incs:[{ month:'2025-07', from:33000, to:36000 }] },
-    { id:4, role:'teacher', name:'Rabia Noor', phone:'03005555555', pin:'5555', subject:'All', classes:['Montessori','KG-1','KG-2'], salary0:35000, joined:'2026-02', incs:[] },
+    { id:4, role:'teacher', name:'Rabia Noor', phone:'03005555555', pin:'5555', subject:'All', classes:['Nursery','KG'], salary0:35000, joined:'2026-02', incs:[] },
     { id:5, role:'teacher', name:'Nadia Parveen', phone:'03006666666', pin:'6666', subject:'Urdu', classes:['1','2','3','4','5'], salary0:30000, joined:'2024-01', incs:[{ month:'2025-01', from:30000, to:34000 }] },
     { id:6, role:'teacher', name:'Faisal Rehman', phone:'03007777777', pin:'7777', subject:'Science', classes:['1','2','3','4','5','6','7','8'], salary0:33000, joined:'2025-08', incs:[] },
     { id:7, role:'teacher', name:'Hina Aslam', phone:'03008888888', pin:'8888', subject:'Maths', classes:['1','2','3','4','5'], salary0:32000, joined:'2026-03', incs:[] },
@@ -253,13 +255,20 @@ button{cursor:pointer}
     { id:17, role:'teacher', name:'Abdul Rehman', phone:'03005678901', pin:'5678', subject:'Islamiat', classes:['1','2','3','4','5','6','7','8','9','10'], salary0:30000, joined:'2020-04', incs:[{ month:'2024-04', from:30000, to:33000 }] },
     { id:18, role:'teacher', name:'Sadia Iqbal', phone:'03006789012', pin:'6789', subject:'Social Studies', classes:['1','2','3','4','5','6','7','8'], salary0:29000, joined:'2025-01', incs:[] },
     { id:19, role:'teacher', name:'Usman Ghani', phone:'03007890123', pin:'7890', subject:'Pak Studies', classes:['9','10'], salary0:31000, joined:'2024-08', incs:[] },
-    { id:20, role:'teacher', name:'Kamran Shah', phone:'03008901234', pin:'8901', subject:'Computer', classes:['6','7','8'], salary0:34000, joined:'2023-03', incs:[] }
+    { id:20, role:'teacher', name:'Kamran Shah', phone:'03008901234', pin:'8901', subject:'Computer', classes:['6','7','8'], salary0:34000, joined:'2023-03', incs:[] },
+    { id:21, role:'teacher', name:'Uzma Farooq', phone:'03011234567', pin:'2121', subject:'All', classes:['Nursery','KG'], salary0:24000, joined:'2025-04', incs:[] },
+    { id:22, role:'teacher', name:'Saba Kanwal', phone:'03012345678', pin:'2222', subject:'English', classes:['1','2','3','4','5'], salary0:26000, joined:'2024-04', incs:[] },
+    { id:23, role:'teacher', name:'Shazia Bano', phone:'03013456789', pin:'2323', subject:'Urdu', classes:['1','2','3','4','5'], salary0:25000, joined:'2023-08', incs:[] },
+    { id:24, role:'teacher', name:'Tahira Yasmeen', phone:'03014567890', pin:'2424', subject:'Maths', classes:['1','2','3','4','5'], salary0:26000, joined:'2025-08', incs:[] },
+    { id:25, role:'teacher', name:'Naila Shahid', phone:'03015678901', pin:'2525', subject:'Science', classes:['1','2','3','4','5'], salary0:25000, joined:'2026-04', incs:[] }
   ];
-  var staffId = 21;
+  var staffId = 26;
   // Each teacher has one subject and teaches it in their classes. The pre-primary teacher (subject 'All') teaches every subject there.
-  function canTeach(u, c, x){ return u.role === 'teacher' && (u.subject === x || (u.subject === 'All' && /^(Montessori|KG)/.test(c))); }
+  function canTeach(u, c, x){ return u.role === 'teacher' && (u.subject === x || (u.subject === 'All' && /^(Nursery|KG)/.test(c))); }
   units().forEach(function(k){ var c = gOf(k);
-    subjectsOf(c).forEach(function(x){ var t = STAFF.filter(function(u){ return canTeach(u, c, x) && u.classes.indexOf(c) >= 0; })[0]; if (t) SUBT[k][x] = t.id; }); });
+    subjectsOf(c).forEach(function(x){ var t = STAFF.filter(function(u){ return canTeach(u, c, x) && u.classes.indexOf(c) >= 0; }).sort(function(a, b){ return subLoad(a) - subLoad(b); })[0]; if (t) SUBT[k][x] = t.id; }); });
+  // spread the work: when two teachers can take a subject, the one with fewer periods gets it
+  function subLoad(u){ return Object.keys(SUBT).reduce(function(a, k){ return a + Object.keys(SUBT[k]).filter(function(x){ return SUBT[k][x] === u.id; }).length; }, 0); }
   var CT = {};
   units().forEach(function(k){
     var cnt = function(u){ return Object.keys(CT).filter(function(x){ return CT[x] === u.id; }).length; };
@@ -288,7 +297,7 @@ button{cursor:pointer}
   function nowTime(){ var d = new Date(); return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2); }
   function first(n){ return n.split(' ')[0]; }
   var TODAY = DAYS[DAYS.length-1];
-  var WEB_ONLY = [{ phone:'03001111111', name:'Tariq Hussain', title:'owner' }].concat(STAFF.filter(function(u){ return u.role === 'accountant' || u.role === 'admin'; }).map(function(u){ return { phone:u.phone, name:u.name, title:u.role }; }));
+  var WEB_ONLY = [{ phone:'03001111111', name:OWNER, title:'owner' }].concat(STAFF.filter(function(u){ return u.role === 'accountant' || u.role === 'admin'; }).map(function(u){ return { phone:u.phone, name:u.name, title:u.role }; }));
   function teachers(){ return STAFF.filter(function(u){ return u.role === 'teacher' && !u.left; }); }
   function myCT(){ return ctOf(S.user); }
   function myTeach(){ return teachesOf(S.user); }

@@ -295,7 +295,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 
 <div class="strip">
   <div class="wrap">
-    <div><b>Montessori to Class 10</b><span>With sections like 5-A and 5-B</span></div>
+    <div><b>Nursery to Matric</b><span>With sections like 5-A and 5-B</span></div>
     <div><b>Offline teacher app</b><span>Syncs when internet is back</span></div>
     <div><b>WhatsApp for parents</b><span>Reminders, receipts, results</span></div>
     <div><b>Free demo</b><span>At your school, about 20 minutes</span></div>
@@ -566,10 +566,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 <a class="wa-float" href="https://wa.me/923158327536?text=Assalam%20o%20Alaikum!%20I%20would%20like%20a%20free%20demo%20of%20SchoolDaftar%20for%20my%20school." target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><svg aria-hidden="true" style="color:#fff"><use href="#i-wa"/></svg></a>
 
 <script>document.getElementById('yr').textContent = new Date().getFullYear();
-// ?school=Name shows the visitor's school in the samples and carries it into the demos
-(function(){ try { var n = (new URLSearchParams(location.search).get('school') || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60); if (!n) return;
-  document.querySelectorAll('[data-school]').forEach(function(el){ el.textContent = n; });
-  document.querySelectorAll('a[href^="demo/"]').forEach(function(a){ a.href = a.getAttribute('href') + '?school=' + encodeURIComponent(n); });
+// ?school=Name shows the visitor's school in the samples; ?school= and ?principal= are carried into the demos
+(function(){ try { var q = new URLSearchParams(location.search), clean = function(v, max){ return (v || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, max); };
+  var n = clean(q.get('school'), 60), pr = clean(q.get('principal'), 40), pass = new URLSearchParams(); if (n) pass.set('school', n); if (pr) pass.set('principal', pr);
+  if (n) document.querySelectorAll('[data-school]').forEach(function(el){ el.textContent = n; });
+  if (n || pr) document.querySelectorAll('a[href^="demo/"]').forEach(function(a){ a.href = a.getAttribute('href') + '?' + pass.toString(); });
 } catch(e){} })();</script>
 </body>
 </html>
