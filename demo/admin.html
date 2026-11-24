@@ -369,10 +369,13 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function fmt(n){ return 'Rs ' + Math.round(n).toLocaleString('en-IN'); }
   function nf(n){ return Math.round(n).toLocaleString('en-IN'); }
   // masked versions for the pages with the eye button
-  var DOTS = '<span class="masked" title="Hidden. Tap the eye to show.">••••••</span>';
-  function mfmt(n){ return S.hideMoney ? 'Rs ' + DOTS : fmt(n); }
-  function mnf(n){ return S.hideMoney ? DOTS : nf(n); }
-  function eyeOn(){ return S.user && S.user.role === 'owner' && (S.view === 'dashboard' || S.view === 'finance'); }
+  var DOTS = '<span class="masked" title="Hidden. Change this in Settings.">••••••</span>';
+  function hiding(){ return S.hideMoney && S.user && S.user.role === 'owner'; }
+  function mfmt(n){ return hiding() ? 'Rs ' + DOTS : fmt(n); }
+  function mnf(n){ return hiding() ? DOTS : nf(n); }
+  var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
+  var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses'];
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function fmtPhone(p){ return p.slice(0,4) + ' ' + p.slice(4); }
   function ymLabel(ym){ return MN[+ym.slice(5,7) - 1] + ' ' + ym.slice(0,4); }
@@ -701,7 +704,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function printNow(html){ document.getElementById('print-root').innerHTML = html; try { window.print(); } catch(e){} }
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
   VIEWS.settings = function(){
-    return '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
+    return '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>' +
+      '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
+      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Finance, Fees and Expenses pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
+      '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>';
   };
   function feeSetHtml(e, inPage){
     var withC = students.filter(function(s){ return concOf(s); });
@@ -1158,7 +1164,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var rows = base.filter(function(i){ return S.feeStatus === 'all' || (S.feeStatus === 'due' ? !i.paid : i.paid); });
     var col = base.filter(function(i){ return i.paid; }).reduce(function(a,i){ return a + i.amount; },0), pend = base.filter(function(i){ return !i.paid; }).reduce(function(a,i){ return a + i.amount; },0);
     var defs = students.filter(function(s){ return owed(s, S.feeType) > 0 && inCls(s, S.feeClass); });
-    return '<div class="kpis">' + kpi('Collected', fmt(col), Math.round(col/Math.max(col+pend,1)*100) + '% of ' + fmt(col+pend)) + kpi('Pending', fmt(pend), base.filter(function(i){ return !i.paid; }).length + ' fee items', 'warn') + kpi('Students with dues', defs.length, S.feeType === 'all' ? 'Any fee type' : typeName(S.feeType)) + kpi('Rules', 'Due ' + ordinal(FEESET.due), 'Late fine Rs ' + nf(FEESET.fine) + ' · sibling ' + FEESET.sib + '% off' + (canSee('settings') ? ' <button class="btn btn-sm" style="margin-left:4px" data-a="go" data-v="settings">Change</button>' : '')) + '</div>' +
+    return '<div class="kpis">' + kpi('Collected', mfmt(col), Math.round(col/Math.max(col+pend,1)*100) + '% of ' + mfmt(col+pend)) + kpi('Pending', mfmt(pend), base.filter(function(i){ return !i.paid; }).length + ' fee items', 'warn') + kpi('Students with dues', defs.length, S.feeType === 'all' ? 'Any fee type' : typeName(S.feeType)) + kpi('Rules', 'Due ' + ordinal(FEESET.due), 'Late fine Rs ' + mnf(FEESET.fine) + ' · sibling ' + FEESET.sib + '% off' + (canSee('settings') ? ' <button class="btn btn-sm" style="margin-left:4px" data-a="go" data-v="settings">Change</button>' : '')) + '</div>' +
       '<div class="toolbar">' + search('fees', 'Student or fee name') + sel('f-ftype','feetype', [['all','All fee types']].concat(FEE_TYPES), S.feeType, 'Fee type') + sel('f-fcls','feecls', filterOpts(), S.feeClass, 'Class') + sel('f-fst','feest', [['due','Due'],['paid','Paid'],['all','All']], S.feeStatus, 'Status') +
         '<span class="spacer"></span>' + exportBtns('fee report') + '<button class="btn" data-a="remind"' + (defs.length ? '' : ' disabled') + '>Send reminders (' + defs.length + ')</button>' +'<button class="btn" data-a="challans">Print challans</button><button class="btn btn-primary" data-a="feeadd">Add a fee</button></div>' +
       table('fees', [
@@ -1166,7 +1172,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'cls',label:'Class',v:function(i){ return sName(i.s); }},
         {k:'type',label:'Type',v:function(i){ return typeName(i.type); }},
         {k:'label',label:'Fee',v:function(i){ return i.label; }},
-        {k:'amt',label:'Amount',r:1,v:function(i){ return i.amount; },h:function(i){ return nf(i.amount); }},
+        {k:'amt',label:'Amount',r:1,v:function(i){ return i.amount; },h:function(i){ return mnf(i.amount); }},
         {k:'st',label:'Status',v:function(i){ return i.paid ? 1 : 0; },h:function(i){ return i.paid ? pill('Paid','p-ok') : pill(i.t && (i.t.m < CUR || i.fine) ? 'Overdue' : 'Due', i.t && (i.t.m < CUR || i.fine) ? 'p-bad' : 'p-warn'); }},
         {k:'x',label:'',act:1,h:function(i){ return (i.paid ? '<button class="btn btn-sm" data-a="unpay" data-v="' + i.key + '">Undo</button>' : '<button class="btn btn-sm btn-primary" data-a="pay" data-v="' + i.key + '">Mark paid</button>' + (i.fine ? '<button class="btn btn-sm" data-a="waive" data-v="' + i.key + '">Waive</button>' : '')) + (i.c ? '<button class="btn btn-sm" data-a="chedit" data-v="' + i.key + '">Edit</button><button class="btn btn-sm btn-danger" data-a="chdel" data-v="' + i.key + '">Delete</button>' : ''); }}
       ], rows);
@@ -1179,14 +1185,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var by = expensesOf(S.expMonth), tot = rows.reduce(function(a,e){ return a + e.amount; },0) + (showPay ? pr.total : 0);
     return '<div class="toolbar">' + sel('f-exm','expm', MNL.slice(0, CUR+1).map(function(n,i){ return [i, n + ' 2026']; }), S.expMonth, 'Month') + sel('f-exc','expc', [['all','All categories']].concat(EXP_CATS.filter(function(c){ return !isAcc || c[0] !== 'salaries'; })), S.expCat, 'Category') + search('exp', 'Description') +
         '<span class="spacer"></span>' + exportBtns('expenses') + '<button class="btn btn-primary" data-a="expadd">Add expense</button></div>' +
-      '<div class="kpis">' + (isAcc ? '' : kpi('Spent this month', fmt(by.total), MNL[S.expMonth] + ' 2026', 'warn') + kpi('Salaries (auto)', fmt(pr.total), pr.rows.length + ' staff')) + kpi(isAcc ? 'Expenses this month' : 'Other expenses', fmt(by.total - payroll(S.expMonth).total), expenses.filter(function(e){ return e.m === S.expMonth; }).length + ' entries') + kpi('Showing', fmt(tot), S.expCat === 'all' ? 'All categories' : catName(S.expCat)) + '</div>' +
-      (showPay ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--brand-soft)"><div style="flex:1;min-width:0"><b>Staff salaries</b> ' + pill('Auto','p-ok') + '<div class="sub">Calculated from the Staff & payroll screen: each person’s salary and increments for ' + MNL[S.expMonth] + '.</div></div><b class="num">' + fmt(pr.total) + '</b><button class="btn btn-sm" data-a="payview">View breakdown</button></div>' : '') +
+      '<div class="kpis">' + (isAcc ? '' : kpi('Spent this month', mfmt(by.total), MNL[S.expMonth] + ' 2026', 'warn') + kpi('Salaries (auto)', mfmt(pr.total), pr.rows.length + ' staff')) + kpi(isAcc ? 'Expenses this month' : 'Other expenses', mfmt(by.total - payroll(S.expMonth).total), expenses.filter(function(e){ return e.m === S.expMonth; }).length + ' entries') + kpi('Showing', mfmt(tot), S.expCat === 'all' ? 'All categories' : catName(S.expCat)) + '</div>' +
+      (showPay ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--brand-soft)"><div style="flex:1;min-width:0"><b>Staff salaries</b> ' + pill('Auto','p-ok') + '<div class="sub">Calculated from the Staff & payroll screen: each person’s salary and increments for ' + MNL[S.expMonth] + '.</div></div><b class="num">' + mfmt(pr.total) + '</b><button class="btn btn-sm" data-a="payview">View breakdown</button></div>' : '') +
       table('exp', [
         {k:'date',label:'Date',v:function(e){ return e.date; },h:function(e){ return dayLabel(e.date); }},
         {k:'desc',label:'Description',v:function(e){ return e.desc; },h:function(e){ return '<b>' + esc(e.desc) + '</b>'; }},
         {k:'cat',label:'Category',v:function(e){ return catName(e.cat); }},
         {k:'meth',label:'Paid by',v:function(e){ return e.method; }},
-        {k:'amt',label:'Amount',r:1,v:function(e){ return e.amount; },h:function(e){ return nf(e.amount); }},
+        {k:'amt',label:'Amount',r:1,v:function(e){ return e.amount; },h:function(e){ return mnf(e.amount); }},
         {k:'x',label:'',act:1,h:function(e){ return '<button class="btn btn-sm" data-a="expedit" data-v="' + e.id + '">Edit</button><button class="btn btn-sm btn-danger" data-a="expdel" data-v="' + e.id + '">Delete</button>'; }}
       ], rows, { empty: 'No other expenses for this month and category.' });
   };
@@ -1232,8 +1238,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var ink = tok('--muted'), grid = tok('--line');
     var o = { responsive:true, maintainAspectRatio:false, animation:false,
       plugins:{ legend:{ position: cfg.legendRight ? 'right' : 'top', labels:{ color: ink, boxWidth:12 } },
-        tooltip:{ callbacks:{ label: function(c){ var v = c.parsed.y != null ? c.parsed.y : c.parsed; var t = cfg.money && S.hideMoney ? 'Rs ••••••' : null; return c.dataset.label ? c.dataset.label + ': ' + (cfg.pct ? v + '%' : t || fmt(v)) : (c.label + ': ' + (t || fmt(v))); } } } } };
-    if (cfg.type !== 'doughnut') o.scales = { x:{ ticks:{ color: ink }, grid:{ display:false } }, y:{ ticks:{ color: ink, callback: function(v){ if (cfg.money && S.hideMoney) return ''; return cfg.pct ? v + '%' : (Math.abs(v) >= 100000 ? (v/100000).toFixed(1) + 'L' : v >= 1000 ? (v/1000) + 'k' : v); } }, grid:{ color: grid }, max: cfg.pct ? 100 : undefined, beginAtZero: true } };
+        tooltip:{ callbacks:{ label: function(c){ var v = c.parsed.y != null ? c.parsed.y : c.parsed; var t = cfg.money && hiding() ? 'Rs ••••••' : null; return c.dataset.label ? c.dataset.label + ': ' + (cfg.pct ? v + '%' : t || fmt(v)) : (c.label + ': ' + (t || fmt(v))); } } } } };
+    if (cfg.type !== 'doughnut') o.scales = { x:{ ticks:{ color: ink }, grid:{ display:false } }, y:{ ticks:{ color: ink, callback: function(v){ if (cfg.money && hiding()) return ''; return cfg.pct ? v + '%' : (Math.abs(v) >= 100000 ? (v/100000).toFixed(1) + 'L' : v >= 1000 ? (v/1000) + 'k' : v); } }, grid:{ color: grid }, max: cfg.pct ? 100 : undefined, beginAtZero: true } };
     charts.push(new Chart(el, { type: cfg.type, data: cfg.data, options: o }));
   }
 
@@ -1320,7 +1326,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function v(id){ var el = document.getElementById(id); return el ? el.value : ''; }
 
   // ================= render =================
-  var TITLES = { promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard', SCHOOL + ' · demo data as of Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','Fee due date, late fine and discounts. Only the owner can change these.'] };
+  var TITLES = { promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard', SCHOOL + ' · demo data as of Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','Fee rules, discounts and hiding amounts. Only the owner can change these.'] };
   var WEB_USERS = [
     { email:'owner@xyzschool.pk', password:'demo1234', name:OWNER, role:'owner', title:'Owner / Principal' },
     { email:'admin@xyzschool.pk', password:'demo1234', name:'Saima Khan', role:'admin', title:'Admin', staffId:13 },
@@ -1351,10 +1357,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       navFor().map(function(n){ return '<button class="navlink" data-a="go" data-v="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ico(n[2]) + (isAdm() && n[0] === 'staff' ? 'Staff' : n[1]) + '</button>'; }).join('') +
       '<div class="foot">' + (S.user && S.user.role === 'accountant' ? 'Accounts office \u00b7 demo with sample data. Salaries and profit are visible to the owner only.' : isAdm() ? 'Admin office \u00b7 demo with sample data. Fees, salaries and profit are visible to the owner only.' : 'Owner / Principal dashboard \u00b7 demo with sample data. Teachers use the mobile app.') + '</div>';
     var t = TITLES[S.view];
-    var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-    var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
     if (isAdm() && S.view === 'staff') t = ['Staff', 'Logins, roles and classes. Salaries are set by the owner.'];
-    document.getElementById('top').innerHTML = '<div><h1>' + t[0] + '</h1><p class="sub">' + t[1] + '</p></div><div class="who"><span class="demo">Demo · data as of 20 Nov 2026 · resets on reload</span><span class="avatar">' + S.user.name.split(' ').map(function(w){ return w[0]; }).join('') + '</span><span><b>' + esc(S.user.name) + '</b><br>' + S.user.title + '</span>' + (eyeOn() ? '<button class="btn btn-sm eye" data-a="eye" aria-pressed="' + S.hideMoney + '" aria-label="' + (S.hideMoney ? 'Show amounts' : 'Hide amounts') + '" title="' + (S.hideMoney ? 'Show amounts' : 'Hide amounts') + '">' + (S.hideMoney ? EYE_OFF : EYE) + '<span>' + (S.hideMoney ? 'Show' : 'Hide') + '</span></button>' : '') + '<button class="btn btn-sm" data-a="logout">Log out</button></div>';
+    document.getElementById('top').innerHTML = '<div><h1>' + t[0] + '</h1><p class="sub">' + t[1] + '</p></div><div class="who"><span class="demo">Demo · data as of 20 Nov 2026 · resets on reload</span><span class="avatar">' + S.user.name.split(' ').map(function(w){ return w[0]; }).join('') + '</span><span><b>' + esc(S.user.name) + '</b><br>' + S.user.title + '</span>' + (hiding() && MASK_VIEWS.indexOf(S.view) >= 0 ? '<button class="btn btn-sm eye" data-a="go" data-v="settings" title="Amounts are hidden. Change this in Settings.">' + EYE_OFF + '<span>Amounts hidden</span></button>' : '') + '<button class="btn btn-sm" data-a="logout">Log out</button></div>';
     var ae = document.activeElement, fid = ae && ae.tagName === 'INPUT' && ae.type === 'search' ? ae.id : null;
     document.getElementById('view').innerHTML = VIEWS[S.view]();
     if (VIEWS[S.view].after) VIEWS[S.view].after();
@@ -1374,7 +1378,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'fillcred'){ var wu = WEB_USERS[+val || 0]; S.lgEmail = wu.email; S.lgPass = wu.password; S.lgErr = ''; renderLogin(); }
     else if (a === 'pwtoggle'){ S.lgEmail = v('lg-email'); S.lgPass = v('lg-pass'); S.showPw = !S.showPw; renderLogin(); var pi = document.getElementById('lg-pass'); if (pi) pi.focus(); }
     else if (a === 'forgot') toast('A reset link goes to the owner\u2019s email. In this demo, use the demo login below.');
-    else if (a === 'eye'){ S.hideMoney = !S.hideMoney; try { localStorage.setItem('sd-hide-money', S.hideMoney ? '1' : '0'); } catch(e){} render(); }
+    else if (a === 'eye'){ S.hideMoney = val === '1'; try { localStorage.setItem('sd-hide-money', S.hideMoney ? '1' : '0'); } catch(e){} render(); }
     else if (a === 'logout'){ S.authed = false; S.user = null; S.lgPass = ''; S.lgErr = ''; closeModal(); render(); window.scrollTo(0, 0); }
     else if (a === 'sort'){ var k = el.dataset.k, cur = S.sort[k]; S.sort[k] = cur && cur.k === val ? { k: val, dir: -cur.dir } : { k: val, dir: 1 }; render(); }
     else if (a === 'pg'){ S.page[el.dataset.k] = +val; if (S.modal && S.modal.regen && el.closest('.modal')){ S.modal.html = S.modal.regen(); renderModal(); } else render(); }
