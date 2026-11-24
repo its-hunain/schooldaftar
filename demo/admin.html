@@ -375,7 +375,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function mnf(n){ return hiding() ? DOTS : nf(n); }
   var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
   var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses'];
+  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses', 'staff'];
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function fmtPhone(p){ return p.slice(0,4) + ' ' + p.slice(4); }
   function ymLabel(ym){ return MN[+ym.slice(5,7) - 1] + ' ' + ym.slice(0,4); }
@@ -705,7 +705,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
   VIEWS.settings = function(){
     return '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
-      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Finance, Fees and Expenses pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
+      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Finance, Fees, Expenses and Staff pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
       '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
   };
@@ -893,12 +893,12 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'join',label:'Joined',v:function(u){ return u.joined; },h:function(u){ return ymLabel(u.joined); }}
     ];
     if (!adm) cols.push(
-        {k:'sal',label:'Salary',r:1,v:curSalary,h:function(u){ return u.salPending ? pill('Not set','p-warn') : nf(curSalary(u)); }},
-        {k:'inc',label:'Last increment',v:sinceRaise,h:function(u){ if (u.salPending) return '<span class="sub">—</span>'; var t = u.incs.length ? ymLabel(u.incs[u.incs.length-1].month) + ' (+' + nf(u.incs[u.incs.length-1].to - u.incs[u.incs.length-1].from) + ')' : 'None since joining'; return esc(t) + (sinceRaise(u) >= 12 ? ' ' + pill(sinceRaise(u) + ' mo','p-warn') : ''); }});
+        {k:'sal',label:'Salary',r:1,v:curSalary,h:function(u){ return u.salPending ? pill('Not set','p-warn') : mnf(curSalary(u)); }},
+        {k:'inc',label:'Last increment',v:sinceRaise,h:function(u){ if (u.salPending) return '<span class="sub">—</span>'; var t = u.incs.length ? ymLabel(u.incs[u.incs.length-1].month) + ' (+' + mnf(u.incs[u.incs.length-1].to - u.incs[u.incs.length-1].from) + ')' : 'None since joining'; return esc(t) + (sinceRaise(u) >= 12 ? ' ' + pill(sinceRaise(u) + ' mo','p-warn') : ''); }});
     cols.push({k:'x',label:'',act:1,h:function(u){ return (u.role === 'teacher' ? '<button class="btn btn-sm" data-a="teachassign" data-v="' + u.id + '">Subjects</button>' : '') + (adm ? '' : '<button class="btn btn-sm' + (u.salPending ? ' btn-primary' : '') + '" data-a="inc" data-v="' + u.id + '">' + (u.salPending ? 'Set salary' : 'Increment') + '</button>') + '<button class="btn btn-sm" data-a="staffedit" data-v="' + u.id + '">Edit</button>' + (u.id === (S.user && S.user.staffId) ? '' : '<button class="btn btn-sm btn-danger" data-a="staffdel" data-v="' + u.id + '">Remove</button>'); }});
     return '<div class="kpis">' + kpi('Staff', act.length, act.filter(function(u){ return u.role === 'teacher'; }).length + ' teachers') +
       (adm ? kpi('Support staff', act.filter(function(u){ return u.role === 'support'; }).length, 'Guards, peons, drivers') :
-        kpi('Monthly payroll', fmt(pr.total), 'Added to expenses automatically') + kpi(pend.length ? 'Salary not set' : 'Increments due', pend.length || act.filter(function(u){ return sinceRaise(u) >= 12; }).length, pend.length ? 'New staff added by the admin' : '12+ months since last raise', 'warn')) +
+        kpi('Monthly payroll', mfmt(pr.total), 'Added to expenses automatically') + kpi(pend.length ? 'Salary not set' : 'Increments due', pend.length || act.filter(function(u){ return sinceRaise(u) >= 12; }).length, pend.length ? 'New staff added by the admin' : '12+ months since last raise', 'warn')) +
       kpi('Logins', act.filter(function(u){ return u.role !== 'support'; }).length, 'Teachers on the app, office on the web') + '</div>' +
       '<div class="toolbar">' + search('staff', 'Name, phone or role') + sel('f-role','staffrole', [['all','All roles'],['teacher','Teachers'],['admin','Admin'],['accountant','Accountants'],['support','Support staff']], S.staffRole, 'Role') +
         '<span class="spacer"></span>' + exportBtns(adm ? 'staff list' : 'staff and payroll') + '<button class="btn btn-primary" data-a="staffadd">Add staff member</button></div>' +
