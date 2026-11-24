@@ -34,7 +34,7 @@ The demos use sample data only. Nothing is saved, and every change resets when t
 
 ## Pricing
 
-Pricing depends on the school's size and needs. Book a free demo to see it and get a quote. A free trial is available before you decide.
+Pricing depends on the school's size and needs. Book a free demo to see it and get a quote. A 1-month free trial is available before you decide.
 
 ## Contact
 
