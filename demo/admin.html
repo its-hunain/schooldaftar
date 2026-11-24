@@ -51,6 +51,8 @@ main{flex:1;min-width:0;display:flex;flex-direction:column}
 .avatar{width:34px;height:34px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:700}
 .content{padding:22px 28px 40px;display:flex;flex-direction:column;gap:18px}
 .demo{font-size:12px;color:var(--muted)}
+.eye{display:inline-flex;align-items:center;justify-content:center;gap:6px}.eye svg{width:16px;height:16px}
+.masked{letter-spacing:2px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .kpi .l{font-size:12px;color:var(--muted);font-weight:600}
@@ -366,6 +368,11 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   // ================= helpers =================
   function fmt(n){ return 'Rs ' + Math.round(n).toLocaleString('en-IN'); }
   function nf(n){ return Math.round(n).toLocaleString('en-IN'); }
+  // masked versions for the pages with the eye button
+  var DOTS = '<span class="masked" title="Hidden. Tap the eye to show.">••••••</span>';
+  function mfmt(n){ return S.hideMoney ? 'Rs ' + DOTS : fmt(n); }
+  function mnf(n){ return S.hideMoney ? DOTS : nf(n); }
+  function eyeOn(){ return S.user && S.user.role === 'owner' && (S.view === 'dashboard' || S.view === 'finance'); }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function fmtPhone(p){ return p.slice(0,4) + ' ' + p.slice(4); }
   function ymLabel(ym){ return MN[+ym.slice(5,7) - 1] + ' ' + ym.slice(0,4); }
@@ -441,7 +448,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function todayAtt(cl){ var day = DAYS[DAYS.length-1], list = cl ? students.filter(function(s){ return inCls(s, cl); }) : students; var p = list.filter(function(s){ return attOf(s, day) === 'P'; }).length; return { p:p, n:list.length, a: list.filter(function(s){ return attOf(s, day) === 'A'; }).length, l: list.filter(function(s){ return attOf(s, day) === 'L'; }).length }; }
 
   // ================= state =================
-  var S = { view:'dashboard', q:{}, sort:{}, page:{}, modal:null,
+  // hide money on the dashboard and Finance (eye button), remembered on this device
+  var HIDE0 = (function(){ try { return localStorage.getItem('sd-hide-money') === '1'; } catch(e){ return false; } })();
+  var S = { hideMoney: HIDE0, view:'dashboard', q:{}, sort:{}, page:{}, modal:null,
     stuClass:'all', stuFee:'all', staffRole:'all', attClass:'5|A', stClass:'5|A', stuStatus:'active', proFrom:'10', proHeld:{}, actWho:'all', actKind:'all', actFlag:false, attDay: DAYS[DAYS.length-1], attView:'daily', attMonth: CUR, subClass:'5', subBy:'class', subTeacher:null, colDay: DAYS[DAYS.length-1], colMethod:'all', colQ:'', colSid:null, user:null, resExam:'Mid-term', resClass:'5|A',
     feeType:'all', feeClass:'all', feeStatus:'due', expMonth:CUR, expCat:'all', plPer:'year', plMonth:CUR };
   var ROLE_NAV = { owner:['dashboard','announce','collection','students','promote','staff','classteachers','subjects','subjectteachers','attendance','results','fees','expenses','finance','activity','settings'], admin:['dashboard','announce','students','promote','staff','classteachers','subjects','subjectteachers','attendance','results','activity'], accountant:['collection','fees','students','expenses'] };
@@ -512,16 +521,16 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var defs = students.filter(function(s){ return owed(s) > 0; }), ta = todayAtt(), inc = incomeOf(CUR).total, ex = expensesOf(CUR).total;
     var due = STAFF.filter(function(u){ return !u.left && sinceRaise(u) >= 12; });
     var top = defs.slice().sort(function(a,b){ return owed(b) - owed(a); }).slice(0,6);
-    return '<div class="kpis">' + kpi('Students', students.length, classes.length + ' classes, ' + units().length + ' sections') + kpi('Staff', STAFF.filter(function(u){ return !u.left; }).length, 'Payroll ' + fmt(payroll(CUR).total) + '/mo') +
-      kpi('Fees collected (Nov)', fmt(col), Math.round(col/(col+pend)*100) + '% of ' + fmt(col+pend)) + kpi('Fees pending', fmt(pend), defs.length + ' students', 'warn') +
-      kpi('Attendance today', Math.round(ta.p/ta.n*100) + '%', ta.a + ' absent · ' + ta.l + ' leave') + kpi('Profit (Nov so far)', fmt(inc - ex), 'Income ' + fmt(inc) + ' · expenses ' + fmt(ex), inc - ex >= 0 ? 'ok' : 'bad') + '</div>' +
+    return '<div class="kpis">' + kpi('Students', students.length, classes.length + ' classes, ' + units().length + ' sections') + kpi('Staff', STAFF.filter(function(u){ return !u.left; }).length, 'Payroll ' + mfmt(payroll(CUR).total) + '/mo') +
+      kpi('Fees collected (Nov)', mfmt(col), Math.round(col/(col+pend)*100) + '% of ' + mfmt(col+pend)) + kpi('Fees pending', mfmt(pend), defs.length + ' students', 'warn') +
+      kpi('Attendance today', Math.round(ta.p/ta.n*100) + '%', ta.a + ' absent · ' + ta.l + ' leave') + kpi('Profit (Nov so far)', mfmt(inc - ex), 'Income ' + mfmt(inc) + ' · expenses ' + mfmt(ex), inc - ex >= 0 ? 'ok' : 'bad') + '</div>' +
       (function(){ var n = visibleLog().filter(needsLook).length; return n ? '<div class="panel" style="flex-direction:row;align-items:center;gap:14px;background:var(--warn-bg);border-color:var(--warn)"><div style="flex:1;min-width:0"><b>' + n + ' changes this month need a look</b><div class="sub">Undone payments, waived fines, changed concessions and deleted records.</div></div><button class="btn btn-sm" data-a="actcheck">Open activity log</button></div>' : ''; })() +
       '<div class="grid2"><div class="panel"><div class="row"><h2>Income vs expenses, 2026</h2><button class="btn btn-sm" data-a="go" data-v="finance">Finance</button></div><div class="chartbox"><canvas id="ch-ie" aria-label="Income and expenses by month" role="img"></canvas></div></div>' +
       '<div class="panel"><div class="row"><h2>Fees collected by class (Nov)</h2><button class="btn btn-sm" data-a="go" data-v="fees">Fees</button></div><div class="chartbox"><canvas id="ch-fc" aria-label="Fee collection percentage by class" role="img"></canvas></div></div></div>' +
       '<div class="grid2"><div class="panel"><div class="row"><h2>Top defaulters</h2><button class="btn btn-sm" data-a="go" data-v="fees">Collect fees</button></div>' +
-        table('dashdef', [{k:'n',label:'Student',v:function(s){ return s.name; },nosort:1},{k:'c',label:'Class',v:function(s){ return s.cls; },nosort:1},{k:'o',label:'Owes',r:1,v:function(s){ return owed(s); },h:function(s){ return nf(owed(s)); },nosort:1}], top, {noPage:1}) + '</div>' +
+        table('dashdef', [{k:'n',label:'Student',v:function(s){ return s.name; },nosort:1},{k:'c',label:'Class',v:function(s){ return s.cls; },nosort:1},{k:'o',label:'Owes',r:1,v:function(s){ return owed(s); },h:function(s){ return mnf(owed(s)); },nosort:1}], top, {noPage:1}) + '</div>' +
       '<div class="panel"><div class="row"><h2>Attendance today by class</h2><button class="btn btn-sm" data-a="go" data-v="attendance">Attendance</button></div><div class="chartbox"><canvas id="ch-at" aria-label="Attendance today by class" role="img"></canvas></div></div></div>' +
-      (due.length ? '<div class="panel"><div class="row"><h2>Increments due</h2><span class="sub">12 months or more since the last raise</span></div>' + table('dashinc', [{k:'n',label:'Name',v:function(u){ return u.name; },nosort:1},{k:'r',label:'Role',v:roleLabel,nosort:1},{k:'s',label:'Salary',r:1,v:curSalary,h:function(u){ return nf(curSalary(u)); },nosort:1},{k:'m',label:'Months',r:1,v:sinceRaise,nosort:1},{k:'x',label:'',act:1,h:function(u){ return '<button class="btn btn-sm" data-a="inc" data-v="' + u.id + '">Give increment</button>'; }}], due, {}) + '</div>' : '');
+      (due.length ? '<div class="panel"><div class="row"><h2>Increments due</h2><span class="sub">12 months or more since the last raise</span></div>' + table('dashinc', [{k:'n',label:'Name',v:function(u){ return u.name; },nosort:1},{k:'r',label:'Role',v:roleLabel,nosort:1},{k:'s',label:'Salary',r:1,v:curSalary,h:function(u){ return mnf(curSalary(u)); },nosort:1},{k:'m',label:'Months',r:1,v:sinceRaise,nosort:1},{k:'x',label:'',act:1,h:function(u){ return '<button class="btn btn-sm" data-a="inc" data-v="' + u.id + '">Give increment</button>'; }}], due, {}) + '</div>' : '');
   };
   VIEWS.dashboard.after = function(){
     var rows = []; for (var m = 0; m <= CUR; m++) rows.push({ m:m, i: incomeOf(m).total, e: expensesOf(m).total });
@@ -1191,12 +1200,12 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     return '<div class="toolbar"><div class="field">Period<div class="seg" role="group" aria-label="Period">' + [['month','Monthly'],['year','Yearly'],['session','School session']].map(function(x){ return '<button data-a="plper" data-v="' + x[0] + '" aria-pressed="' + (S.plPer===x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
         (S.plPer === 'month' ? sel('f-plm','plm', MNL.slice(0, CUR+1).map(function(n,i){ return [i, n + ' 2026' + (i === CUR ? ' (so far)' : '')]; }), S.plMonth, 'Month') : '') +
         '<span class="spacer"></span>' + exportBtns('profit and loss, ' + periodName) + '</div>' +
-      '<div class="kpis">' + kpi('Income', fmt(inc.total), periodName) + kpi('Expenses', fmt(ex.total), 'Salaries ' + fmt(ex.salaries), 'warn') + kpi(net >= 0 ? 'Profit' : 'Loss', fmt(Math.abs(net)), Math.round(net/Math.max(inc.total,1)*100) + '% margin', net >= 0 ? 'ok' : 'bad') +
-        (months.length > 1 ? kpi('Average per month', fmt(net / months.length), 'Profit') : kpi('Fee items unpaid', allItems().filter(function(i){ return !i.paid; }).length, 'November')) + '</div>' +
+      '<div class="kpis">' + kpi('Income', mfmt(inc.total), periodName) + kpi('Expenses', mfmt(ex.total), 'Salaries ' + mfmt(ex.salaries), 'warn') + kpi(net >= 0 ? 'Profit' : 'Loss', mfmt(Math.abs(net)), Math.round(net/Math.max(inc.total,1)*100) + '% margin', net >= 0 ? 'ok' : 'bad') +
+        (months.length > 1 ? kpi('Average per month', mfmt(net / months.length), 'Profit') : kpi('Fee items unpaid', allItems().filter(function(i){ return !i.paid; }).length, 'November')) + '</div>' +
       (months.length > 1 ? '<div class="panel"><h2>Income, expenses and profit by month</h2><div class="chartbox" style="height:300px"><canvas id="ch-pl" role="img" aria-label="Income, expenses and profit by month"></canvas></div></div>' : '') +
-      '<div class="grid2"><div class="panel"><h2>Income by fee type</h2>' + table('plinc', [{k:'t',label:'Fee type',v:function(t){ return t[1]; },nosort:1},{k:'a',label:'Amount',r:1,v:function(t){ return inc[t[0]]; },h:function(t){ return nf(inc[t[0]]); },nosort:1},{k:'s',label:'Share',r:1,v:function(t){ return inc[t[0]]; },h:function(t){ return Math.round(inc[t[0]]/Math.max(inc.total,1)*100) + '%'; },nosort:1}], FEE_TYPES.filter(function(t){ return inc[t[0]]; }), {noPage:1, foot:'<tfoot><tr><td>Total</td><td class="r num">' + nf(inc.total) + '</td><td class="r">100%</td></tr></tfoot>'}) + '</div>' +
+      '<div class="grid2"><div class="panel"><h2>Income by fee type</h2>' + table('plinc', [{k:'t',label:'Fee type',v:function(t){ return t[1]; },nosort:1},{k:'a',label:'Amount',r:1,v:function(t){ return inc[t[0]]; },h:function(t){ return mnf(inc[t[0]]); },nosort:1},{k:'s',label:'Share',r:1,v:function(t){ return inc[t[0]]; },h:function(t){ return Math.round(inc[t[0]]/Math.max(inc.total,1)*100) + '%'; },nosort:1}], FEE_TYPES.filter(function(t){ return inc[t[0]]; }), {noPage:1, foot:'<tfoot><tr><td>Total</td><td class="r num">' + mnf(inc.total) + '</td><td class="r">100%</td></tr></tfoot>'}) + '</div>' +
         '<div class="panel"><h2>Expenses by category</h2><div class="chartbox"><canvas id="ch-cat" role="img" aria-label="Expenses by category"></canvas></div></div></div>' +
-      (months.length > 1 ? '<div class="panel"><h2>Month by month</h2>' + table('plm', [{k:'m',label:'Month',v:function(r){ return r.m; },h:function(r){ return MNL[r.m] + (r.m === CUR ? ' (so far)' : ''); }},{k:'i',label:'Income',r:1,v:function(r){ return r.i; },h:function(r){ return nf(r.i); }},{k:'e',label:'Expenses',r:1,v:function(r){ return r.e; },h:function(r){ return nf(r.e); }},{k:'n',label:'Profit',r:1,v:function(r){ return r.i - r.e; },h:function(r){ var n = r.i - r.e; return '<span style="color:var(--' + (n >= 0 ? 'ok' : 'bad') + ');font-weight:600">' + (n < 0 ? '−' : '') + nf(Math.abs(n)) + '</span>'; }}], rows, {noPage:1, foot:'<tfoot><tr><td>Total</td><td class="r num">' + nf(inc.total) + '</td><td class="r num">' + nf(ex.total) + '</td><td class="r num">' + (net < 0 ? '−' : '') + nf(Math.abs(net)) + '</td></tr></tfoot>'}) + '</div>' : '');
+      (months.length > 1 ? '<div class="panel"><h2>Month by month</h2>' + table('plm', [{k:'m',label:'Month',v:function(r){ return r.m; },h:function(r){ return MNL[r.m] + (r.m === CUR ? ' (so far)' : ''); }},{k:'i',label:'Income',r:1,v:function(r){ return r.i; },h:function(r){ return mnf(r.i); }},{k:'e',label:'Expenses',r:1,v:function(r){ return r.e; },h:function(r){ return mnf(r.e); }},{k:'n',label:'Profit',r:1,v:function(r){ return r.i - r.e; },h:function(r){ var n = r.i - r.e; return '<span style="color:var(--' + (n >= 0 ? 'ok' : 'bad') + ');font-weight:600">' + (n < 0 ? '−' : '') + mnf(Math.abs(n)) + '</span>'; }}], rows, {noPage:1, foot:'<tfoot><tr><td>Total</td><td class="r num">' + mnf(inc.total) + '</td><td class="r num">' + mnf(ex.total) + '</td><td class="r num">' + (net < 0 ? '−' : '') + mnf(Math.abs(net)) + '</td></tr></tfoot>'}) + '</div>' : '');
   };
   VIEWS.finance.after = function(){
     var months = S.plPer === 'month' ? [S.plMonth] : S.plPer === 'year' ? MN.slice(0, CUR+1).map(function(_, i){ return i; }) : [7,8,9,10];
@@ -1223,8 +1232,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var ink = tok('--muted'), grid = tok('--line');
     var o = { responsive:true, maintainAspectRatio:false, animation:false,
       plugins:{ legend:{ position: cfg.legendRight ? 'right' : 'top', labels:{ color: ink, boxWidth:12 } },
-        tooltip:{ callbacks:{ label: function(c){ var v = c.parsed.y != null ? c.parsed.y : c.parsed; return c.dataset.label ? c.dataset.label + ': ' + (cfg.pct ? v + '%' : fmt(v)) : (c.label + ': ' + fmt(v)); } } } } };
-    if (cfg.type !== 'doughnut') o.scales = { x:{ ticks:{ color: ink }, grid:{ display:false } }, y:{ ticks:{ color: ink, callback: function(v){ return cfg.pct ? v + '%' : (Math.abs(v) >= 100000 ? (v/100000).toFixed(1) + 'L' : v >= 1000 ? (v/1000) + 'k' : v); } }, grid:{ color: grid }, max: cfg.pct ? 100 : undefined, beginAtZero: true } };
+        tooltip:{ callbacks:{ label: function(c){ var v = c.parsed.y != null ? c.parsed.y : c.parsed; var t = cfg.money && S.hideMoney ? 'Rs ••••••' : null; return c.dataset.label ? c.dataset.label + ': ' + (cfg.pct ? v + '%' : t || fmt(v)) : (c.label + ': ' + (t || fmt(v))); } } } } };
+    if (cfg.type !== 'doughnut') o.scales = { x:{ ticks:{ color: ink }, grid:{ display:false } }, y:{ ticks:{ color: ink, callback: function(v){ if (cfg.money && S.hideMoney) return ''; return cfg.pct ? v + '%' : (Math.abs(v) >= 100000 ? (v/100000).toFixed(1) + 'L' : v >= 1000 ? (v/1000) + 'k' : v); } }, grid:{ color: grid }, max: cfg.pct ? 100 : undefined, beginAtZero: true } };
     charts.push(new Chart(el, { type: cfg.type, data: cfg.data, options: o }));
   }
 
@@ -1342,8 +1351,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       navFor().map(function(n){ return '<button class="navlink" data-a="go" data-v="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ico(n[2]) + (isAdm() && n[0] === 'staff' ? 'Staff' : n[1]) + '</button>'; }).join('') +
       '<div class="foot">' + (S.user && S.user.role === 'accountant' ? 'Accounts office \u00b7 demo with sample data. Salaries and profit are visible to the owner only.' : isAdm() ? 'Admin office \u00b7 demo with sample data. Fees, salaries and profit are visible to the owner only.' : 'Owner / Principal dashboard \u00b7 demo with sample data. Teachers use the mobile app.') + '</div>';
     var t = TITLES[S.view];
+    var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
     if (isAdm() && S.view === 'staff') t = ['Staff', 'Logins, roles and classes. Salaries are set by the owner.'];
-    document.getElementById('top').innerHTML = '<div><h1>' + t[0] + '</h1><p class="sub">' + t[1] + '</p></div><div class="who"><span class="demo">Demo · data as of 20 Nov 2026 · resets on reload</span><span class="avatar">' + S.user.name.split(' ').map(function(w){ return w[0]; }).join('') + '</span><span><b>' + esc(S.user.name) + '</b><br>' + S.user.title + '</span><button class="btn btn-sm" data-a="logout">Log out</button></div>';
+    document.getElementById('top').innerHTML = '<div><h1>' + t[0] + '</h1><p class="sub">' + t[1] + '</p></div><div class="who"><span class="demo">Demo · data as of 20 Nov 2026 · resets on reload</span><span class="avatar">' + S.user.name.split(' ').map(function(w){ return w[0]; }).join('') + '</span><span><b>' + esc(S.user.name) + '</b><br>' + S.user.title + '</span>' + (eyeOn() ? '<button class="btn btn-sm eye" data-a="eye" aria-pressed="' + S.hideMoney + '" aria-label="' + (S.hideMoney ? 'Show amounts' : 'Hide amounts') + '" title="' + (S.hideMoney ? 'Show amounts' : 'Hide amounts') + '">' + (S.hideMoney ? EYE_OFF : EYE) + '<span>' + (S.hideMoney ? 'Show' : 'Hide') + '</span></button>' : '') + '<button class="btn btn-sm" data-a="logout">Log out</button></div>';
     var ae = document.activeElement, fid = ae && ae.tagName === 'INPUT' && ae.type === 'search' ? ae.id : null;
     document.getElementById('view').innerHTML = VIEWS[S.view]();
     if (VIEWS[S.view].after) VIEWS[S.view].after();
@@ -1363,6 +1374,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'fillcred'){ var wu = WEB_USERS[+val || 0]; S.lgEmail = wu.email; S.lgPass = wu.password; S.lgErr = ''; renderLogin(); }
     else if (a === 'pwtoggle'){ S.lgEmail = v('lg-email'); S.lgPass = v('lg-pass'); S.showPw = !S.showPw; renderLogin(); var pi = document.getElementById('lg-pass'); if (pi) pi.focus(); }
     else if (a === 'forgot') toast('A reset link goes to the owner\u2019s email. In this demo, use the demo login below.');
+    else if (a === 'eye'){ S.hideMoney = !S.hideMoney; try { localStorage.setItem('sd-hide-money', S.hideMoney ? '1' : '0'); } catch(e){} render(); }
     else if (a === 'logout'){ S.authed = false; S.user = null; S.lgPass = ''; S.lgErr = ''; closeModal(); render(); window.scrollTo(0, 0); }
     else if (a === 'sort'){ var k = el.dataset.k, cur = S.sort[k]; S.sort[k] = cur && cur.k === val ? { k: val, dir: -cur.dir } : { k: val, dir: 1 }; render(); }
     else if (a === 'pg'){ S.page[el.dataset.k] = +val; if (S.modal && S.modal.regen && el.closest('.modal')){ S.modal.html = S.modal.regen(); renderModal(); } else render(); }
