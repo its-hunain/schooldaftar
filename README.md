@@ -41,5 +41,3 @@ Pricing depends on the school's size and needs. Book a free demo to see it and g
 Book a free demo at your school:
 
 - Call / WhatsApp: [0315-8327536](https://wa.me/923158327536)
-- Email: [mohammadhunain83@gmail.com](mailto:mohammadhunain83@gmail.com)
-- Web: [hunain.online](https://hunain.online)
