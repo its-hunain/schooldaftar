@@ -587,11 +587,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     html += '<div class="row"><b>' + esc(s.name) + ' · ' + sName(s) + '</b><button class="btn btn-sm" data-a="cunpick">Change student</button></div>';
     if (!dueItems.length) return html + '<div class="banner p-ok">All fees are clear for this student.</div>';
     var dueTotal = dueItems.reduce(function(a,i){ return a + i.amount; }, 0);
+    // opened from a fee row: only that fee is ticked, the rest can be added
+    var only = S.colOnly && dueItems.some(function(i){ return i.key === S.colOnly; }) ? S.colOnly : null, isOn = function(i){ return !only || i.key === only; };
+    var selN = dueItems.filter(isOn).length, selTotal = dueItems.filter(isOn).reduce(function(a,i){ return a + i.amount; }, 0);
     html += '<form class="form" id="collect-form" data-sid="' + s.id + '" novalidate><p class="sub">Tick only the fees the parent is paying now. The rest stays due and can be collected another day.</p>' +
-      '<div class="tablewrap"><table><thead><tr><th><input type="checkbox" id="c-all" checked aria-label="Select all fees"></th><th>Fee</th><th>Type</th><th class="r">Amount</th></tr></thead><tbody>' +
-      dueItems.map(function(i){ return '<tr><td><input type="checkbox" class="c-item" value="' + i.key + '" data-amt="' + i.amount + '" checked aria-label="' + esc(i.label) + '"></td><td>' + esc(i.label) + (i.t && i.t.m < CUR ? ' ' + pill('Overdue','p-bad') : '') + '</td><td class="sub">' + typeName(i.type) + '</td><td class="r num">' + nf(i.amount) + '</td></tr>'; }).join('') +
-      '</tbody><tfoot><tr><td></td><td colspan="2">Collecting now <span class="sub" id="c-count">(' + dueItems.length + ' of ' + dueItems.length + ' fees)</span></td><td class="r num" id="c-total">' + nf(dueTotal) + '</td></tr></tfoot></table></div>' +
-      '<p class="sub num" id="c-left">Left due after this: Rs 0</p><div class="fields">' + '<label class="field" for="c-meth">Paid by<select id="c-meth">' + METHODS.map(function(m){ return '<option>' + m + '</option>'; }).join('') + '</select></label></div>' +
+      '<div class="tablewrap"><table><thead><tr><th><input type="checkbox" id="c-all"' + (selN === dueItems.length ? ' checked' : '') + ' aria-label="Select all fees"></th><th>Fee</th><th>Type</th><th class="r">Amount</th></tr></thead><tbody>' +
+      dueItems.map(function(i){ return '<tr><td><input type="checkbox" class="c-item" value="' + i.key + '" data-amt="' + i.amount + '"' + (isOn(i) ? ' checked' : '') + ' aria-label="' + esc(i.label) + '"></td><td>' + esc(i.label) + (i.t && i.t.m < CUR ? ' ' + pill('Overdue','p-bad') : '') + '</td><td class="sub">' + typeName(i.type) + '</td><td class="r num">' + nf(i.amount) + '</td></tr>'; }).join('') +
+      '</tbody><tfoot><tr><td></td><td colspan="2">Collecting now <span class="sub" id="c-count">(' + selN + ' of ' + dueItems.length + ' fees)</span></td><td class="r num" id="c-total">' + nf(selTotal) + '</td></tr></tfoot></table></div>' +
+      '<p class="sub num" id="c-left">Left due after this: ' + fmt(dueTotal - selTotal) + '</p><div class="fields">' + '<label class="field" for="c-meth">Paid by<select id="c-meth">' + METHODS.map(function(m){ return '<option>' + m + '</option>'; }).join('') + '</select></label></div>' +
       err_(err) + '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">Collect and make receipt</button></div></form>';
     return html;
   }
@@ -1174,7 +1177,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'label',label:'Fee',v:function(i){ return i.label; }},
         {k:'amt',label:'Amount',r:1,v:function(i){ return i.amount; },h:function(i){ return mnf(i.amount); }},
         {k:'st',label:'Status',v:function(i){ return i.paid ? 1 : 0; },h:function(i){ return i.paid ? pill('Paid','p-ok') : pill(i.t && (i.t.m < CUR || i.fine) ? 'Overdue' : 'Due', i.t && (i.t.m < CUR || i.fine) ? 'p-bad' : 'p-warn'); }},
-        {k:'x',label:'',act:1,h:function(i){ return (i.paid ? '<button class="btn btn-sm" data-a="unpay" data-v="' + i.key + '">Undo</button>' : '<button class="btn btn-sm btn-primary" data-a="pay" data-v="' + i.key + '">Mark paid</button>' + (i.fine ? '<button class="btn btn-sm" data-a="waive" data-v="' + i.key + '">Waive</button>' : '')) + (i.c ? '<button class="btn btn-sm" data-a="chedit" data-v="' + i.key + '">Edit</button><button class="btn btn-sm btn-danger" data-a="chdel" data-v="' + i.key + '">Delete</button>' : ''); }}
+        {k:'x',label:'',act:1,h:function(i){ return (i.paid ? '<button class="btn btn-sm" data-a="unpay" data-v="' + i.key + '">Undo</button>' : '<button class="btn btn-sm btn-primary" data-a="pay" data-v="' + i.key + '">Collect</button>' + (i.fine ? '<button class="btn btn-sm" data-a="waive" data-v="' + i.key + '">Waive</button>' : '')) + (i.c ? '<button class="btn btn-sm" data-a="chedit" data-v="' + i.key + '">Edit</button><button class="btn btn-sm btn-danger" data-a="chdel" data-v="' + i.key + '">Delete</button>' : ''); }}
       ], rows);
   };
 
@@ -1450,7 +1453,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     }
     else if (a === 'sendresyes'){ closeModal(); toast('Result cards sent to ' + val + ' parents on WhatsApp.'); }
     // fees
-    else if (a === 'pay'){ var it = allItems().filter(function(i){ return i.key === val; })[0]; var rc = recordPayment(it.s, [it], 'Cash'); render(); openModal('Payment recorded', receiptHtml(rc)); }
+    else if (a === 'pay'){ var it = allItems().filter(function(i){ return i.key === val; })[0]; S.colQ = it.s.name; S.colSid = it.s.id; S.colOnly = it.key; openModal('Collect fee', collectHtml(), true); }
     else if (a === 'unpay'){ var iu1 = allItems().filter(function(i){ return i.key === val; })[0], rp = payments.filter(function(r){ return r.items.some(function(x){ return x.key === val; }); })[0];
       openModal('Undo payment', '<p>Undo <b>' + esc(iu1.label) + '</b> (' + fmt(iu1.amount) + ') for <b>' + esc(iu1.s.name) + '</b>?' + (rp ? ' It is removed from receipt #' + rp.no + '.' : '') + ' It shows as due again.</p><label class="field" for="un-r">Reason<select id="un-r"><option>Entered by mistake</option><option>Wrong student selected</option><option>Cheque bounced</option><option>Refunded to parent</option><option>Other</option></select></label><p class="sub">Saved in the activity log with your name. The owner sees it.</p><div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" style="background:var(--bad);border-color:var(--bad);color:#fff" data-a="unpayyes" data-v="' + val + '">Undo payment</button></div>'); }
     else if (a === 'unpayyes'){ var iu2 = allItems().filter(function(i){ return i.key === val; })[0], rp2 = payments.filter(function(r){ return r.items.some(function(x){ return x.key === val; }); })[0], ur = v('un-r');
@@ -1468,7 +1471,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="chone" data-v="' + ds.id + '">Fee challan</button><button class="btn" data-a="remind1" data-v="' + ds.id + '">Send reminder</button><button class="btn btn-primary" data-a="collectfor" data-v="' + ds.id + '">Collect fee</button></div>', true);
     }
     else if (a === 'remind1'){ var rs = byId(val); closeModal(); toast('Reminder with the dues breakdown sent to ' + rs.parent + ' on WhatsApp.'); }
-    else if (a === 'collectfor'){ var cs0 = byId(val); S.colQ = cs0.name; S.colSid = cs0.id; S.modal = null; openModal('Collect fee', collectHtml(), true); }
+    else if (a === 'collectfor'){ var cs0 = byId(val); S.colQ = cs0.name; S.colSid = cs0.id; S.colOnly = null; S.modal = null; openModal('Collect fee', collectHtml(), true); }
     else if (a === 'teachview'){ var tv = staffById(val), tl = teachesOf(tv);
       var tvH = function(){ return (tl.length ? table('tv', [{k:'c',label:'Class',h:function(x){ return '<b>' + uName(x.c) + '</b>'; }},{k:'s',label:'Subjects',h:function(x){ return esc(x.subs.join(', ')); }},{k:'x',label:'',act:1,h:function(x){ return '<button class="btn btn-sm" data-a="teachgo" data-v="' + esc(x.c) + '">Change</button>'; }}], tl, {}) : '<p>No subjects assigned yet.</p>') +
         '<p class="sub">Assign or change subjects in <b>Subject teachers</b>, by class or by teacher. The teacher then sees only these classes and subjects when entering marks.</p>' +
@@ -1492,9 +1495,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'subdel'){ var nm = students.filter(function(x){ return x.cls === S.subClass && (mk(x,'Mid-term',val) !== null || mk(x,'Monthly test',val) !== null || mk(x,'Final',val) !== null); }).length;
       openModal('Delete subject', confirmBox('Remove <b>' + esc(val) + '</b> from ' + cn(S.subClass) + '?' + (nm ? ' ' + nm + ' students already have marks in it. Those marks stop counting in totals and result cards.' : ''), 'subdelyes', val, 'Delete')); }
     else if (a === 'subdelyes'){ SUBJ[S.subClass] = SUBJ[S.subClass].filter(function(x){ return x !== val; }); SECTIONS[S.subClass].forEach(function(x){ delete SUBT[S.subClass + '|' + x][val]; }); log('classes', val + ' removed from ' + cn(S.subClass), true); closeModal(); render(); toast(val + ' removed from ' + cn(S.subClass) + '.'); }
-    else if (a === 'collect'){ S.colQ = ''; S.colSid = null; openModal('Collect fee', collectHtml(), true); }
-    else if (a === 'cpick'){ S.colSid = +val; S.modal.html = collectHtml(); renderModal(); }
-    else if (a === 'cunpick'){ S.colSid = null; S.modal.html = collectHtml(); renderModal(); var cq0 = document.getElementById('cq'); if (cq0) cq0.focus(); }
+    else if (a === 'collect'){ S.colQ = ''; S.colSid = null; S.colOnly = null; openModal('Collect fee', collectHtml(), true); }
+    else if (a === 'cpick'){ S.colSid = +val; S.colOnly = null; S.modal.html = collectHtml(); renderModal(); }
+    else if (a === 'cunpick'){ S.colSid = null; S.colOnly = null; S.modal.html = collectHtml(); renderModal(); var cq0 = document.getElementById('cq'); if (cq0) cq0.focus(); }
     else if (a === 'rcpt'){ var rr = payments.filter(function(r){ return r.no === +val; })[0]; openModal('Receipt #' + rr.no, receiptHtml(rr)); }
     else if (a === 'rcptsend'){ closeModal(); toast('Receipt sent to ' + val + ' on WhatsApp.'); }
     else if (a === 'feeadd') openModal('Add a fee', feeForm());
@@ -1563,7 +1566,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   document.addEventListener('input', function(e){
     var el = e.target;
     if (el.id === 'an-body'){ var ln = document.getElementById('an-len'); if (ln) ln.textContent = el.value.length + ' / 1000 characters'; return; }
-    if (el.dataset.a === 'cq'){ S.colQ = el.value; S.colSid = null; S.modal.html = collectHtml(); renderModal(); var cqi = document.getElementById('cq'); cqi.focus(); cqi.setSelectionRange(cqi.value.length, cqi.value.length); return; }
+    if (el.dataset.a === 'cq'){ S.colQ = el.value; S.colSid = null; S.colOnly = null; S.modal.html = collectHtml(); renderModal(); var cqi = document.getElementById('cq'); cqi.focus(); cqi.setSelectionRange(cqi.value.length, cqi.value.length); return; }
     if (el.dataset.a === 'q'){ S.q[el.dataset.k] = el.value; S.page[el.dataset.k] = 1; render(); }
   });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.modal) closeModal();
