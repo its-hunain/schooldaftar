@@ -708,7 +708,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
   VIEWS.settings = function(){
     return '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
-      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Students, Fees, Expenses, Finance and Staff pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
+      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Students, Fees, Expenses, Finance and Staff pages, and in the concession list below, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
       '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
   };
@@ -720,7 +720,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       '<p class="sub">Scholarships and fixed concessions are set per student in <b>Edit student</b>. Sibling discount is given automatically when two students share the same father and WhatsApp number.</p>' + err(e) +
       '<div class="row" style="justify-content:flex-end">' + (inPage ? '' : '<button type="button" class="btn" data-a="mclose">Cancel</button>') + '<button class="btn btn-primary" type="submit">Save rules</button></div></form>' +
       '<h3 style="font-size:15px">Students with a concession (' + withC.length + ')</h3>' +
-      table('concl', [{k:'n',label:'Student',h:function(s){ return '<b>' + esc(s.name) + '</b><div class="sub">' + sName(s) + '</div>'; }},{k:'t',label:'Concession',h:function(s){ return esc(concOf(s).label); }},{k:'f',label:'Fee',r:1,h:function(s){ return nf(s.fee); }},{k:'o',label:'Off',r:1,h:function(s){ return '−' + nf(concOf(s).amt); }},{k:'p',label:'Pays',r:1,h:function(s){ return nf(netFee(s)); }}], withC, {foot:'<tfoot><tr><td colspan="3">Total per month</td><td class="r num">−' + nf(withC.reduce(function(x,s){ return x + concOf(s).amt; }, 0)) + '</td><td></td></tr></tfoot>'});
+      table('concl', [{k:'n',label:'Student',h:function(s){ return '<b>' + esc(s.name) + '</b><div class="sub">' + sName(s) + '</div>'; }},{k:'t',label:'Concession',h:function(s){ var l = esc(concOf(s).label); return hiding() ? l.replace(/Rs [\d,]+/g, 'Rs ' + DOTS) : l; }},{k:'f',label:'Fee',r:1,h:function(s){ return mnf(s.fee); }},{k:'o',label:'Off',r:1,h:function(s){ return '−' + mnf(concOf(s).amt); }},{k:'p',label:'Pays',r:1,h:function(s){ return mnf(netFee(s)); }}], withC, {foot:'<tfoot><tr><td colspan="3">Total per month</td><td class="r num">−' + mnf(withC.reduce(function(x,s){ return x + concOf(s).amt; }, 0)) + '</td><td></td></tr></tfoot>'});
   }
 
   var PROMO = {};
