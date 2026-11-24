@@ -375,7 +375,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function mnf(n){ return hiding() ? DOTS : nf(n); }
   var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
   var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses', 'staff', 'collection'];
+  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses', 'staff', 'collection', 'students'];
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function fmtPhone(p){ return p.slice(0,4) + ' ' + p.slice(4); }
   function ymLabel(ym){ return MN[+ym.slice(5,7) - 1] + ' ' + ym.slice(0,4); }
@@ -601,7 +601,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var stat = sel('f-stust','stustatus', [['active','Studying now (' + students.length + ')'],['left','Left or passed out (' + alumni.length + ')']], S.stuStatus, 'Status');
     if (S.stuStatus === 'left'){
       var ar = alumni.filter(function(s){ return match('stu', s.name + ' ' + s.father + ' ' + s.parent + ' ' + (s.slcNo || '')); });
-      return '<div class="kpis">' + kpi('Left school', alumni.filter(function(a){ return a.status === 'left'; }).length, '2026') + kpi('Passed out', alumni.filter(function(a){ return a.status === 'passed'; }).length, 'Finished Class 10') + kpi('Certificates issued', alumni.filter(function(a){ return a.slcNo; }).length, 'School leaving certificates') + kpi('Dues written off', fmt(alumni.reduce(function(x,a){ return x + (a.writeOff || 0); }, 0)), 'When they left', 'warn') + '</div>' +
+      return '<div class="kpis">' + kpi('Left school', alumni.filter(function(a){ return a.status === 'left'; }).length, '2026') + kpi('Passed out', alumni.filter(function(a){ return a.status === 'passed'; }).length, 'Finished Class 10') + kpi('Certificates issued', alumni.filter(function(a){ return a.slcNo; }).length, 'School leaving certificates') + kpi('Dues written off', mfmt(alumni.reduce(function(x,a){ return x + (a.writeOff || 0); }, 0)), 'When they left', 'warn') + '</div>' +
         '<div class="toolbar">' + search('stu', 'Name, father or SLC no.') + stat + '<span class="spacer"></span>' + exportBtns('former students') + '</div>' +
         '<p class="sub">Former students stay here with their full record. Nothing is deleted.</p>' +
         table('alu', [
@@ -617,7 +617,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     }
     var rows = students.filter(function(s){ return inCls(s, S.stuClass) && (S.stuFee === 'all' || (S.stuFee === 'due' ? owed(s) > 0 : S.stuFee === 'conc' ? !!concOf(s) : owed(s) === 0)) && match('stu', s.name + ' ' + s.father + ' ' + s.parent + ' ' + s.bform); });
     var withC = students.filter(function(s){ return concOf(s); }), cTot = withC.reduce(function(x,s){ return x + concOf(s).amt; }, 0);
-    return '<div class="kpis">' + kpi('Total students', students.length, units().length + ' sections') + kpi('Girls / boys', students.filter(function(s){ return s.girl; }).length + ' / ' + students.filter(function(s){ return !s.girl; }).length) + kpi('With dues', students.filter(function(s){ return owed(s) > 0; }).length, 'Any fee type', 'warn') + kpi('With a concession', withC.length, fmt(cTot) + ' off per month', 'info') + kpi('Avg attendance (Nov)', Math.round(students.reduce(function(a,s){ return a + monthAttPct(s); },0)/students.length*100) + '%') + '</div>' +
+    return '<div class="kpis">' + kpi('Total students', students.length, units().length + ' sections') + kpi('Girls / boys', students.filter(function(s){ return s.girl; }).length + ' / ' + students.filter(function(s){ return !s.girl; }).length) + kpi('With dues', students.filter(function(s){ return owed(s) > 0; }).length, 'Any fee type', 'warn') + kpi('With a concession', withC.length, mfmt(cTot) + ' off per month', 'info') + kpi('Avg attendance (Nov)', Math.round(students.reduce(function(a,s){ return a + monthAttPct(s); },0)/students.length*100) + '%') + '</div>' +
       '<div class="toolbar">' + search('stu', 'Student, father, phone or B-Form') + stat + sel('f-stucls','stucls', filterOpts(), S.stuClass, 'Class') + sel('f-stufee','stufee', [['all','All'],['due','Has dues'],['clear','No dues'],['conc','Has a concession']], S.stuFee, 'Fees') +
         '<span class="spacer"></span>' + exportBtns('student list') + '<button class="btn" data-a="dl" data-v="Excel import template">Import from Excel</button><button class="btn btn-primary" data-a="stuadd">Add student</button></div>' +
       table('stu', [
@@ -626,8 +626,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'father',label:'Father',v:function(s){ return s.father; }},
         {k:'cls',label:'Class',v:function(s){ return classes.indexOf(s.cls) * 10 + SECTIONS[s.cls].indexOf(s.sec); },h:function(s){ return sName(s); }},
         {k:'phone',label:'WhatsApp',v:function(s){ return s.parent; },h:function(s){ var n = sibsOf(s).length; return esc(s.parent) + (n ? ' <span class="sub" title="' + esc(sibsOf(s).map(function(x){ return x.name + ', ' + sName(x); }).join('; ')) + '">+' + n + ' sibling' + (n > 1 ? 's' : '') + '</span>' : ''); }},
-        {k:'fee',label:'Monthly fee',r:1,v:netFee,h:function(s){ var c = concOf(s); return nf(netFee(s)) + (c ? '<div class="sub" style="color:var(--info);font-weight:600">' + esc(c.label) + ' off</div>' : ''); }},
-        {k:'owed',label:'Dues',r:1,v:function(s){ return owed(s); },h:function(s){ var o = owed(s); return o ? '<button class="btn btn-sm" style="color:var(--warn);font-weight:700;border-style:dashed" data-a="dues" data-v="' + s.id + '" aria-label="Show dues for ' + esc(s.name) + '">' + nf(o) + ' ▾</button>' : pill('Clear','p-ok'); }},
+        {k:'fee',label:'Monthly fee',r:1,v:netFee,h:function(s){ var c = concOf(s); return mnf(netFee(s)) + (c ? '<div class="sub" style="color:var(--info);font-weight:600">' + esc(c.label) + ' off</div>' : ''); }},
+        {k:'owed',label:'Dues',r:1,v:function(s){ return owed(s); },h:function(s){ var o = owed(s); return o ? '<button class="btn btn-sm" style="color:var(--warn);font-weight:700;border-style:dashed" data-a="dues" data-v="' + s.id + '" aria-label="Show dues for ' + esc(s.name) + '">' + mnf(o) + ' ▾</button>' : pill('Clear','p-ok'); }},
         {k:'att',label:'Attendance',r:1,v:monthAttPct,h:function(s){ var p = monthAttPct(s); return '<span style="color:var(--' + (p < .75 ? 'bad' : 'ink') + ')">' + Math.round(p*100) + '%</span>'; }},
         {k:'x',label:'',act:1,h:function(s){ return '<button class="btn btn-sm" data-a="stuedit" data-v="' + s.id + '">Edit</button><button class="btn btn-sm" data-a="stuleave" data-v="' + s.id + '">Leaves school</button>'; }}
       ], rows);
@@ -705,7 +705,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
   VIEWS.settings = function(){
     return '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
-      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Fees, Expenses, Finance and Staff pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
+      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Students, Fees, Expenses, Finance and Staff pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
       '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
   };
