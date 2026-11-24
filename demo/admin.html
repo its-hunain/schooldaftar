@@ -375,7 +375,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function mnf(n){ return hiding() ? DOTS : nf(n); }
   var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
   var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses', 'staff'];
+  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses', 'staff', 'collection'];
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function fmtPhone(p){ return p.slice(0,4) + ' ' + p.slice(4); }
   function ymLabel(ym){ return MN[+ym.slice(5,7) - 1] + ' ' + ym.slice(0,4); }
@@ -552,8 +552,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     return '<div class="toolbar">' + sel('f-colday','colday', DAYS.slice().reverse().map(function(d){ return [d, dayLabel(d) + (d === DAYS[DAYS.length-1] ? ' (today)' : '')]; }), day, 'Date') +
         sel('f-colm','colm', [['all','All methods']].concat(METHODS.map(function(m){ return [m, m]; })), S.colMethod, 'Paid by') + search('col', 'Student or receipt no.') +
         '<span class="spacer"></span>' + exportBtns('daily collection, ' + dayLabel(day)) + '<button class="btn btn-primary" data-a="collect">Collect fee</button></div>' +
-      '<div class="kpis">' + kpi('Collected ' + (day === DAYS[DAYS.length-1] ? 'today' : 'on ' + dayLabel(day)), fmt(sum(dayAll)), dayAll.length + ' receipts', 'ok') + kpi('Cash in hand', fmt(byM('Cash')), 'Count at the counter') +
-        kpi('Bank transfer', fmt(byM('Bank transfer')), 'Check the bank statement') + kpi('JazzCash / Easypaisa', fmt(byM('JazzCash / Easypaisa')), 'Check the wallet') + kpi('November so far', fmt(month), payments.length + ' receipts') + '</div>' +
+      '<div class="kpis">' + kpi('Collected ' + (day === DAYS[DAYS.length-1] ? 'today' : 'on ' + dayLabel(day)), mfmt(sum(dayAll)), dayAll.length + ' receipts', 'ok') + kpi('Cash in hand', mfmt(byM('Cash')), 'Count at the counter') +
+        kpi('Bank transfer', mfmt(byM('Bank transfer')), 'Check the bank statement') + kpi('JazzCash / Easypaisa', mfmt(byM('JazzCash / Easypaisa')), 'Check the wallet') + kpi('November so far', mfmt(month), payments.length + ' receipts') + '</div>' +
       table('col', [
         {k:'no',label:'Receipt',v:function(r){ return r.no; },h:function(r){ return '#' + r.no; }},
         {k:'t',label:'Time',v:function(r){ return r.time; }},
@@ -561,9 +561,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'cls',label:'Class',v:function(r){ return uName(r.unit); }},
         {k:'for',label:'For',v:function(r){ return r.items.map(function(i){ return i.label; }).join(', '); },h:function(r){ var t = r.items.map(function(i){ return i.label; }).join(', '); return '<span title="' + esc(t) + '">' + esc(t.length > 38 ? t.slice(0, 36) + '…' : t) + '</span>'; }},
         {k:'m',label:'Paid by',v:function(r){ return r.method; }},
-        {k:'amt',label:'Amount',r:1,v:function(r){ return r.amount; },h:function(r){ return nf(r.amount); }},
+        {k:'amt',label:'Amount',r:1,v:function(r){ return r.amount; },h:function(r){ return mnf(r.amount); }},
         {k:'x',label:'',act:1,h:function(r){ return '<button class="btn btn-sm" data-a="rcpt" data-v="' + r.no + '">Receipt</button>'; }}
-      ], list.slice().reverse(), { empty: 'No payments on this day yet.', foot: list.length ? '<tfoot><tr><td colspan="6">Total, ' + list.length + ' receipts</td><td class="r num">' + nf(sum(list)) + '</td><td></td></tr></tfoot>' : '' });
+      ], list.slice().reverse(), { empty: 'No payments on this day yet.', foot: list.length ? '<tfoot><tr><td colspan="6">Total, ' + list.length + ' receipts</td><td class="r num">' + mnf(sum(list)) + '</td><td></td></tr></tfoot>' : '' });
   };
   function receiptHtml(r){
     var s = byId(r.sid), left = s ? owed(s) : 0;
@@ -705,7 +705,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
   VIEWS.settings = function(){
     return '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
-      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Finance, Fees, Expenses and Staff pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
+      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Fees, Expenses, Finance and Staff pages, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
       '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
   };
