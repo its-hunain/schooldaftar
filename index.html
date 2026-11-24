@@ -287,9 +287,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     </div>
     <div class="phone" role="img" aria-label="Example WhatsApp messages from a school to a parent: a fee reminder, a payment receipt and an absence alert">
       <div class="screen">
-        <div class="wa-head"><span class="av">XS</span><span><b data-school>XYZ School</b><small>Example messages</small></span></div>
+        <div class="wa-head"><span class="av" data-school-av>XS</span><span><b data-school>XYZ School</b><small>Example messages</small></span></div>
         <div class="wa-body">
-          <div class="bub">Assalam o Alaikum! <b>Ahmed (Class 5-A)</b> ki November fees <b>Rs 4,500</b> 10 Nov tak due hai.</div>
+          <div class="bub">Assalam o Alaikum! <b>Ahmed (Class 5-A)</b> ki November fees <b>Rs 2,600</b> 10 Nov tak due hai.</div>
           <div class="bub">Pay via bank transfer or JazzCash. Payment ke baad screenshot bhej dein.</div>
           <div class="bub me">Done, screenshot bhej diya</div>
           <div class="bub">Shukriya! Payment received.<div class="pdf"><i>PDF</i><span>Receipt_Nov_Ahmed.pdf</span></div></div>
@@ -575,6 +575,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 (function(){ try { var q = new URLSearchParams(location.search), clean = function(v, max){ return (v || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, max); };
   var n = clean(q.get('school'), 60), pr = clean(q.get('principal'), 40), pass = new URLSearchParams(); if (n) pass.set('school', n); if (pr) pass.set('principal', pr);
   if (n) document.querySelectorAll('[data-school]').forEach(function(el){ el.textContent = n; });
+  if (n) document.querySelectorAll('[data-school-av]').forEach(function(el){ el.textContent = n.split(' ').filter(Boolean).slice(0, 2).map(function(w){ return w[0].toUpperCase(); }).join(''); });
   if (n || pr) document.querySelectorAll('a[href^="demo/"]').forEach(function(a){ a.href = a.getAttribute('href') + '?' + pass.toString(); });
 } catch(e){} })();</script>
 </body>
