@@ -295,7 +295,7 @@ button{cursor:pointer}
   function OUT(e){ return EXAMS.filter(function(x){ return x[0] === e; })[0][1]; }
   function mk(s, e, x){ var v = s.marks[e] && s.marks[e][x]; return typeof v === 'number' ? v : null; }
   function nowTime(){ var d = new Date(); return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2); }
-  function first(n){ return n.split(' ')[0]; }
+  function first(n){ var w = n.split(' '); return /^(Sir|Miss|Mr|Mrs|Ms|Dr|Madam|Prof)\.?$/i.test(w[0]) && w[1] ? w[0] + ' ' + w[1] : w[0]; }
   var TODAY = DAYS[DAYS.length-1];
   var WEB_ONLY = [{ phone:'03001111111', name:OWNER, title:'owner' }].concat(STAFF.filter(function(u){ return u.role === 'accountant' || u.role === 'admin'; }).map(function(u){ return { phone:u.phone, name:u.name, title:u.role }; }));
   function teachers(){ return STAFF.filter(function(u){ return u.role === 'teacher' && !u.left; }); }

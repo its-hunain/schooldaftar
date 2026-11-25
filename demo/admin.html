@@ -269,7 +269,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   var NEXT_BATCH = 2027, MATRIC_TOTAL = 850;
   (function seedMatric2026(){
     for (var k = 0; k < 36; k++){
-      var id = sid++, g = hsh(id, 3) < .5, f = g ? girls[Math.floor(hsh(id, 5) * girls.length)] : boys[Math.floor(hsh(id, 7) * boys.length)], ln = lasts[Math.floor(hsh(id, 9) * lasts.length)];
+      var id = sid++, g = k % 2 === 1, f = g ? girls[(k * 7 + 3) % girls.length] : boys[(k * 4 + 2) % boys.length], ln = lasts[(k * 5 + 1) % lasts.length];
       var a = { id: id, name: f + ' ' + ln, father: fathers[Math.floor(hsh(id, 11) * fathers.length)] + ' ' + ln, cls: '10', sec: 'A', girl: g, fee: 3300, paid: true, monthsDue: 0,
         parent: '03' + (10 + Math.floor(hsh(id, 13) * 40)) + '-' + (1000000 + Math.floor(hsh(id, 15) * 8999999)), admitted: (2015 + Math.floor(hsh(id, 17) * 6)) + '-04',
         marks: { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }, charges: [], tu: [], conc: { type:'auto' },
@@ -1734,7 +1734,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       S.user = WEB_USERS.filter(function(u){ return u.email === em; })[0]; S.authed = true; S.lgPass = '';
       if (!canSee(S.view)) S.view = ROLE_NAV[S.user.role][0];
       try { history.replaceState(null, '', '#' + S.view); } catch(e2){}
-      render(); window.scrollTo(0, 0); toast('Welcome back, ' + S.user.name.split(' ')[0] + '.');
+      render(); window.scrollTo(0, 0); toast('Welcome back, ' + (/^(Sir|Miss|Mr|Mrs|Ms|Dr|Madam|Prof)\.?$/i.test(S.user.name.split(' ')[0]) ? S.user.name.split(' ').slice(0, 2).join(' ') : S.user.name.split(' ')[0]) + '.');
       return;
     }
     if (id === 'leave-form'){
