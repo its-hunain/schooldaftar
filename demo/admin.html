@@ -726,6 +726,15 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   var PROMO = {};
   function nextCls(c){ var i = classes.indexOf(c); return i < classes.length - 1 ? classes[i + 1] : null; }
   function promoBlock(c){ var n = nextCls(c); return n && !PROMO[n] ? n : null; }
+  // promote one class: students not held back move up (or pass out from Class 10); returns the counts
+  function promoteClass(qc){ var qn = nextCls(qc), ql = students.filter(function(s){ return s.cls === qc; }), mv = 0, hb = 0;
+    ql.forEach(function(s){ if (proHeld(s)){ s.repeat = true; hb++; return; } mv++; s.repeat = false;
+      if (qn){ s.cls = qn; if (SECTIONS[qn].indexOf(s.sec) < 0) s.sec = 'A'; s.marks = { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }; }
+      else { students = students.filter(function(x){ return x !== s; }); s.status = 'passed'; s.leftOn = DAYS[DAYS.length-1]; s.reason = 'Passed out (Matric)'; s.conduct = 'Good'; s.lastClass = sName(s); s.writeOff = 0; alumni.push(s); } });
+    PROMO[qc] = { moved: mv, held: hb }; log('promotion', qn ? 'Promoted ' + mv + ' students from ' + cn(qc) + ' to ' + cn(qn) + (hb ? ', held back ' + hb : '') : mv + ' students of ' + cn(qc) + ' marked as passed out' + (hb ? ', ' + hb + ' held back' : ''));
+    return { moved: mv, held: hb }; }
+  // classes still to promote, top to bottom
+  function proLeft(){ return classes.slice().reverse().filter(function(c){ return !PROMO[c]; }); }
   function proPct(s){ var p = pctOf(s, 'Final'); return p === null ? pctOf(s, 'Mid-term') : p; }
   function proHeld(s){ var h = S.proHeld[s.id]; return h != null ? h : (proPct(s) !== null && proPct(s) < .5); }
   VIEWS.promote = function(){
@@ -754,7 +763,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         {k:'d',label:'Decision',h:function(s){ return proHeld(s) ? pill('Held back in ' + cn(c), 'p-warn') : pill(n ? 'To ' + uName(n + '|' + (SECTIONS[n].indexOf(s.sec) >= 0 ? s.sec : 'A')) : 'Passed out', 'p-ok'); }}
       ], list, {}) +
       '<div class="row" style="justify-content:flex-end"><span class="sub">' + moving.length + ' ' + (n ? 'move to ' + cn(n) : 'pass out') + ', ' + held + ' held back</span><button class="btn btn-primary" data-a="proyes"' + (blk || !moving.length && !held ? ' disabled' : '') + '>' + (n ? 'Promote ' + moving.length + ' to ' + cn(n) : 'Mark ' + moving.length + ' as passed out') + '</button></div>';
-    return head + '<div class="panel"><div class="row"><h2>' + cn(c) + (n ? ' → ' + cn(n) : ' → passed out') + '</h2>' + (list.length ? '<span class="sub">' + list.length + ' students</span>' : '') + '</div>' + body + '</div><div class="panel"><h2>All classes, top to bottom</h2>' + ov + '</div>';
+    return head + '<div class="panel"><div class="row"><h2>' + cn(c) + (n ? ' → ' + cn(n) : ' → passed out') + '</h2>' + (list.length ? '<span class="sub">' + list.length + ' students</span>' : '') + '</div>' + body + '</div><div class="panel"><div class="row"><h2>All classes, top to bottom</h2>' + (proLeft().length ? '<button class="btn btn-primary" data-a="proall">Promote all classes (' + proLeft().length + ')</button>' : pill('All classes done', 'p-ok')) + '</div>' + ov + '</div>';
   };
   // Where a log entry leads: the section for its area, filtered to the student, teacher or class it names.
   var KIND_VIEW = { fees:'fees', students:'students', staff:'staff', marks:'results', attendance:'attendance', expenses:'expenses', settings:'settings', ann:'announce', classes:'classteachers', promotion:'promote' };
@@ -1412,11 +1421,15 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'propick'){ S.proFrom = val; S.proHeld = {}; render(); window.scrollTo(0, 0); }
     else if (a === 'proyes'){ var pc = S.proFrom, pn = nextCls(pc), pl = students.filter(function(s){ return s.cls === pc; }), pm = pl.filter(function(s){ return !proHeld(s); });
       openModal('Confirm promotion', confirmBox((pn ? 'Move <b>' + pm.length + '</b> students from ' + cn(pc) + ' to ' + cn(pn) : 'Mark <b>' + pm.length + '</b> students of ' + cn(pc) + ' as passed out') + (pl.length - pm.length ? ' and hold back <b>' + (pl.length - pm.length) + '</b>' : '') + '? ' + (pn ? 'Their marks start fresh for the new session. Past results stay in the reports.' : 'They move to Left or passed out, and you can issue their certificates from there.'), 'proyes2', pc, pn ? 'Promote' : 'Mark passed out').replace('background:var(--bad);border-color:var(--bad)', 'background:var(--brand);border-color:var(--brand)')); }
-    else if (a === 'proyes2'){ var qc = S.proFrom, qn = nextCls(qc), ql = students.filter(function(s){ return s.cls === qc; }), mv = 0, hb = 0;
-      ql.forEach(function(s){ if (proHeld(s)){ s.repeat = true; hb++; return; } mv++; s.repeat = false;
-        if (qn){ s.cls = qn; if (SECTIONS[qn].indexOf(s.sec) < 0) s.sec = 'A'; s.marks = { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }; }
-        else { students = students.filter(function(x){ return x !== s; }); s.status = 'passed'; s.leftOn = DAYS[DAYS.length-1]; s.reason = 'Passed out (Matric)'; s.conduct = 'Good'; s.lastClass = sName(s); s.writeOff = 0; alumni.push(s); } });
-      PROMO[qc] = { moved: mv, held: hb }; log('promotion', qn ? 'Promoted ' + mv + ' students from ' + cn(qc) + ' to ' + cn(qn) + (hb ? ', held back ' + hb : '') : mv + ' students of ' + cn(qc) + ' marked as passed out' + (hb ? ', ' + hb + ' held back' : ''));
+    else if (a === 'proall'){ var left = proLeft(), totM = 0, totH = 0;
+      var rowsA = left.map(function(c){ var l = students.filter(function(s){ return s.cls === c; }), h = l.filter(proHeld).length; totM += l.length - h; totH += h; return '<tr><td><b>' + cn(c) + '</b></td><td>' + (nextCls(c) ? cn(nextCls(c)) : 'Passed out') + '</td><td class="r num">' + (l.length - h) + '</td><td class="r num">' + (h ? '<span style="color:var(--warn);font-weight:700">' + h + '</span>' : '0') + '</td></tr>'; }).join('');
+      openModal('Promote all classes', '<p>Every class below is promoted in one go, from the top down, so two batches never mix. Students who failed the final (or the mid-term if the final is not entered) are held back in their class.</p>' +
+        '<div class="tablewrap"><table><thead><tr><th>Class</th><th>Moves to</th><th class="r">Moving</th><th class="r">Held back</th></tr></thead><tbody>' + rowsA + '</tbody><tfoot><tr><td colspan="2">Total</td><td class="r num">' + totM + '</td><td class="r num">' + totH + '</td></tr></tfoot></table></div>' +
+        '<p class="sub">To hold back or promote a particular student, open that class first and change the tick there. Marks start fresh for the new session; past results stay in the reports. Saved in the activity log.</p>' +
+        '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" data-a="proall2">Promote ' + left.length + ' classes</button></div>', true); }
+    else if (a === 'proall2'){ var leftB = proLeft(), sumM = 0, sumH = 0; leftB.forEach(function(c){ var r = promoteClass(c); sumM += r.moved; sumH += r.held; });
+      S.proFrom = classes[0]; S.proHeld = {}; closeModal(); render(); window.scrollTo(0, 0); toast(leftB.length + ' classes promoted: ' + sumM + ' students moved up or passed out' + (sumH ? ', ' + sumH + ' held back' : '') + '.'); }
+    else if (a === 'proyes2'){ var qc = S.proFrom, qn = nextCls(qc), pr1 = promoteClass(qc), mv = pr1.moved;
       var prev = classes[classes.indexOf(qc) - 1]; if (prev) S.proFrom = prev; S.proHeld = {}; closeModal(); render(); window.scrollTo(0, 0); toast(qn ? mv + ' students are now in ' + cn(qn) + '.' : mv + ' students marked as passed out.'); }
     else if (a === 'actinfo') openLogDetails(val);
     else if (a === 'actgo'){ closeModal(); openLog(val); }
