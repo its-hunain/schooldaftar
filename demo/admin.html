@@ -265,6 +265,27 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   });
   [[7,{ type:'staff' }],[52,{ type:'staff' }],[15,{ type:'sch', pct:50 }],[88,{ type:'fixed', amt:1000 }],[131,{ type:'sch', pct:25 }]].forEach(function(x){ var s = students.filter(function(y){ return y.id === x[0]; })[0]; if (s) s.conc = x[1]; });
   var alumni = [];
+  // Matric 2026: last year's Class 10, passed out in April 2026. Board result came in August; some marksheets and dues are still open.
+  var NEXT_BATCH = 2027, MATRIC_TOTAL = 850;
+  (function seedMatric2026(){
+    for (var k = 0; k < 36; k++){
+      var id = sid++, g = hsh(id, 3) < .5, f = g ? girls[Math.floor(hsh(id, 5) * girls.length)] : boys[Math.floor(hsh(id, 7) * boys.length)], ln = lasts[Math.floor(hsh(id, 9) * lasts.length)];
+      var a = { id: id, name: f + ' ' + ln, father: fathers[Math.floor(hsh(id, 11) * fathers.length)] + ' ' + ln, cls: '10', sec: 'A', girl: g, fee: 3300, paid: true, monthsDue: 0,
+        parent: '03' + (10 + Math.floor(hsh(id, 13) * 40)) + '-' + (1000000 + Math.floor(hsh(id, 15) * 8999999)), admitted: (2015 + Math.floor(hsh(id, 17) * 6)) + '-04',
+        marks: { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }, charges: [], tu: [], conc: { type:'auto' },
+        status: 'passed', leftOn: '2026-04-06', reason: 'Passed out (Matric)', conduct: 'Good', lastClass: 'Class 10', writeOff: 0 };
+      subjectsOf('10').forEach(function(x){ a.marks['Final'][x] = 45 + Math.floor(hsh(id * 3 + x.length, 19) * 54); });
+      a.dob = (2010 - (hsh(id, 21) < .3 ? 1 : 0)) + '-' + p2(1 + Math.floor(hsh(id, 23) * 12)) + '-' + p2(1 + Math.floor(hsh(id, 25) * 28));
+      a.bform = idNum(a, 27, g ? 'g' : 'b'); a.fcnic = idNum(a, 29, 'b'); a.address = 'House ' + (1 + Math.floor(hsh(id, 31) * 480)) + ', ' + AREAS[Math.floor(hsh(id, 33) * AREAS.length)] + ', Karachi';
+      var pct = .3 + hsh(id, 35) * .65, got = k < 33;
+      a.matric = { batch: 2026, roll: String(206100 + k * 7 + Math.floor(hsh(id, 37) * 6)), admit: '2026-03-0' + (2 + (k % 3)),
+        result: got ? { marks: Math.round(MATRIC_TOTAL * pct) } : null, sheet: got && hsh(id, 39) < .55 ? '2026-09-' + p2(8 + (k % 12)) : null };
+      if (hsh(id, 41) < .45) a.slcNo = 'SLC-2026-00' + (10 + k);
+      if (k % 6 === 1){ a.tu = [{ m: 2, paid: false, late: true }]; a.paid = false; a.monthsDue = 1; }      // March tuition never paid
+      if (k % 9 === 4) a.charges.push({ cid: cid++, type:'other', label:'Farewell party contribution', amount: 1000, paid: false });
+      alumni.push(a);
+    }
+  })();
   [[40,'2026-04-15','Shifted to another city','Very good'],[120,'2026-06-30','Joined another school','Good'],[200,'2026-09-05','Family moved abroad','Excellent']].forEach(function(x, n){
     var s = students.filter(function(y){ return y.id === x[0]; })[0]; if (!s) return;
     students = students.filter(function(y){ return y !== s; });
@@ -375,7 +396,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function mnf(n){ return hiding() ? DOTS : nf(n); }
   var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-2.6 3.5M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/></svg>';
   var EYE = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses', 'staff', 'collection', 'students'];
+  var MASK_VIEWS = ['dashboard', 'finance', 'fees', 'expenses', 'staff', 'collection', 'students', 'matric'];
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function fmtPhone(p){ return p.slice(0,4) + ' ' + p.slice(4); }
   function ymLabel(ym){ return MN[+ym.slice(5,7) - 1] + ' ' + ym.slice(0,4); }
@@ -423,7 +444,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     s.charges.forEach(function(c){ it.push({ key:'c' + c.cid, s:s, type:c.type, label:c.label, amount:c.amount, paid:c.paid, c:c }); });
     return it;
   }
-  function allItems(){ return students.reduce(function(a,s){ return a.concat(feeItems(s)); }, []); }
+  // passed-out students keep their unpaid dues until they are collected
+  function dueHolders(){ return students.concat(alumni.filter(function(a){ return a.status === 'passed'; })); }
+  function allItems(){ return dueHolders().reduce(function(a,s){ return a.concat(feeItems(s)); }, []); }
+  // Matric batch helpers
+  function matBatch(s){ return s.matric && s.matric.batch ? s.matric.batch : (!s.status && s.cls === '10' ? NEXT_BATCH : null); }
+  function mat(s){ return s.matric || (s.matric = {}); }
+  function matPct(s){ var r = s.matric && s.matric.result; return r ? r.marks / MATRIC_TOTAL : null; }
+  function matGrade(p){ return p >= .8 ? 'A-1' : p >= .7 ? 'A' : p >= .6 ? 'B' : p >= .5 ? 'C' : p >= .4 ? 'D' : p >= .33 ? 'E' : 'Fail'; }
   function owed(s, type){ return feeItems(s).filter(function(i){ return !i.paid && (!type || type === 'all' || i.type === type); }).reduce(function(a,i){ return a + i.amount; }, 0); }
   var TUITION_RATIO = [.9,.88,.91,.89,.87,.83,.86,.88,.85,.9];
   function incomeOf(m){
@@ -456,10 +484,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   var S = { hideMoney: HIDE0, view:'dashboard', q:{}, sort:{}, page:{}, modal:null,
     stuClass:'all', stuFee:'all', staffRole:'all', attClass:'5|A', stClass:'5|A', stuStatus:'active', proFrom:'10', proHeld:{}, actWho:'all', actKind:'all', actFlag:false, attDay: DAYS[DAYS.length-1], attView:'daily', attMonth: CUR, subClass:'5', subBy:'class', subTeacher:null, colDay: DAYS[DAYS.length-1], colMethod:'all', colQ:'', colSid:null, user:null, resExam:'Mid-term', resClass:'5|A',
     feeType:'all', feeClass:'all', feeStatus:'due', expMonth:CUR, expCat:'all', plPer:'year', plMonth:CUR };
-  var ROLE_NAV = { owner:['dashboard','announce','collection','students','promote','staff','classteachers','subjects','subjectteachers','attendance','results','fees','expenses','finance','activity','settings'], admin:['dashboard','announce','students','promote','staff','classteachers','subjects','subjectteachers','attendance','results','activity'], accountant:['collection','fees','students','expenses'] };
+  var ROLE_NAV = { owner:['dashboard','announce','collection','students','promote','matric','staff','classteachers','subjects','subjectteachers','attendance','results','fees','expenses','finance','activity','settings'], admin:['dashboard','announce','students','promote','matric','staff','classteachers','subjects','subjectteachers','attendance','results','activity'], accountant:['collection','fees','students','expenses'] };
   function navFor(){ var allow = ROLE_NAV[S.user ? S.user.role : 'owner']; return NAV.filter(function(n){ return allow.indexOf(n[0]) >= 0; }).sort(function(a,b){ return allow.indexOf(a[0]) - allow.indexOf(b[0]); }); }
   function canSee(v){ return ROLE_NAV[S.user ? S.user.role : 'owner'].indexOf(v) >= 0; }
-  var NAV = [['promote','Promotion','up'],['activity','Activity log','clock'],['announce','Announcements','mega'],['classteachers','Class teachers','ctic'],['subjects','Subjects','book'],['subjectteachers','Subject teachers','users'],['collection','Daily collection','cash'],['dashboard','Dashboard','home'],['students','Students','student'],['staff','Staff & payroll','users'],['attendance','Attendance','check'],['results','Exams & results','doc'],['fees','Fees','card'],['expenses','Expenses','wallet'],['finance','Finance','chart'],['settings','Settings','gear']];
+  var NAV = [['promote','Promotion','up'],['matric','Matric batch','grad'],['activity','Activity log','clock'],['announce','Announcements','mega'],['classteachers','Class teachers','ctic'],['subjects','Subjects','book'],['subjectteachers','Subject teachers','users'],['collection','Daily collection','cash'],['dashboard','Dashboard','home'],['students','Students','student'],['staff','Staff & payroll','users'],['attendance','Attendance','check'],['results','Exams & results','doc'],['fees','Fees','card'],['expenses','Expenses','wallet'],['finance','Finance','chart'],['settings','Settings','gear']];
   var icons = {
     home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
     student:'<circle cx="12" cy="7" r="4"/><path d="M4 21c1-4 4.2-6 8-6s7 2 8 6"/>',
@@ -475,7 +503,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     up:'<path d="M12 20V5"/><path d="M5 12l7-7 7 7"/>',
     clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
-    cash:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/>'
+    cash:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/>',
+    grad:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/>'
   };
   function ico(k){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icons[k] + '</svg>'; }
 
@@ -521,7 +550,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   VIEWS.dashboard = function(){
     if (isAdm()) return admDashboard();
     var items = allItems(), col = items.filter(function(i){ return i.paid; }).reduce(function(a,i){ return a + i.amount; }, 0), pend = items.filter(function(i){ return !i.paid; }).reduce(function(a,i){ return a + i.amount; }, 0);
-    var defs = students.filter(function(s){ return owed(s) > 0; }), ta = todayAtt(), inc = incomeOf(CUR).total, ex = expensesOf(CUR).total;
+    var defs = dueHolders().filter(function(s){ return owed(s) > 0; }), ta = todayAtt(), inc = incomeOf(CUR).total, ex = expensesOf(CUR).total;
     var due = STAFF.filter(function(u){ return !u.left && sinceRaise(u) >= 12; });
     var top = defs.slice().sort(function(a,b){ return owed(b) - owed(a); }).slice(0,6);
     return '<div class="kpis">' + kpi('Students', students.length, classes.length + ' classes, ' + units().length + ' sections') + kpi('Staff', STAFF.filter(function(u){ return !u.left; }).length, 'Payroll ' + mfmt(payroll(CUR).total) + '/mo') +
@@ -708,7 +737,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
   VIEWS.settings = function(){
     return '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
-      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Students, Fees, Expenses, Finance and Staff pages, and in the concession list below, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
+      '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Students, Matric batch, Fees, Expenses, Finance and Staff pages, and in the concession list below, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
       '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
   };
@@ -730,13 +759,45 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function promoteClass(qc){ var qn = nextCls(qc), ql = students.filter(function(s){ return s.cls === qc; }), mv = 0, hb = 0;
     ql.forEach(function(s){ if (proHeld(s)){ s.repeat = true; hb++; return; } mv++; s.repeat = false;
       if (qn){ s.cls = qn; if (SECTIONS[qn].indexOf(s.sec) < 0) s.sec = 'A'; s.marks = { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }; }
-      else { students = students.filter(function(x){ return x !== s; }); s.status = 'passed'; s.leftOn = DAYS[DAYS.length-1]; s.reason = 'Passed out (Matric)'; s.conduct = 'Good'; s.lastClass = sName(s); s.writeOff = 0; alumni.push(s); } });
+      else { mat(s).batch = NEXT_BATCH; students = students.filter(function(x){ return x !== s; }); s.status = 'passed'; s.leftOn = DAYS[DAYS.length-1]; s.reason = 'Passed out (Matric)'; s.conduct = 'Good'; s.lastClass = sName(s); s.writeOff = 0; alumni.push(s); } });
     PROMO[qc] = { moved: mv, held: hb }; log('promotion', qn ? 'Promoted ' + mv + ' students from ' + cn(qc) + ' to ' + cn(qn) + (hb ? ', held back ' + hb : '') : mv + ' students of ' + cn(qc) + ' marked as passed out' + (hb ? ', ' + hb + ' held back' : ''));
     return { moved: mv, held: hb }; }
   // classes still to promote, top to bottom
   function proLeft(){ return classes.slice().reverse().filter(function(c){ return !PROMO[c]; }); }
   function proPct(s){ var p = pctOf(s, 'Final'); return p === null ? pctOf(s, 'Mid-term') : p; }
   function proHeld(s){ var h = S.proHeld[s.id]; return h != null ? h : (proPct(s) !== null && proPct(s) < .5); }
+  VIEWS.matric = function(){
+    var Y = S.matYear || 2026, adm = isAdm(), all = students.concat(alumni).filter(function(s){ return matBatch(s) === Y; });
+    var rows = all.filter(function(s){ return match('mat', s.name + ' ' + s.father + ' ' + ((s.matric && s.matric.roll) || '')); }).sort(function(a, b){ return a.name < b.name ? -1 : 1; });
+    var res = all.filter(function(s){ return matPct(s) !== null; }), pass = res.filter(function(s){ return matPct(s) >= .33; }), a1 = res.filter(function(s){ return matPct(s) >= .8; }).length;
+    var out = all.filter(function(s){ return s.status; }), sheets = res.filter(function(s){ return s.matric.sheet; }).length, dueS = all.filter(function(s){ return owed(s) > 0; }), dueAmt = dueS.reduce(function(x, s){ return x + owed(s); }, 0);
+    var waitSheet = res.filter(function(s){ return !s.matric.sheet; }).length, waitAdmit = all.filter(function(s){ return !(s.matric && s.matric.admit); }).length;
+    var batches = [[2026, 'Matric 2026 (passed out)'], [NEXT_BATCH, 'Matric ' + NEXT_BATCH + (out.length && Y === NEXT_BATCH ? ' (passed out)' : ' (in Class 10 now)')]];
+    var grades = ['A-1','A','B','C','D','E','Fail'].map(function(g){ return [g, res.filter(function(s){ return matGrade(matPct(s)) === g; }).length]; }).filter(function(g){ return g[1]; });
+    return '<div class="toolbar"><div class="field">Batch<div class="seg" role="group" aria-label="Batch">' + batches.map(function(b){ return '<button data-a="matyear" data-v="' + b[0] + '" aria-pressed="' + (Y === b[0]) + '">' + b[1] + '</button>'; }).join('') + '</div></div></div>' +
+      '<div class="kpis">' + kpi('Students', all.length, out.length ? out.length + ' passed out' + (all.length - out.length ? ', ' + (all.length - out.length) + ' in Class 10' : '') : 'In Class 10, exams in March ' + Y) +
+        kpi('Board results', res.length ? Math.round(pass.length / res.length * 100) + '% passed' : 'Not out yet', res.length ? res.length + ' of ' + all.length + ' entered · ' + a1 + ' A-1' : 'Enter them when the board announces', res.length ? 'ok' : null) +
+        kpi('Marksheets handed over', sheets + ' / ' + res.length, waitSheet ? waitSheet + ' still to collect' : res.length ? 'All handed over' : 'After the result') +
+        kpi('Dues pending', adm ? dueS.length + ' students' : mfmt(dueAmt), adm ? 'The owner and accountant see the amounts' : dueS.length + ' students', dueS.length ? 'warn' : 'ok') + '</div>' +
+      (grades.length ? '<div class="panel"><div class="row"><h2>Board result, Matric ' + Y + '</h2><span class="sub">' + res.length + ' results · pass mark 33%</span></div><div class="chk">' + grades.map(function(g){ return pill(g[0] + ': ' + g[1], g[0] === 'Fail' ? 'p-bad' : g[0] === 'A-1' || g[0] === 'A' ? 'p-ok' : 'p-info'); }).join(' ') + '</div><p class="sub">Use these numbers in admission ads: ' + Math.round(pass.length / Math.max(res.length, 1) * 100) + '% passed, ' + a1 + ' students with A-1.</p></div>' : '') +
+      '<div class="toolbar">' + search('mat', 'Name, father or board roll no.') + '<span class="spacer"></span>' + exportBtns('Matric ' + Y + ' batch') +
+        (waitAdmit ? '<button class="btn" data-a="mnotify" data-v="admit">Admit cards arrived (' + waitAdmit + ')</button>' : '') +
+        (waitSheet ? '<button class="btn btn-primary" data-a="mnotify" data-v="sheet">Marksheets arrived (' + waitSheet + ')</button>' : '') + '</div>' +
+      table('mat', [
+        {k:'n',label:'Student',v:function(s){ return s.name; },h:function(s){ return '<b>' + esc(s.name) + '</b><div class="sub">' + esc(s.father) + '</div>'; }},
+        {k:'st',label:'Status',v:function(s){ return s.status ? 1 : 0; },h:function(s){ return s.status ? pill('Passed out', 'p-info') : pill(sName(s), 'p-ok'); }},
+        {k:'roll',label:'Board roll no.',v:function(s){ return (s.matric && s.matric.roll) || ''; },h:function(s){ return s.matric && s.matric.roll ? '<span class="num">' + esc(s.matric.roll) + '</span>' : '<span class="sub">—</span>'; }},
+        {k:'ad',label:'Admit card',v:function(s){ return s.matric && s.matric.admit ? 1 : 0; },h:function(s){ return s.matric && s.matric.admit ? pill('Given ' + dLong(s.matric.admit).replace(/ \d{4}$/, ''), 'p-ok') : '<button class="btn btn-sm" data-a="madmit" data-v="' + s.id + '">Mark given</button>'; }},
+        {k:'r',label:'Board result',r:1,v:function(s){ var q = matPct(s); return q === null ? -1 : q; },h:function(s){ var q = matPct(s); return q === null ? '<button class="btn btn-sm" data-a="mres" data-v="' + s.id + '">Enter result</button>' : '<button class="btn btn-sm" data-a="mres" data-v="' + s.id + '" title="Edit result"><span class="num">' + s.matric.result.marks + ' / ' + MATRIC_TOTAL + '</span></button> ' + pill(matGrade(q), q < .33 ? 'p-bad' : q >= .7 ? 'p-ok' : 'p-info'); }},
+        {k:'ms',label:'Marksheet',v:function(s){ return s.matric && s.matric.sheet ? 2 : matPct(s) !== null ? 1 : 0; },h:function(s){ return s.matric && s.matric.sheet ? pill('Given ' + dLong(s.matric.sheet).replace(/ \d{4}$/, ''), 'p-ok') : matPct(s) !== null ? '<button class="btn btn-sm btn-primary" data-a="msheet" data-v="' + s.id + '">Hand over</button>' : '<span class="sub">After the result</span>'; }},
+        {k:'slc',label:'Certificate',v:function(s){ return s.slcNo || ''; },h:function(s){ return !s.status ? '<span class="sub">After passing out</span>' : s.slcNo ? '<button class="btn btn-sm" data-a="slcview" data-v="' + s.id + '">' + esc(s.slcNo) + '</button>' : '<button class="btn btn-sm" data-a="slcissue" data-v="' + s.id + '">Issue</button>'; }},
+        {k:'due',label:'Dues',r:1,v:function(s){ return owed(s); },h:function(s){ var o = owed(s); return !o ? pill('Clear', 'p-ok') : (adm ? pill('Due', 'p-warn') : '<b style="color:var(--warn)">' + mnf(o) + '</b>') + (canSee('fees') || canSee('collection') ? ' <button class="btn btn-sm" data-a="collectfor" data-v="' + s.id + '">Collect</button>' : ''); }}
+      ], rows, { empty: 'No students in this batch match.' });
+  };
+  function matResHtml(s, e){ var r = (s.matric && s.matric.result) || {};
+    return '<form class="form" id="mres-form" data-id="' + s.id + '" novalidate><p class="sub">' + esc(s.name) + ', ' + esc(s.father) + '. Matric (Science) total is ' + MATRIC_TOTAL + ' marks; the grade is worked out from the percentage.</p>' +
+      '<div class="fields"><label class="field" for="mr-roll">Board roll no.<input id="mr-roll" inputmode="numeric" value="' + esc((s.matric && s.matric.roll) || '') + '"></label><label class="field" for="mr-marks">Marks obtained (out of ' + MATRIC_TOTAL + ')<input id="mr-marks" type="number" min="0" max="' + MATRIC_TOTAL + '" value="' + (r.marks != null ? r.marks : '') + '"></label></div>' + err(e) +
+      '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">Save result</button></div></form>'; }
   VIEWS.promote = function(){
     var c = S.proFrom, n = nextCls(c), list = students.filter(function(s){ return s.cls === c; }), blk = promoBlock(c), done = PROMO[c];
     var yr = function(s){ var p = 0, t = 0; ATT_MONTHS.forEach(function(m){ var r = attCount(s, m); p += r.P; t += r.n; }); return p / t; };
@@ -1175,12 +1236,12 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var base = allItems().filter(function(i){ return (S.feeType === 'all' || i.type === S.feeType) && inCls(i.s, S.feeClass) && match('fees', i.s.name + ' ' + i.label); });
     var rows = base.filter(function(i){ return S.feeStatus === 'all' || (S.feeStatus === 'due' ? !i.paid : i.paid); });
     var col = base.filter(function(i){ return i.paid; }).reduce(function(a,i){ return a + i.amount; },0), pend = base.filter(function(i){ return !i.paid; }).reduce(function(a,i){ return a + i.amount; },0);
-    var defs = students.filter(function(s){ return owed(s, S.feeType) > 0 && inCls(s, S.feeClass); });
+    var defs = dueHolders().filter(function(s){ return owed(s, S.feeType) > 0 && inCls(s, S.feeClass); });
     return '<div class="kpis">' + kpi('Collected', mfmt(col), Math.round(col/Math.max(col+pend,1)*100) + '% of ' + mfmt(col+pend)) + kpi('Pending', mfmt(pend), base.filter(function(i){ return !i.paid; }).length + ' fee items', 'warn') + kpi('Students with dues', defs.length, S.feeType === 'all' ? 'Any fee type' : typeName(S.feeType)) + kpi('Rules', 'Due ' + ordinal(FEESET.due), 'Late fine Rs ' + mnf(FEESET.fine) + ' · sibling ' + FEESET.sib + '% off' + (canSee('settings') ? ' <button class="btn btn-sm" style="margin-left:4px" data-a="go" data-v="settings">Change</button>' : '')) + '</div>' +
       '<div class="toolbar">' + search('fees', 'Student or fee name') + sel('f-ftype','feetype', [['all','All fee types']].concat(FEE_TYPES), S.feeType, 'Fee type') + sel('f-fcls','feecls', filterOpts(), S.feeClass, 'Class') + sel('f-fst','feest', [['due','Due'],['paid','Paid'],['all','All']], S.feeStatus, 'Status') +
         '<span class="spacer"></span>' + exportBtns('fee report') + '<button class="btn" data-a="remind"' + (defs.length ? '' : ' disabled') + '>Send reminders (' + defs.length + ')</button>' +'<button class="btn" data-a="challans">Print challans</button><button class="btn btn-primary" data-a="feeadd">Add a fee</button></div>' +
       table('fees', [
-        {k:'name',label:'Student',v:function(i){ return i.s.name; },h:function(i){ return '<b>' + esc(i.s.name) + '</b>'; }},
+        {k:'name',label:'Student',v:function(i){ return i.s.name; },h:function(i){ return '<b>' + esc(i.s.name) + '</b>' + (i.s.status ? ' ' + pill('Passed out', 'p-info') : ''); }},
         {k:'cls',label:'Class',v:function(i){ return sName(i.s); }},
         {k:'type',label:'Type',v:function(i){ return typeName(i.type); }},
         {k:'label',label:'Fee',v:function(i){ return i.label; }},
@@ -1338,7 +1399,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function v(id){ var el = document.getElementById(id); return el ? el.value : ''; }
 
   // ================= render =================
-  var TITLES = { promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard', SCHOOL + ' · demo data as of Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','Fee rules, discounts and hiding amounts. Only the owner can change these.'] };
+  var TITLES = { matric:['Matric batch','Board admit cards, results, marksheets, certificates and dues, before and after Class 10 passes out'], promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard', SCHOOL + ' · demo data as of Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','Fee rules, discounts and hiding amounts. Only the owner can change these.'] };
   var WEB_USERS = [
     { email:'owner@xyzschool.pk', password:'demo1234', name:OWNER, role:'owner', title:'Owner / Principal' },
     { email:'admin@xyzschool.pk', password:'demo1234', name:'Saima Khan', role:'admin', title:'Admin', staffId:13 },
@@ -1421,6 +1482,19 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'propick'){ S.proFrom = val; S.proHeld = {}; render(); window.scrollTo(0, 0); }
     else if (a === 'proyes'){ var pc = S.proFrom, pn = nextCls(pc), pl = students.filter(function(s){ return s.cls === pc; }), pm = pl.filter(function(s){ return !proHeld(s); });
       openModal('Confirm promotion', confirmBox((pn ? 'Move <b>' + pm.length + '</b> students from ' + cn(pc) + ' to ' + cn(pn) : 'Mark <b>' + pm.length + '</b> students of ' + cn(pc) + ' as passed out') + (pl.length - pm.length ? ' and hold back <b>' + (pl.length - pm.length) + '</b>' : '') + '? ' + (pn ? 'Their marks start fresh for the new session. Past results stay in the reports.' : 'They move to Left or passed out, and you can issue their certificates from there.'), 'proyes2', pc, pn ? 'Promote' : 'Mark passed out').replace('background:var(--bad);border-color:var(--bad)', 'background:var(--brand);border-color:var(--brand)')); }
+    else if (a === 'matyear'){ S.matYear = +val; S.page.mat = 0; render(); }
+    else if (a === 'madmit'){ var ma = byId(val); mat(ma).admit = DAYS[DAYS.length-1]; log('students', 'Matric admit card handed to ' + ma.name); render(); toast('Admit card marked as given to ' + ma.name + '.'); }
+    else if (a === 'mres'){ var mr = byId(val); openModal('Board result', matResHtml(mr)); var mi = document.getElementById('mr-marks'); if (mi) mi.focus(); }
+    else if (a === 'msheet' || a === 'msheet2'){ var mh = byId(val), mo = owed(mh);
+      if (a === 'msheet' && mo > 0) openModal('Hand over marksheet', '<div class="banner p-warn" role="alert">' + esc(mh.name) + ' still has ' + (isAdm() ? 'unpaid dues' : fmt(mo) + ' unpaid') + '. Many schools collect dues before handing over the marksheet.</div>' +
+        '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn" data-a="msheet2" data-v="' + mh.id + '">Hand over anyway</button>' + (canSee('fees') || canSee('collection') ? '<button class="btn btn-primary" data-a="collectfor" data-v="' + mh.id + '">Collect dues first</button>' : '') + '</div>');
+      else { mat(mh).sheet = DAYS[DAYS.length-1]; log('students', 'Matric marksheet handed to ' + mh.name + (mo > 0 ? ' with dues still unpaid' : ''), mo > 0); closeModal(); render(); toast('Marksheet handed over to ' + mh.name + '.'); } }
+    else if (a === 'mnotify' || a === 'mnotify2'){ var Yn = S.matYear || 2026, mAll = students.concat(alumni).filter(function(x){ return matBatch(x) === Yn; });
+      var mT = val === 'sheet' ? mAll.filter(function(x){ return matPct(x) !== null && !x.matric.sheet; }) : mAll.filter(function(x){ return !(x.matric && x.matric.admit); });
+      var mMsg = val === 'sheet' ? 'Assalam o Alaikum! [Name] ki Matric ' + Yn + ' ki marksheet ' + SCHOOL + ' aa gayi hai. School office se subah 9 se 1 baje tak le sakte hain. Shukriya.' : 'Assalam o Alaikum! [Name] ka Matric ' + Yn + ' ka admit card ' + SCHOOL + ' aa gaya hai. School office se subah 9 se 1 baje tak le sakte hain. Shukriya.';
+      if (a === 'mnotify') openModal(val === 'sheet' ? 'Marksheets arrived' : 'Admit cards arrived', chat([mMsg.replace('[Name]', '<b>' + esc(mT[0] ? mT[0].name.split(' ')[0] : 'Ahmed') + '</b>')], 'Goes to the parents of ' + mT.length + ' students on WhatsApp, each with their own child’s name.') +
+        '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" data-a="mnotify2" data-v="' + val + '">Send to ' + mT.length + ' parents</button></div>');
+      else { log('ann', 'Told ' + mT.length + ' parents on WhatsApp that the Matric ' + Yn + ' ' + (val === 'sheet' ? 'marksheets' : 'admit cards') + ' have arrived'); closeModal(); render(); toast('Sent to ' + mT.length + ' parents on WhatsApp.'); } }
     else if (a === 'proall'){ var left = proLeft(), totM = 0, totH = 0;
       var rowsA = left.map(function(c){ var l = students.filter(function(s){ return s.cls === c; }), h = l.filter(proHeld).length; totM += l.length - h; totH += h; return '<tr><td><b>' + cn(c) + '</b></td><td>' + (nextCls(c) ? cn(nextCls(c)) : 'Passed out') + '</td><td class="r num">' + (l.length - h) + '</td><td class="r num">' + (h ? '<span style="color:var(--warn);font-weight:700">' + h + '</span>' : '0') + '</td></tr>'; }).join('');
       openModal('Promote all classes', '<p>Every class below is promoted in one go, from the top down, so two batches never mix. Students who failed the final (or the mid-term if the final is not entered) are held back in their class.</p>' +
@@ -1587,6 +1661,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   document.addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target, id = f.id;
+    if (id === 'mres-form'){
+      var ms = byId(f.dataset.id), mm = document.getElementById('mr-marks').value.trim(), mroll = document.getElementById('mr-roll').value.trim();
+      var mn = +mm, merr = mm === '' || !/^\d+$/.test(mm) || mn > MATRIC_TOTAL ? 'Enter the marks as a whole number from 0 to ' + MATRIC_TOTAL + '.' : mroll && !/^\d{4,10}$/.test(mroll) ? 'The roll number should be digits only.' : '';
+      if (merr){ S.modal.html = matResHtml(ms, merr); renderModal(); return; }
+      var old = ms.matric && ms.matric.result ? ms.matric.result.marks : null; mat(ms).result = { marks: mn }; if (mroll) ms.matric.roll = mroll;
+      log('marks', 'Matric board result for ' + ms.name + ': ' + mn + ' / ' + MATRIC_TOTAL + ' (' + matGrade(mn / MATRIC_TOTAL) + ')' + (old !== null && old !== mn ? ', was ' + old : ''), old !== null && old !== mn);
+      closeModal(); render(); toast('Result saved: ' + matGrade(mn / MATRIC_TOTAL) + '.'); return;
+    }
     if (id === 'ann-form'){
       var ad = annDraft();
       S.annErr = !ad.title.trim() ? 'Add a title.' : !ad.body.trim() ? 'Write the message.' : /\[[^\]]*\]/.test(ad.title + ad.body) ? 'Replace the parts in [brackets] with the real details first.' : (ad.to === 'classes' && !ad.classes.length) ? 'Choose at least one class.' : (ad.when === 'later' && (!ad.at || ad.at < '2026-11-20T18:00')) ? 'Pick a date and time in the future.' : '';
