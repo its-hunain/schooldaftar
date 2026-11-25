@@ -272,7 +272,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       var id = sid++, g = k % 2 === 1, f = g ? girls[(k * 7 + 3) % girls.length] : boys[(k * 4 + 2) % boys.length], ln = lasts[(k * 5 + 1) % lasts.length];
       var a = { id: id, name: f + ' ' + ln, father: fathers[Math.floor(hsh(id, 11) * fathers.length)] + ' ' + ln, cls: '10', sec: 'A', girl: g, fee: 3300, paid: true, monthsDue: 0,
         parent: '03' + (10 + Math.floor(hsh(id, 13) * 40)) + '-' + (1000000 + Math.floor(hsh(id, 15) * 8999999)), admitted: (2015 + Math.floor(hsh(id, 17) * 6)) + '-04',
-        marks: { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }, charges: [], tu: [], conc: { type:'auto' },
+        marks: { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }, charges: [], tu: [], conc: { type:'none' },
         status: 'passed', leftOn: '2026-04-06', reason: 'Passed out (Matric)', conduct: 'Good', lastClass: 'Class 10', writeOff: 0 };
       subjectsOf('10').forEach(function(x){ a.marks['Final'][x] = 45 + Math.floor(hsh(id * 3 + x.length, 19) * 54); });
       a.dob = (2010 - (hsh(id, 21) < .3 ? 1 : 0)) + '-' + p2(1 + Math.floor(hsh(id, 23) * 12)) + '-' + p2(1 + Math.floor(hsh(id, 25) * 28));
@@ -293,7 +293,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   });
   var slcSeq = 31;
   var FEESET = { fine:200, due:10, sib:10, staff:50 };
-  var CONC_TYPES = [['auto','Automatic (sibling discount if any)'],['none','No concession'],['staff','Staff child'],['sch','Scholarship (%)'],['fixed','Fixed amount off (Rs)']];
+  var CONC_TYPES = [['none','No concession'],['sib','Sibling discount'],['staff','Staff child'],['sch','Scholarship (%)'],['fixed','Fixed amount off (Rs)']];
   var STAFF = [
     { id:1, role:'accountant', name:'Kashif Mehmood', phone:'03002222222', pin:'2222', classes:[], salary0:37000, joined:'2022-03', incs:[{ month:'2026-01', from:37000, to:40000 }] },
     { id:2, role:'teacher', name:'Sana Javed', phone:'03003333333', pin:'3333', subject:'English', classes:['6','7','8','9','10'], salary0:32000, joined:'2023-04', incs:[{ month:'2024-07', from:32000, to:35000 },{ month:'2026-07', from:35000, to:38000 }] },
@@ -322,6 +322,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     { id:25, role:'teacher', name:'Naila Shahid', phone:'03015678901', pin:'2525', subject:'Science', classes:['1','2','3','4','5'], salary0:25000, joined:'2026-04', incs:[] }
   ];
   var staffId = 26;
+  // the eldest brother or sister already in school (same WhatsApp number)
+  function sibAuto(s){ var o = students.filter(function(x){ return x.parent === s.parent && x.id < s.id; }).sort(function(a, b){ return a.id - b.id; })[0]; return o ? { type:'sib', sibOf: o.id } : null; }
+  students.forEach(function(s){ if (s.conc.type === 'auto') s.conc = sibAuto(s) || { type:'none' }; });
+  [[7, 2], [52, 11]].forEach(function(x){ var s = students.filter(function(y){ return y.id === x[0]; })[0]; if (s) s.conc = { type:'staff', staffId: x[1] }; });
   // Each teacher has one subject and teaches it in their classes. The pre-primary teacher (subject 'All') teaches every subject there.
   function canTeach(u, c, x){ return u.role === 'teacher' && (u.subject === x || (u.subject === 'All' && /^(Nursery|KG)/.test(c))); }
   units().forEach(function(k){ var c = gOf(k);
@@ -428,10 +432,14 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (c.type === 'staff') return { label:'Staff child ' + FEESET.staff + '%', amt: r10(s.fee * FEESET.staff / 100) };
     if (c.type === 'sch') return { label:'Scholarship ' + c.pct + '%', amt: r10(s.fee * c.pct / 100) };
     if (c.type === 'fixed') return { label:'Concession Rs ' + nf(c.amt), amt: Math.min(s.fee, c.amt) };
+    if (c.type === 'sib' && FEESET.sib > 0) return { label:'Sibling ' + FEESET.sib + '%', amt: r10(s.fee * FEESET.sib / 100) };
     if (c.type === 'auto' && FEESET.sib > 0 && sibRank(s) > 0) return { label:'Sibling ' + FEESET.sib + '%', amt: r10(s.fee * FEESET.sib / 100) };
     return null; }
   function netFee(s){ var c = concOf(s); return s.fee - (c ? c.amt : 0); }
-  function concText(c){ return c.type === 'auto' ? 'Automatic' : c.type === 'none' ? 'None' : c.type === 'staff' ? 'Staff child' : c.type === 'sch' ? 'Scholarship ' + c.pct + '%' : 'Rs ' + nf(c.amt) + ' off'; }
+  function concText(c){ var o = c.type === 'sib' ? byId(c.sibOf) : c.type === 'staff' ? staffById(c.staffId) : null;
+    return c.type === 'auto' ? 'Automatic' : c.type === 'none' ? 'None' : c.type === 'sib' ? 'Sibling of ' + (o ? o.name : 'a student') : c.type === 'staff' ? 'Staff child' + (o ? ' (' + o.name + ')' : '') : c.type === 'sch' ? 'Scholarship ' + c.pct + '%' : 'Rs ' + nf(c.amt) + ' off'; }
+  // who a sibling or staff-child discount comes from, for lists
+  function concWho(c){ var o = c && c.type === 'sib' ? byId(c.sibOf) : c && c.type === 'staff' ? staffById(c.staffId) : null; return o ? (c.type === 'sib' ? 'Sibling of ' + o.name + (o.cls ? ' (' + sName(o) + ')' : '') : 'Child of ' + o.name) : ''; }
   var LOG = [], logId = 1;
   var KINDS = { fees:'Fees', students:'Students', staff:'Staff', marks:'Marks', attendance:'Attendance', expenses:'Expenses', settings:'Settings', ann:'Announcements', classes:'Classes', promotion:'Promotion' };
   function log(kind, text, flag, d){ LOG.unshift({ id: logId++, d: d || null, date: DAYS[DAYS.length-1], time: nowTime(), who: S.user ? S.user.name : OWNER, role: S.user ? S.user.title : 'Owner / Principal', kind: kind, text: text, flag: !!flag }); }
@@ -746,10 +754,10 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     return '<form class="form" id="feeset-form" novalidate><p class="sub">These rules apply to every student. Changes count from the next fee and are saved in the activity log.</p>' +
       '<div class="fields"><label class="field" for="fs-due">Fee due by (day of month)<input id="fs-due" type="number" min="1" max="28" value="' + FEESET.due + '"></label><label class="field" for="fs-fine">Late fine after that (Rs)<input id="fs-fine" type="number" min="0" value="' + FEESET.fine + '"></label></div>' +
       '<div class="fields"><label class="field" for="fs-sib">Sibling discount, 2nd child onwards (%)<input id="fs-sib" type="number" min="0" max="100" value="' + FEESET.sib + '"></label><label class="field" for="fs-staff">Staff child discount (%)<input id="fs-staff" type="number" min="0" max="100" value="' + FEESET.staff + '"></label></div>' +
-      '<p class="sub">Scholarships and fixed concessions are set per student in <b>Edit student</b>. Sibling discount is given automatically when two students share the same father and WhatsApp number.</p>' + err(e) +
+      '<p class="sub">Scholarships and fixed concessions are set per student in <b>Edit student</b>. Sibling and staff-child discounts are set per student too, naming the brother, sister or staff member they come from.</p>' + err(e) +
       '<div class="row" style="justify-content:flex-end">' + (inPage ? '' : '<button type="button" class="btn" data-a="mclose">Cancel</button>') + '<button class="btn btn-primary" type="submit">Save rules</button></div></form>' +
       '<h3 style="font-size:15px">Students with a concession (' + withC.length + ')</h3>' +
-      table('concl', [{k:'n',label:'Student',h:function(s){ return '<b>' + esc(s.name) + '</b><div class="sub">' + sName(s) + '</div>'; }},{k:'t',label:'Concession',h:function(s){ var l = esc(concOf(s).label); return hiding() ? l.replace(/Rs [\d,]+/g, 'Rs ' + DOTS) : l; }},{k:'f',label:'Fee',r:1,h:function(s){ return mnf(s.fee); }},{k:'o',label:'Off',r:1,h:function(s){ return '−' + mnf(concOf(s).amt); }},{k:'p',label:'Pays',r:1,h:function(s){ return mnf(netFee(s)); }}], withC, {foot:'<tfoot><tr><td colspan="3">Total per month</td><td class="r num">−' + mnf(withC.reduce(function(x,s){ return x + concOf(s).amt; }, 0)) + '</td><td></td></tr></tfoot>'});
+      table('concl', [{k:'n',label:'Student',h:function(s){ return '<b>' + esc(s.name) + '</b><div class="sub">' + sName(s) + '</div>'; }},{k:'t',label:'Concession',h:function(s){ var l = esc(concOf(s).label); return (hiding() ? l.replace(/Rs [\d,]+/g, 'Rs ' + DOTS) : l) + (concWho(s.conc) ? '<div class="sub">' + esc(concWho(s.conc)) + '</div>' : ''); }},{k:'f',label:'Fee',r:1,h:function(s){ return mnf(s.fee); }},{k:'o',label:'Off',r:1,h:function(s){ return '−' + mnf(concOf(s).amt); }},{k:'p',label:'Pays',r:1,h:function(s){ return mnf(netFee(s)); }}], withC, {foot:'<tfoot><tr><td colspan="3">Total per month</td><td class="r num">−' + mnf(withC.reduce(function(x,s){ return x + concOf(s).amt; }, 0)) + '</td><td></td></tr></tfoot>'});
   }
 
   var PROMO = {};
@@ -874,7 +882,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function needsLook(l){ return l.flag && !l.checked; }
   function snap(o){ return JSON.parse(JSON.stringify(o)); }
   function tuOf(sid, m){ var s = byId(sid); return s ? s.tu.filter(function(t){ return t.m === m; })[0] : null; }
-  function conc0(s){ return s.conc || { type:'auto' }; }
+  function conc0(s){ return s.conc || { type:'none' }; }
   var RULE_NAMES = { due:'Due day', fine:'Late fine', sib:'Sibling discount', staff:'Staff child discount' };
   function ruleText(k, v){ return k === 'due' ? ordinal(v) + ' of the month' : k === 'fine' ? 'Rs ' + nf(v) : v + '%'; }
   var ACTS = {
@@ -1071,7 +1079,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       ['2026-11-19','12:15',A,'Admin','students','Edited details of ' + st(45).name + ': new parent WhatsApp number',0, { rows:[['Student', st(45).name + ' (' + sName(st(45)) + ')']], before: '0300-1234567', after: st(45).parent }],
       ['2026-11-20','09:12',K,'Accountant','fees','Collected Rs 3,100 from ' + col.name + ' (' + sName(col) + '), receipt #' + (rcptNo - 3) + ', Cash',0, { rows:[['Receipt', '#' + (rcptNo - 3)], ['Amount', 'Rs 3,100'], ['Paid by', 'Cash']] }],
       ['2026-11-19','15:40',K,'Accountant','fees','Undid payment: November tuition (' + fmt(netFee(unpaid)) + ') for ' + unpaid.name + ', removed from receipt #2457. Reason: Entered by mistake',1, { act:'payment', sid: unpaid.id, key: 't' + unpaid.id + '-' + CUR, reason: 'Entered by mistake', rows:[['Fee item', 'November tuition'], ['Amount', fmt(netFee(unpaid))], ['Receipt', '#2457']] }],
-      ['2026-11-19','11:05',T,'Owner / Principal','students','Concession for ' + concS.name + ' changed from Automatic to Scholarship 25%',1, { act:'revertStudent', sid: concS.id, conc: { type:'auto' }, fee: concS.fee, before: 'Concession Automatic', after: 'Concession Scholarship 25%' }],
+      ['2026-11-19','11:05',T,'Owner / Principal','students','Concession for ' + concS.name + ' changed from None to Scholarship 25%',1, { act:'revertStudent', sid: concS.id, conc: { type:'none' }, fee: concS.fee, before: 'Concession None', after: 'Concession Scholarship 25%' }],
       ['2026-11-18','13:22',K,'Accountant','fees','Waived late fine of Rs 200 (October) for ' + waivS.name + '. Reason: Parent request',1, { act:'unwaive', sid: waivS.id, m: 9, reason: 'Parent request', rows:[['Student', waivS.name + ' (' + sName(waivS) + ')'], ['Fine', 'Rs 200, October']] }],
       ['2026-11-18','10:01',T,'Owner / Principal','staff','Increment for Sana Javed: Rs 35,000 to Rs 38,000 from Jul 2026',0, { before: 'Rs 35,000 a month', after: 'Rs 38,000 a month from Jul 2026' }],
       ['2026-11-17','12:30',K,'Accountant','expenses','Deleted expense: Printer toner (Rs 3,500, 12 Nov)',1, { act:'restoreExpense', snap: toner, rows:[['Amount', 'Rs 3,500'], ['Date', 'Thu 12 Nov'], ['Paid by', 'Cash']] }],
@@ -1342,18 +1350,41 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function confirmBox(text, act, v, label){ return '<p>' + text + '</p><div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" style="background:var(--bad);border-color:var(--bad);color:#fff" data-a="' + act + '" data-v="' + v + '">' + label + '</button></div>'; }
 
   function isAcc(){ return !!(S.user && S.user.role === 'accountant'); }
-  function studentForm(s, e){
-    s = s || {}; var c = s.conc || { type:'auto' }, cv = c.type === 'sch' || c.type === 'fixed';
-    return '<form class="form" id="stu-form" data-id="' + (s.id || '') + '" novalidate>' +
+  function studentForm(s, e, ask){
+    s = s || {}; var c = s.conc || { type:'none' }; if (c.type === 'auto') c = (s.id && sibAuto(s)) || { type:'none' }; var cv = c.type === 'sch' || c.type === 'fixed';
+    // suggested siblings: same WhatsApp number or same father's CNIC
+    var ph0 = String(s.parent || '').replace(/\D/g, ''), cn0 = String(s.fcnic || '').replace(/\D/g, '');
+    var sugg = students.filter(function(x){ return x.id !== s.id && ((ph0.length === 11 && x.parent.replace(/\D/g, '') === ph0) || (cn0.length === 13 && String(x.fcnic || '').replace(/\D/g, '') === cn0)); });
+    var optS = function(x){ return '<option value="' + x.id + '"' + (c.sibOf === x.id ? ' selected' : '') + '>' + esc(x.name) + ' · ' + sName(x) + ' · father ' + esc(x.father) + '</option>'; };
+    var others = students.filter(function(x){ return x.id !== s.id && sugg.indexOf(x) < 0; }).sort(function(a, b){ return a.name < b.name ? -1 : 1; });
+    return (ask ? ask : '') + '<form class="form" id="stu-form" data-id="' + (s.id || '') + '" novalidate' + (ask ? ' style="display:none"' : '') + '>' +
       '<div class="fields"><label class="field" for="sf-name">Student name<input id="sf-name" value="' + esc(s.name) + '" placeholder="e.g. Ahmed Raza"></label><label class="field" for="sf-father">Father’s name<input id="sf-father" value="' + esc(s.father) + '"></label></div>' +
       '<div class="fields"><label class="field" for="sf-cls">Class and section<select id="sf-cls">' + units().map(function(k){ return '<option value="' + k + '"' + (s.cls && uOf(s) === k ? ' selected' : '') + '>' + uName(k) + '</option>'; }).join('') + '</select></label><label class="field" for="sf-g">Gender<select id="sf-g"><option value="b"' + (s.girl ? '' : ' selected') + '>Boy</option><option value="g"' + (s.girl ? ' selected' : '') + '>Girl</option></select></label><label class="field" for="sf-dob">Date of birth<input id="sf-dob" type="date" min="2005-01-01" max="2023-12-31" value="' + esc(s.dob) + '"></label></div>' +
       '<div class="fields"><label class="field" for="sf-bform">B-Form number<input id="sf-bform" inputmode="numeric" value="' + esc(s.bform) + '" placeholder="42201-1234567-1"></label><label class="field" for="sf-cnic">Father’s CNIC<input id="sf-cnic" inputmode="numeric" value="' + esc(s.fcnic) + '" placeholder="42201-1234567-1"></label></div>' +
       '<div class="fields"><label class="field" for="sf-phone">Parent’s WhatsApp<input id="sf-phone" type="tel" value="' + esc(s.parent) + '" placeholder="0300-1234567"></label><label class="field" for="sf-em">Emergency contact<input id="sf-em" type="tel" value="' + esc(s.emerg) + '" placeholder="Another family number"></label></div>' +
       '<label class="field" for="sf-addr">Home address<input id="sf-addr" value="' + esc(s.address) + '" placeholder="House no, area, Karachi"></label>' +
-      '<div class="fields"><label class="field" for="sf-fee">Monthly fee before concession (Rs)<input id="sf-fee" type="number" min="1" value="' + esc(s.fee) + '"></label><label class="field" for="sf-conc">Concession' + (isAcc() ? ' (set by the owner)' : '') + '<select id="sf-conc"' + (isAcc() ? ' disabled' : '') + '>' + CONC_TYPES.map(function(o){ return '<option value="' + o[0] + '"' + (c.type === o[0] ? ' selected' : '') + '>' + o[1] + (o[0] === 'staff' ? ' (' + FEESET.staff + '%)' : '') + '</option>'; }).join('') + '</select></label>' +
+      '<div class="fields"><label class="field" for="sf-fee">Monthly fee before concession (Rs)<input id="sf-fee" type="number" min="1" value="' + esc(s.fee) + '"></label><label class="field" for="sf-conc">Concession' + (isAcc() ? ' (set by the owner)' : '') + '<select id="sf-conc"' + (isAcc() ? ' disabled' : '') + '>' + CONC_TYPES.map(function(o){ return '<option value="' + o[0] + '"' + (c.type === o[0] ? ' selected' : '') + '>' + o[1] + (o[0] === 'staff' ? ' (' + FEESET.staff + '%)' : o[0] === 'sib' ? ' (' + FEESET.sib + '%)' : '') + '</option>'; }).join('') + '</select></label>' +
         '<label class="field" for="sf-cval" id="sf-cval-w"' + (cv ? '' : ' hidden') + '><span id="sf-cval-l">' + (c.type === 'fixed' ? 'Amount off (Rs)' : 'Scholarship %') + '</span><input id="sf-cval" type="number" min="1" value="' + esc(c.type === 'sch' ? c.pct : c.type === 'fixed' ? c.amt : '') + '"></label></div>' +
-      (s.id ? '' : '<label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="sf-adm" checked> Charge admission fee of Rs 3,000</label>') +
+      '<label class="field" for="sf-sib" id="sf-sib-w"' + (c.type === 'sib' ? '' : ' hidden') + '>Brother or sister of<select id="sf-sib"><option value="">Choose the student already in school</option>' +
+        (sugg.length ? '<optgroup label="Same WhatsApp number or father’s CNIC">' + sugg.map(optS).join('') + '</optgroup>' : '') + '<optgroup label="All students (A–Z)">' + others.map(optS).join('') + '</optgroup></select><span class="sub" style="font-weight:400">Empty father, WhatsApp, CNIC and address fields are filled from the sibling’s record.</span></label>' +
+      '<label class="field" for="sf-staff" id="sf-staff-w"' + (c.type === 'staff' ? '' : ' hidden') + '>Child of which staff member<select id="sf-staff"><option value="">Choose the staff member</option>' + STAFF.filter(function(u){ return !u.left; }).sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(function(u){ return '<option value="' + u.id + '"' + (c.staffId === u.id ? ' selected' : '') + '>' + esc(u.name) + ' · ' + esc(roleLabel(u)) + '</option>'; }).join('') + '</select></label>' +
+      '<label class="field" for="sf-cnote" id="sf-cnote-w"' + (cv ? '' : ' hidden') + '>Reason (optional)<input id="sf-cnote" maxlength="80" value="' + esc(c.note || '') + '" placeholder="e.g. merit, orphan, financial hardship"></label>' +
+      (s.id ? '' : '<label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="sf-adm"' + (s.adm === false ? '' : ' checked') + '> Charge admission fee of Rs 3,000</label>') +
       err(e) + '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">' + (s.id ? 'Save changes' : 'Add student') + '</button></div></form>';
+  }
+  // the yes/no step before a new or changed concession is saved
+  function concAsk(d, conc){
+    var t = { id: d.id || -1, fee: +d.fee, conc: conc, parent: d.parent }, cc = concOf(t), net = t.fee - (cc ? cc.amt : 0), o, why = '', warn = '';
+    if (conc.type === 'sib'){ o = byId(conc.sibOf);
+      why = '<b>' + esc(d.name) + '</b> is the brother or sister of <b>' + esc(o.name) + '</b> (' + sName(o) + ', father ' + esc(o.father) + ', WhatsApp ' + esc(o.parent) + '). Sibling discount ' + FEESET.sib + '%.';
+      var dp = String(d.parent).replace(/\D/g, ''), sp = o.parent.replace(/\D/g, '');
+      if (dp !== sp || d.father.trim().toLowerCase() !== o.father.toLowerCase()) warn = 'The ' + (dp !== sp ? 'WhatsApp number' : '') + (dp !== sp && d.father.trim().toLowerCase() !== o.father.toLowerCase() ? ' and the ' : '') + (d.father.trim().toLowerCase() !== o.father.toLowerCase() ? 'father’s name' : '') + ' do not match ' + esc(o.name) + '’s record. Check that they really are siblings.'; }
+    else if (conc.type === 'staff'){ o = staffById(conc.staffId); why = '<b>' + esc(d.name) + '</b> is the child of staff member <b>' + esc(o.name) + '</b> (' + esc(roleLabel(o)) + '). Staff child discount ' + FEESET.staff + '%.'; }
+    else if (conc.type === 'sch') why = 'Scholarship of ' + conc.pct + '% for <b>' + esc(d.name) + '</b>' + (conc.note ? ', reason: ' + esc(conc.note) : '') + '.';
+    else why = 'Fixed concession of ' + fmt(conc.amt) + ' a month for <b>' + esc(d.name) + '</b>' + (conc.note ? ', reason: ' + esc(conc.note) : '') + '.';
+    return '<div class="panel" style="background:var(--info-bg);border-color:var(--info)"><b>Confirm the concession</b><p style="margin:0">' + why + '</p>' + (warn ? '<div class="banner p-warn" role="alert">' + warn + '</div>' : '') +
+      '<div class="row"><span>Monthly fee</span><b class="num">' + fmt(t.fee) + ' → ' + fmt(net) + '</b></div><p class="sub">The owner sees this in the activity log. It applies from the next fee.</p>' +
+      '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="stuback">Back to the form</button><button class="btn btn-primary" data-a="stuok">Confirm and save</button></div></div>';
   }
   function allSubjects(){ var o = []; classes.forEach(function(c){ subjectsOf(c).forEach(function(x){ if (o.indexOf(x) < 0) o.push(x); }); }); return o; }
   function staffForm(u, e, role){
@@ -1494,6 +1525,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'propick'){ S.proFrom = val; S.proHeld = {}; render(); window.scrollTo(0, 0); }
     else if (a === 'proyes'){ var pc = S.proFrom, pn = nextCls(pc), pl = students.filter(function(s){ return s.cls === pc; }), pm = pl.filter(function(s){ return !proHeld(s); });
       openModal('Confirm promotion', confirmBox((pn ? 'Move <b>' + pm.length + '</b> students from ' + cn(pc) + ' to ' + cn(pn) : 'Mark <b>' + pm.length + '</b> students of ' + cn(pc) + ' as passed out') + (pl.length - pm.length ? ' and hold back <b>' + (pl.length - pm.length) + '</b>' : '') + '? ' + (pn ? 'Their marks start fresh for the new session. Past results stay in the reports.' : 'They move to Left or passed out, and you can issue their certificates from there.'), 'proyes2', pc, pn ? 'Promote' : 'Mark passed out').replace('background:var(--bad);border-color:var(--bad)', 'background:var(--brand);border-color:var(--brand)')); }
+    else if (a === 'stuok'){ var sf0 = document.getElementById('stu-form'); if (sf0){ sf0.dataset.ok = '1'; if (sf0.requestSubmit) sf0.requestSubmit(); else sf0.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true })); } }
+    else if (a === 'stuback'){ if (S.stuDraft){ S.modal.html = studentForm(S.stuDraft); renderModal(); } }
     else if (a === 'matclear'){ S.matAd = S.matRes = S.matSh = S.matDue = 'all'; S.q.mat = ''; S.page = {}; render(); }
     else if (a === 'matyear'){ S.matYear = +val; S.page.mat = 0; render(); }
     else if (a === 'madmit'){ var ma = byId(val); mat(ma).admit = DAYS[DAYS.length-1]; log('students', 'Matric admit card handed to ' + ma.name); render(); toast('Admit card marked as given to ' + ma.name + '.'); }
@@ -1635,7 +1668,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       var ca = document.getElementById('c-all'); ca.checked = on.length === boxes.length; ca.indeterminate = on.length > 0 && on.length < boxes.length;
       return;
     }
-    if (el.id === 'sf-conc'){ var w = document.getElementById('sf-cval-w'); w.hidden = !(el.value === 'sch' || el.value === 'fixed'); document.getElementById('sf-cval-l').textContent = el.value === 'fixed' ? 'Amount off (Rs)' : 'Scholarship %'; return; }
+    if (el.id === 'sf-conc'){ var w = document.getElementById('sf-cval-w'), cvv = el.value === 'sch' || el.value === 'fixed'; w.hidden = !cvv; document.getElementById('sf-cnote-w').hidden = !cvv; document.getElementById('sf-cval-l').textContent = el.value === 'fixed' ? 'Amount off (Rs)' : 'Scholarship %';
+      document.getElementById('sf-sib-w').hidden = el.value !== 'sib'; document.getElementById('sf-staff-w').hidden = el.value !== 'staff'; return; }
+    if (el.id === 'sf-sib'){ var sb = byId(el.value); if (sb){ [['sf-father', sb.father], ['sf-phone', sb.parent], ['sf-cnic', sb.fcnic], ['sf-addr', sb.address], ['sf-em', sb.emerg]].forEach(function(x){ var fe = document.getElementById(x[0]); if (fe && !fe.value.trim() && x[1]) fe.value = x[1]; }); } return; }
     if (el.id === 'chl-c' || el.id === 'chl-m'){ if (el.id === 'chl-c') S.chl.cls = el.value; else S.chl.m = +el.value; S.modal.html = challanModal(S.chl, S.chl.m); renderModal(); return; }
     if (el.classList.contains('pro-chk')){ S.proHeld[el.dataset.v] = !el.checked; render(); return; }
     var a = el.dataset.a; if (!a) return;
@@ -1773,12 +1808,16 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (id === 'stu-form'){
       var ph = v('sf-phone').replace(/\D/g, ''), fee = parseInt(v('sf-fee'), 10), uk = v('sf-cls'), ct = v('sf-conc'), cvn = parseInt(v('sf-cval'), 10);
       var bf = v('sf-bform').replace(/\D/g, ''), cn2 = v('sf-cnic').replace(/\D/g, ''), em = v('sf-em').replace(/\D/g, '');
-      var conc = ct === 'sch' ? { type:'sch', pct: cvn } : ct === 'fixed' ? { type:'fixed', amt: cvn } : { type: ct };
-      if (isAcc()){ var ex0 = f.dataset.id ? byId(f.dataset.id) : null; conc = ex0 ? (ex0.conc || { type:'auto' }) : { type:'auto' }; ct = conc.type; cvn = conc.type === 'sch' ? conc.pct : conc.amt; }
-      var d = { id: +f.dataset.id || null, name: v('sf-name').trim(), father: v('sf-father').trim(), cls: gOf(uk), sec: secOf(uk), girl: v('sf-g') === 'g', parent: v('sf-phone'), fee: v('sf-fee'), dob: v('sf-dob'), bform: v('sf-bform'), fcnic: v('sf-cnic'), emerg: v('sf-em'), address: v('sf-addr').trim(), conc: conc };
+      var cnote = (v('sf-cnote') || '').trim(), sibId = +v('sf-sib') || null, stId = +v('sf-staff') || null;
+      var conc = ct === 'sch' ? { type:'sch', pct: cvn } : ct === 'fixed' ? { type:'fixed', amt: cvn } : ct === 'sib' ? { type:'sib', sibOf: sibId } : ct === 'staff' ? { type:'staff', staffId: stId } : { type: ct };
+      if (cnote && (ct === 'sch' || ct === 'fixed')) conc.note = cnote;
+      if (isAcc()){ var ex0 = f.dataset.id ? byId(f.dataset.id) : null; conc = ex0 ? (ex0.conc || { type:'none' }) : { type:'none' }; ct = conc.type; cvn = conc.type === 'sch' ? conc.pct : conc.amt; }
+      var d = { id: +f.dataset.id || null, name: v('sf-name').trim(), father: v('sf-father').trim(), cls: gOf(uk), sec: secOf(uk), girl: v('sf-g') === 'g', parent: v('sf-phone'), fee: v('sf-fee'), dob: v('sf-dob'), bform: v('sf-bform'), fcnic: v('sf-cnic'), emerg: v('sf-em'), address: v('sf-addr').trim(), conc: conc, adm: !!(document.getElementById('sf-adm') && document.getElementById('sf-adm').checked) };
       var er = !d.name ? 'Enter the student’s name.' : ph.length !== 11 ? 'Enter an 11-digit WhatsApp number.' : !(fee > 0) ? 'Enter the monthly fee.' : bf && bf.length !== 13 ? 'The B-Form number has 13 digits.' : cn2 && cn2.length !== 13 ? 'The CNIC number has 13 digits.' : em && em.length !== 11 ? 'Enter an 11-digit emergency number, or leave it blank.' :
-        ct === 'sch' && !(cvn >= 1 && cvn <= 100) ? 'Enter the scholarship as 1 to 100 percent.' : ct === 'fixed' && !(cvn >= 1 && cvn <= fee) ? 'The amount off must be between 1 and the monthly fee.' : '';
+        ct === 'sch' && !(cvn >= 1 && cvn <= 100) ? 'Enter the scholarship as 1 to 100 percent.' : ct === 'fixed' && !(cvn >= 1 && cvn <= fee) ? 'The amount off must be between 1 and the monthly fee.' : ct === 'sib' && !sibId ? 'Choose the brother or sister who is already in school.' : ct === 'sib' && sibId === d.id ? 'A student cannot be their own sibling.' : ct === 'staff' && !stId ? 'Choose the staff member this student is the child of.' : '';
       if (er){ S.modal.html = studentForm(d, er); renderModal(); return; }
+      var prevC = d.id ? (byId(d.id).conc || { type:'none' }) : { type:'none' };
+      if (!isAcc() && conc.type !== 'none' && concText(conc) + (conc.note || '') !== concText(prevC) + (prevC.note || '') && f.dataset.ok !== '1'){ S.stuDraft = d; S.modal.html = studentForm(d, '', concAsk(d, conc)); renderModal(); return; }
       var phone = ph.slice(0,4) + '-' + ph.slice(4), idf = function(x){ return x ? x.slice(0,5) + '-' + x.slice(5,12) + '-' + x.slice(12) : ''; };
       var rec = { name: d.name, father: d.father, cls: d.cls, sec: d.sec, girl: d.girl, parent: phone, fee: fee, dob: d.dob, bform: idf(bf), fcnic: idf(cn2), emerg: em ? em.slice(0,4) + '-' + em.slice(4) : '', address: d.address, conc: conc };
       if (d.id){ var s = byId(d.id), oldC = concText(s.conc || { type:'auto' }), oldF = s.fee, oldU = sName(s), oldCO = snap(s.conc || { type:'auto' }); Object.keys(rec).forEach(function(k){ s[k] = rec[k]; });
@@ -1786,7 +1825,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         log('students', 'Edited ' + s.name + (ch.length ? ': ' + ch.join(', ') : ''), oldC !== concText(conc) || oldF !== fee, oldC !== concText(conc) || oldF !== fee ? { act:'revertStudent', sid: s.id, conc: oldCO, fee: oldF, before: 'Concession ' + oldC + ', fee ' + fmt(oldF), after: 'Concession ' + concText(conc) + ', fee ' + fmt(fee) } : null); toast('Saved changes for ' + s.name + '.'); }
       else { var ns = Object.assign({ id: sid++, paid: false, monthsDue: 1, tu: [{ m: CUR, paid: false }], admitted: NOW_YM, marks: { 'Monthly test':{}, 'Mid-term':{}, 'Final':{} }, charges: [] }, rec);
         if (document.getElementById('sf-adm') && document.getElementById('sf-adm').checked) ns.charges.push({ cid: cid++, type:'admission', label:'New admission fee', amount:3000, paid:false });
-        students.push(ns); log('students', 'Added student ' + ns.name + ' to ' + sName(ns) + (concOf(ns) ? ', ' + concOf(ns).label + ' off' : '')); toast(d.name + ' added to ' + sName(ns) + '.'); }
+        students.push(ns); log('students', 'Added student ' + ns.name + ' to ' + sName(ns) + (concOf(ns) ? ', ' + concOf(ns).label + ' off' + (concWho(ns.conc) ? ' (' + concWho(ns.conc) + ')' : '') + (ns.conc.note ? ', reason: ' + ns.conc.note : '') : ''), conc.type !== 'none'); toast(d.name + ' added to ' + sName(ns) + '.'); }
       closeModal(); render();
     }
     else if (id === 'staff-form'){
