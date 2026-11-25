@@ -426,6 +426,11 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function sinceRaise(u){ return ymIdx(NOW_YM) - ymIdx(u.incs.length ? u.incs[u.incs.length-1].month : u.joined); }
   function roleLabel(u){ return u.role === 'support' ? (u.job || 'Support staff') : u.role === 'teacher' ? 'Teacher' : u.role === 'admin' ? 'Admin' : 'Accountant'; }
   function r10(n){ return Math.round(n / 10) * 10; }
+  // what the parent pays each month, for the student form while it is being filled in
+  function stuNet(fee, type, val){ fee = parseInt(fee, 10); if (!(fee > 0)) return '—'; val = parseInt(val, 10);
+    var off = type === 'sib' ? r10(fee * FEESET.sib / 100) : type === 'staff' ? r10(fee * FEESET.staff / 100) : type === 'sch' ? (val >= 1 && val <= 100 ? r10(fee * val / 100) : 0) : type === 'fixed' ? (val >= 1 ? Math.min(fee, val) : 0) : 0;
+    return nf(fee - off) + (off ? '  (' + nf(off) + ' off)' : ''); }
+  function stuNetUpdate(){ var o = document.getElementById('sf-net'); if (o) o.value = stuNet(document.getElementById('sf-fee').value, document.getElementById('sf-conc').value, document.getElementById('sf-cval').value); }
   function sibsOf(s){ return students.filter(function(x){ return x.parent === s.parent && x.id !== s.id; }); }
   function sibRank(s){ return students.filter(function(x){ return x.parent === s.parent && x.id < s.id; }).length; }
   function concOf(s){ var c = s.conc || { type:'auto' };
@@ -1363,7 +1368,9 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       '<div class="fields"><label class="field" for="sf-bform">B-Form number<input id="sf-bform" inputmode="numeric" value="' + esc(s.bform) + '" placeholder="42201-1234567-1"></label><label class="field" for="sf-cnic">Father’s CNIC<input id="sf-cnic" inputmode="numeric" value="' + esc(s.fcnic) + '" placeholder="42201-1234567-1"></label></div>' +
       '<div class="fields"><label class="field" for="sf-phone">Parent’s WhatsApp<input id="sf-phone" type="tel" value="' + esc(s.parent) + '" placeholder="0300-1234567"></label><label class="field" for="sf-em">Emergency contact<input id="sf-em" type="tel" value="' + esc(s.emerg) + '" placeholder="Another family number"></label></div>' +
       '<label class="field" for="sf-addr">Home address<input id="sf-addr" value="' + esc(s.address) + '" placeholder="House no, area, Karachi"></label>' +
-      '<div class="fields"><label class="field" for="sf-fee">Monthly fee before concession (Rs)<input id="sf-fee" type="number" min="1" value="' + esc(s.fee) + '"></label><label class="field" for="sf-conc">Concession' + (isAcc() ? ' (set by the owner)' : '') + '<select id="sf-conc"' + (isAcc() ? ' disabled' : '') + '>' + CONC_TYPES.map(function(o){ return '<option value="' + o[0] + '"' + (c.type === o[0] ? ' selected' : '') + '>' + o[1] + (o[0] === 'staff' ? ' (' + FEESET.staff + '%)' : o[0] === 'sib' ? ' (' + FEESET.sib + '%)' : '') + '</option>'; }).join('') + '</select></label>' +
+      '<div class="fields"><label class="field" for="sf-fee">Monthly fee before concession (Rs)<input id="sf-fee" type="number" min="1" value="' + esc(s.fee) + '"></label>' +
+        '<label class="field" for="sf-net">Monthly fee after concession (Rs)<input id="sf-net" readonly tabindex="-1" style="background:var(--bg);font-weight:700" value="' + esc(stuNet(s.fee, c.type, c.type === 'sch' ? c.pct : c.type === 'fixed' ? c.amt : '')) + '" aria-live="polite"></label>' +
+      '</div><div class="fields"><label class="field" for="sf-conc">Concession' + (isAcc() ? ' (set by the owner)' : '') + '<select id="sf-conc"' + (isAcc() ? ' disabled' : '') + '>' + CONC_TYPES.map(function(o){ return '<option value="' + o[0] + '"' + (c.type === o[0] ? ' selected' : '') + '>' + o[1] + (o[0] === 'staff' ? ' (' + FEESET.staff + '%)' : o[0] === 'sib' ? ' (' + FEESET.sib + '%)' : '') + '</option>'; }).join('') + '</select></label>' +
         '<label class="field" for="sf-cval" id="sf-cval-w"' + (cv ? '' : ' hidden') + '><span id="sf-cval-l">' + (c.type === 'fixed' ? 'Amount off (Rs)' : 'Scholarship %') + '</span><input id="sf-cval" type="number" min="1" value="' + esc(c.type === 'sch' ? c.pct : c.type === 'fixed' ? c.amt : '') + '"></label></div>' +
       '<label class="field" for="sf-sib" id="sf-sib-w"' + (c.type === 'sib' ? '' : ' hidden') + '>Brother or sister of<select id="sf-sib"><option value="">Choose the student already in school</option>' +
         (sugg.length ? '<optgroup label="Same WhatsApp number or father’s CNIC">' + sugg.map(optS).join('') + '</optgroup>' : '') + '<optgroup label="All students (A–Z)">' + others.map(optS).join('') + '</optgroup></select><span class="sub" style="font-weight:400">Empty father, WhatsApp, CNIC and address fields are filled from the sibling’s record.</span></label>' +
@@ -1669,7 +1676,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       return;
     }
     if (el.id === 'sf-conc'){ var w = document.getElementById('sf-cval-w'), cvv = el.value === 'sch' || el.value === 'fixed'; w.hidden = !cvv; document.getElementById('sf-cnote-w').hidden = !cvv; document.getElementById('sf-cval-l').textContent = el.value === 'fixed' ? 'Amount off (Rs)' : 'Scholarship %';
-      document.getElementById('sf-sib-w').hidden = el.value !== 'sib'; document.getElementById('sf-staff-w').hidden = el.value !== 'staff'; return; }
+      document.getElementById('sf-sib-w').hidden = el.value !== 'sib'; document.getElementById('sf-staff-w').hidden = el.value !== 'staff'; stuNetUpdate(); return; }
     if (el.id === 'sf-sib'){ var sb = byId(el.value); if (sb){ [['sf-father', sb.father], ['sf-phone', sb.parent], ['sf-cnic', sb.fcnic], ['sf-addr', sb.address], ['sf-em', sb.emerg]].forEach(function(x){ var fe = document.getElementById(x[0]); if (fe && !fe.value.trim() && x[1]) fe.value = x[1]; }); } return; }
     if (el.id === 'chl-c' || el.id === 'chl-m'){ if (el.id === 'chl-c') S.chl.cls = el.value; else S.chl.m = +el.value; S.modal.html = challanModal(S.chl, S.chl.m); renderModal(); return; }
     if (el.classList.contains('pro-chk')){ S.proHeld[el.dataset.v] = !el.checked; render(); return; }
@@ -1700,6 +1707,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   });
   document.addEventListener('input', function(e){
     var el = e.target;
+    if (el.id === 'sf-fee' || el.id === 'sf-cval'){ stuNetUpdate(); return; }
     if (el.id === 'an-body'){ var ln = document.getElementById('an-len'); if (ln) ln.textContent = el.value.length + ' / 1000 characters'; return; }
     if (el.dataset.a === 'cq'){ S.colQ = el.value; S.colSid = null; S.colOnly = null; S.modal.html = collectHtml(); renderModal(); var cqi = document.getElementById('cq'); cqi.focus(); cqi.setSelectionRange(cqi.value.length, cqi.value.length); return; }
     if (el.dataset.a === 'q'){ S.q[el.dataset.k] = el.value; S.page[el.dataset.k] = 1; render(); }
