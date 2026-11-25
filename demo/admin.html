@@ -53,6 +53,7 @@ main{flex:1;min-width:0;display:flex;flex-direction:column}
 .demo{font-size:12px;color:var(--muted)}
 .eye{display:inline-flex;align-items:center;justify-content:center;gap:6px}.eye svg{width:16px;height:16px}
 .masked{letter-spacing:2px}
+.form input[readonly]{background:var(--surface-2);color:var(--muted);cursor:not-allowed}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .kpi .l{font-size:12px;color:var(--muted);font-weight:600}
@@ -430,6 +431,12 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function stuNet(fee, type, val){ fee = parseInt(fee, 10); if (!(fee > 0)) return '—'; val = parseInt(val, 10);
     var off = type === 'sib' ? r10(fee * FEESET.sib / 100) : type === 'staff' ? r10(fee * FEESET.staff / 100) : type === 'sch' ? (val >= 1 && val <= 100 ? r10(fee * val / 100) : 0) : type === 'fixed' ? (val >= 1 ? Math.min(fee, val) : 0) : 0;
     return nf(fee - off) + (off ? '  (' + nf(off) + ' off)' : ''); }
+  // sibling discount: the family fields come from the brother or sister and cannot be typed over
+  var FAMILY = [['sf-father', 'father'], ['sf-cnic', 'fcnic'], ['sf-phone', 'parent'], ['sf-addr', 'address']];
+  function stuFamilyLock(){ var cs = document.getElementById('sf-conc'), sb = cs && cs.value === 'sib' ? byId(document.getElementById('sf-sib').value) : null;
+    FAMILY.forEach(function(x){ var fe = document.getElementById(x[0]); if (!fe) return;
+      if (sb){ fe.value = sb[x[1]] || ''; fe.readOnly = true; fe.title = 'Copied from ' + sb.name + '. Change the concession to edit.'; } else { fe.readOnly = false; fe.title = ''; } });
+    var em = document.getElementById('sf-em'); if (sb && em && !em.value.trim() && sb.emerg) em.value = sb.emerg; }
   function stuNetUpdate(){ var o = document.getElementById('sf-net'); if (o) o.value = stuNet(document.getElementById('sf-fee').value, document.getElementById('sf-conc').value, document.getElementById('sf-cval').value); }
   function sibsOf(s){ return students.filter(function(x){ return x.parent === s.parent && x.id !== s.id; }); }
   function sibRank(s){ return students.filter(function(x){ return x.parent === s.parent && x.id < s.id; }).length; }
@@ -1362,20 +1369,24 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var sugg = students.filter(function(x){ return x.id !== s.id && ((ph0.length === 11 && x.parent.replace(/\D/g, '') === ph0) || (cn0.length === 13 && String(x.fcnic || '').replace(/\D/g, '') === cn0)); });
     var optS = function(x){ return '<option value="' + x.id + '"' + (c.sibOf === x.id ? ' selected' : '') + '>' + esc(x.name) + ' · ' + sName(x) + ' · father ' + esc(x.father) + '</option>'; };
     var others = students.filter(function(x){ return x.id !== s.id && sugg.indexOf(x) < 0; }).sort(function(a, b){ return a.name < b.name ? -1 : 1; });
+    var sibR = c.type === 'sib' && c.sibOf ? byId(c.sibOf) : null, RO = sibR ? ' readonly title="Copied from ' + esc(sibR.name) + '. Change the concession to edit."' : '';
     return (ask ? ask : '') + '<form class="form" id="stu-form" data-id="' + (s.id || '') + '" novalidate' + (ask ? ' style="display:none"' : '') + '>' +
-      '<div class="fields"><label class="field" for="sf-name">Student name<input id="sf-name" value="' + esc(s.name) + '" placeholder="e.g. Ahmed Raza"></label><label class="field" for="sf-father">Father’s name<input id="sf-father" value="' + esc(s.father) + '"></label></div>' +
-      '<div class="fields"><label class="field" for="sf-cls">Class and section<select id="sf-cls">' + units().map(function(k){ return '<option value="' + k + '"' + (s.cls && uOf(s) === k ? ' selected' : '') + '>' + uName(k) + '</option>'; }).join('') + '</select></label><label class="field" for="sf-g">Gender<select id="sf-g"><option value="b"' + (s.girl ? '' : ' selected') + '>Boy</option><option value="g"' + (s.girl ? ' selected' : '') + '>Girl</option></select></label><label class="field" for="sf-dob">Date of birth<input id="sf-dob" type="date" min="2005-01-01" max="2023-12-31" value="' + esc(s.dob) + '"></label></div>' +
-      '<div class="fields"><label class="field" for="sf-bform">B-Form number<input id="sf-bform" inputmode="numeric" value="' + esc(s.bform) + '" placeholder="42201-1234567-1"></label><label class="field" for="sf-cnic">Father’s CNIC<input id="sf-cnic" inputmode="numeric" value="' + esc(s.fcnic) + '" placeholder="42201-1234567-1"></label></div>' +
-      '<div class="fields"><label class="field" for="sf-phone">Parent’s WhatsApp<input id="sf-phone" type="tel" value="' + esc(s.parent) + '" placeholder="0300-1234567"></label><label class="field" for="sf-em">Emergency contact<input id="sf-em" type="tel" value="' + esc(s.emerg) + '" placeholder="Another family number"></label></div>' +
-      '<label class="field" for="sf-addr">Home address<input id="sf-addr" value="' + esc(s.address) + '" placeholder="House no, area, Karachi"></label>' +
-      '<div class="fields"><label class="field" for="sf-fee">Monthly fee before concession (Rs)<input id="sf-fee" type="number" min="1" value="' + esc(s.fee) + '"></label>' +
-        '<label class="field" for="sf-net">Monthly fee after concession (Rs)<input id="sf-net" readonly tabindex="-1" style="background:var(--bg);font-weight:700" value="' + esc(stuNet(s.fee, c.type, c.type === 'sch' ? c.pct : c.type === 'fixed' ? c.amt : '')) + '" aria-live="polite"></label>' +
-      '</div><div class="fields"><label class="field" for="sf-conc">Concession' + (isAcc() ? ' (set by the owner)' : '') + '<select id="sf-conc"' + (isAcc() ? ' disabled' : '') + '>' + CONC_TYPES.map(function(o){ return '<option value="' + o[0] + '"' + (c.type === o[0] ? ' selected' : '') + '>' + o[1] + (o[0] === 'staff' ? ' (' + FEESET.staff + '%)' : o[0] === 'sib' ? ' (' + FEESET.sib + '%)' : '') + '</option>'; }).join('') + '</select></label>' +
+      '<div class="panel" style="padding:12px;gap:10px;background:var(--surface-2)"><b style="font-size:13px">Concession</b><span class="sub" style="margin-top:-6px">Choose it first: for a sibling, the family details below come from the brother or sister already in school.</span>' +
+      '<div class="fields"><label class="field" for="sf-conc">Concession' + (isAcc() ? ' (set by the owner)' : '') + '<select id="sf-conc"' + (isAcc() ? ' disabled' : '') + '>' + CONC_TYPES.map(function(o){ return '<option value="' + o[0] + '"' + (c.type === o[0] ? ' selected' : '') + '>' + o[1] + (o[0] === 'staff' ? ' (' + FEESET.staff + '%)' : o[0] === 'sib' ? ' (' + FEESET.sib + '%)' : '') + '</option>'; }).join('') + '</select></label>' +
         '<label class="field" for="sf-cval" id="sf-cval-w"' + (cv ? '' : ' hidden') + '><span id="sf-cval-l">' + (c.type === 'fixed' ? 'Amount off (Rs)' : 'Scholarship %') + '</span><input id="sf-cval" type="number" min="1" value="' + esc(c.type === 'sch' ? c.pct : c.type === 'fixed' ? c.amt : '') + '"></label></div>' +
       '<label class="field" for="sf-sib" id="sf-sib-w"' + (c.type === 'sib' ? '' : ' hidden') + '>Brother or sister of<select id="sf-sib"><option value="">Choose the student already in school</option>' +
-        (sugg.length ? '<optgroup label="Same WhatsApp number or father’s CNIC">' + sugg.map(optS).join('') + '</optgroup>' : '') + '<optgroup label="All students (A–Z)">' + others.map(optS).join('') + '</optgroup></select><span class="sub" style="font-weight:400">Empty father, WhatsApp, CNIC and address fields are filled from the sibling’s record.</span></label>' +
+        (sugg.length ? '<optgroup label="Same WhatsApp number or father’s CNIC">' + sugg.map(optS).join('') + '</optgroup>' : '') + '<optgroup label="All students (A–Z)">' + others.map(optS).join('') + '</optgroup></select><span class="sub" style="font-weight:400">Father’s name, CNIC, WhatsApp and address are copied from the sibling and locked.</span></label>' +
       '<label class="field" for="sf-staff" id="sf-staff-w"' + (c.type === 'staff' ? '' : ' hidden') + '>Child of which staff member<select id="sf-staff"><option value="">Choose the staff member</option>' + STAFF.filter(function(u){ return !u.left; }).sort(function(a, b){ return a.name < b.name ? -1 : 1; }).map(function(u){ return '<option value="' + u.id + '"' + (c.staffId === u.id ? ' selected' : '') + '>' + esc(u.name) + ' · ' + esc(roleLabel(u)) + '</option>'; }).join('') + '</select></label>' +
       '<label class="field" for="sf-cnote" id="sf-cnote-w"' + (cv ? '' : ' hidden') + '>Reason (optional)<input id="sf-cnote" maxlength="80" value="' + esc(c.note || '') + '" placeholder="e.g. merit, orphan, financial hardship"></label>' +
+      '</div>' +
+      '<div class="fields"><label class="field" for="sf-name">Student name<input id="sf-name" value="' + esc(s.name) + '" placeholder="e.g. Ahmed Raza"></label><label class="field" for="sf-father">Father’s name<input id="sf-father" value="' + esc(sibR ? sibR.father : s.father) + '"' + RO + '></label></div>' +
+      '<div class="fields"><label class="field" for="sf-cls">Class and section<select id="sf-cls">' + units().map(function(k){ return '<option value="' + k + '"' + (s.cls && uOf(s) === k ? ' selected' : '') + '>' + uName(k) + '</option>'; }).join('') + '</select></label><label class="field" for="sf-g">Gender<select id="sf-g"><option value="b"' + (s.girl ? '' : ' selected') + '>Boy</option><option value="g"' + (s.girl ? ' selected' : '') + '>Girl</option></select></label><label class="field" for="sf-dob">Date of birth<input id="sf-dob" type="date" min="2005-01-01" max="2023-12-31" value="' + esc(s.dob) + '"></label></div>' +
+      '<div class="fields"><label class="field" for="sf-bform">B-Form number<input id="sf-bform" inputmode="numeric" value="' + esc(s.bform) + '" placeholder="42201-1234567-1"></label><label class="field" for="sf-cnic">Father’s CNIC<input id="sf-cnic" inputmode="numeric" value="' + esc(sibR ? sibR.fcnic : s.fcnic) + '" placeholder="42201-1234567-1"' + RO + '></label></div>' +
+      '<div class="fields"><label class="field" for="sf-phone">Parent’s WhatsApp<input id="sf-phone" type="tel" value="' + esc(sibR ? sibR.parent : s.parent) + '" placeholder="0300-1234567"' + RO + '></label><label class="field" for="sf-em">Emergency contact<input id="sf-em" type="tel" value="' + esc(s.emerg) + '" placeholder="Another family number"></label></div>' +
+      '<label class="field" for="sf-addr">Home address<input id="sf-addr" value="' + esc(sibR ? sibR.address : s.address) + '" placeholder="House no, area, Karachi"' + RO + '></label>' +
+      '<div class="fields"><label class="field" for="sf-fee">Monthly fee before concession (Rs)<input id="sf-fee" type="number" min="1" value="' + esc(s.fee) + '"></label>' +
+        '<label class="field" for="sf-net">Monthly fee after concession (Rs)<input id="sf-net" readonly tabindex="-1" style="background:var(--bg);font-weight:700" value="' + esc(stuNet(s.fee, c.type, c.type === 'sch' ? c.pct : c.type === 'fixed' ? c.amt : '')) + '" aria-live="polite"></label>' +
+      '</div>' +
       (s.id ? '' : '<label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="sf-adm"' + (s.adm === false ? '' : ' checked') + '> Charge admission fee of Rs 3,000</label>') +
       err(e) + '<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" type="submit">' + (s.id ? 'Save changes' : 'Add student') + '</button></div></form>';
   }
@@ -1676,8 +1687,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       return;
     }
     if (el.id === 'sf-conc'){ var w = document.getElementById('sf-cval-w'), cvv = el.value === 'sch' || el.value === 'fixed'; w.hidden = !cvv; document.getElementById('sf-cnote-w').hidden = !cvv; document.getElementById('sf-cval-l').textContent = el.value === 'fixed' ? 'Amount off (Rs)' : 'Scholarship %';
-      document.getElementById('sf-sib-w').hidden = el.value !== 'sib'; document.getElementById('sf-staff-w').hidden = el.value !== 'staff'; stuNetUpdate(); return; }
-    if (el.id === 'sf-sib'){ var sb = byId(el.value); if (sb){ [['sf-father', sb.father], ['sf-phone', sb.parent], ['sf-cnic', sb.fcnic], ['sf-addr', sb.address], ['sf-em', sb.emerg]].forEach(function(x){ var fe = document.getElementById(x[0]); if (fe && !fe.value.trim() && x[1]) fe.value = x[1]; }); } return; }
+      document.getElementById('sf-sib-w').hidden = el.value !== 'sib'; document.getElementById('sf-staff-w').hidden = el.value !== 'staff'; stuFamilyLock(); stuNetUpdate(); return; }
+    if (el.id === 'sf-sib'){ stuFamilyLock(); return; }
     if (el.id === 'chl-c' || el.id === 'chl-m'){ if (el.id === 'chl-c') S.chl.cls = el.value; else S.chl.m = +el.value; S.modal.html = challanModal(S.chl, S.chl.m); renderModal(); return; }
     if (el.classList.contains('pro-chk')){ S.proHeld[el.dataset.v] = !el.checked; render(); return; }
     var a = el.dataset.a; if (!a) return;
@@ -1817,6 +1828,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       var ph = v('sf-phone').replace(/\D/g, ''), fee = parseInt(v('sf-fee'), 10), uk = v('sf-cls'), ct = v('sf-conc'), cvn = parseInt(v('sf-cval'), 10);
       var bf = v('sf-bform').replace(/\D/g, ''), cn2 = v('sf-cnic').replace(/\D/g, ''), em = v('sf-em').replace(/\D/g, '');
       var cnote = (v('sf-cnote') || '').trim(), sibId = +v('sf-sib') || null, stId = +v('sf-staff') || null;
+      var sibF = ct === 'sib' && sibId ? byId(sibId) : null; if (sibF) FAMILY.forEach(function(x){ var fe = document.getElementById(x[0]); if (fe) fe.value = sibF[x[1]] || ''; });
+      if (sibF) ph = sibF.parent.replace(/\D/g, ''), cn2 = String(sibF.fcnic || '').replace(/\D/g, '');
       var conc = ct === 'sch' ? { type:'sch', pct: cvn } : ct === 'fixed' ? { type:'fixed', amt: cvn } : ct === 'sib' ? { type:'sib', sibOf: sibId } : ct === 'staff' ? { type:'staff', staffId: stId } : { type: ct };
       if (cnote && (ct === 'sch' || ct === 'fixed')) conc.note = cnote;
       if (isAcc()){ var ex0 = f.dataset.id ? byId(f.dataset.id) : null; conc = ex0 ? (ex0.conc || { type:'none' }) : { type:'none' }; ct = conc.type; cvn = conc.type === 'sch' ? conc.pct : conc.amt; }
