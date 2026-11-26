@@ -716,7 +716,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
   function slcHtml(s){
     var L = function(l, v){ return '<div class="line"><span>' + l + '</span><b>' + v + '</b></div>'; };
-    return '<div class="cert"><div style="text-align:center"><div style="font-family:var(--display);font-size:18px;font-weight:700">' + SCHOOL + '</div><div class="sub">Malir, Karachi · Registered with the Directorate of Inspection &amp; Registration of Private Institutions, Sindh</div></div>' +
+    return '<div class="cert"><div style="text-align:center"><div style="font-family:var(--display);font-size:18px;font-weight:700">' + SCHOOL + '</div><div class="sub">' + esc(SCHOOLINFO.addr) + ' · Registered with the Directorate of Inspection &amp; Registration of Private Institutions, Sindh' + (SCHOOLINFO.reg ? ' · Reg. no. ' + esc(SCHOOLINFO.reg) : '') + (SCHOOLINFO.phone ? ' · ' + esc(SCHOOLINFO.phone) : '') + '</div></div>' +
       '<h4>SCHOOL LEAVING CERTIFICATE</h4><div class="row"><span class="sub">No. ' + esc(s.slcNo) + '</span><span class="sub">Issued ' + dLong(DAYS[DAYS.length-1]) + '</span></div>' +
       L('Name of student', esc(s.name)) + L('Father’s name', esc(s.father)) + L('Admission number', 'S-' + ('00' + s.id).slice(-3)) + L('Date of admission', ymLabel(s.admitted)) +
       L('Date of birth (figures)', s.dob ? dLong(s.dob) : '—') + L('Date of birth (words)', s.dob ? dateWords(s.dob) : '—') + L('B-Form number', esc(s.bform || '—')) +
@@ -725,7 +725,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="dl" data-v="leaving certificate ' + esc(s.slcNo) + ' (PDF)">Download PDF</button><button class="btn btn-primary" data-a="slcprint" data-v="' + s.id + '">Print</button></div>';
   }
   // ---------- fee challan: bank copy, school copy, parent copy ----------
-  var BANK = 'Meezan Bank, Malir branch · A/C 0102-0105678901';
+  // school profile, edited by the owner in Settings
+  var SCHOOLINFO = { addr: 'Malir, Karachi', phone: '021-34500000', reg: '', bank: 'Meezan Bank, Malir branch · A/C 0102-0105678901' };
   function challanLines(s, m){
     var due = feeItems(s).filter(function(i){ return !i.paid; }), L = [], c = concOf(s);
     var curT = due.filter(function(i){ return i.type === 'tuition' && i.t.m === m; })[0];
@@ -739,7 +740,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
   function challanHtml(s, m){
     var L = challanLines(s, m), tot = L.reduce(function(x,l){ return x + l[1]; }, 0), dueOn = FEESET.due + ' ' + MN[m], no = 'CH-' + p2(m + 1) + '-' + ('00' + s.id).slice(-3);
-    var copy = function(name){ return '<div class="chc"><div class="row"><h4>' + SCHOOL + '</h4><b style="font-size:10.5px">' + name + '</b></div><div class="sub" style="font-size:10.5px">' + BANK + '</div>' +
+    var copy = function(name){ return '<div class="chc"><div class="row"><h4>' + SCHOOL + '</h4><b style="font-size:10.5px">' + name + '</b></div><div class="sub" style="font-size:10.5px">' + esc(SCHOOLINFO.bank) + (SCHOOLINFO.phone ? ' · Office ' + esc(SCHOOLINFO.phone) : '') + '</div>' +
       '<div class="row"><span>Challan</span><b>' + no + '</b></div><div class="row"><span>Student</span><b>' + esc(s.name) + '</b></div><div class="row"><span>Father</span><b>' + esc(s.father) + '</b></div><div class="row"><span>Class</span><b>' + sName(s) + ' · S-' + ('00' + s.id).slice(-3) + '</b></div><div class="row"><span>Fee month</span><b>' + MNL[m] + ' 2026</b></div>' +
       '<div style="border-top:1px solid var(--line);margin:3px 0"></div>' + L.map(function(l){ return '<div class="row"><span>' + esc(l[0]) + '</span><b class="num">' + (l[1] < 0 ? '−' : '') + nf(Math.abs(l[1])) + '</b></div>'; }).join('') +
       '<div class="row" style="border-top:1px solid var(--line);padding-top:4px"><span><b style="color:var(--ink)">Pay by ' + dueOn + '</b></span><b class="num" style="font-size:13px">Rs ' + nf(tot) + '</b></div>' +
@@ -755,8 +756,16 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
   function printNow(html){ document.getElementById('print-root').innerHTML = html; try { window.print(); } catch(e){} }
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
+  function schoolFormHtml(e){ var d = S.schDraft || { name: SCHOOL, owner: OWNER, addr: SCHOOLINFO.addr, phone: SCHOOLINFO.phone, reg: SCHOOLINFO.reg, bank: SCHOOLINFO.bank };
+    var F = function(id, label, val, ph, extra){ return '<label class="field" for="' + id + '">' + label + '<input id="' + id + '" value="' + esc(val || '') + '" placeholder="' + ph + '"' + (extra || '') + '></label>'; };
+    return '<form class="panel form" id="school-form" novalidate><div class="row"><h2>School profile</h2><span class="sub">Shown on receipts, challans, certificates, result cards and WhatsApp messages</span></div>' +
+      '<div class="fields">' + F('sc-name', 'School name', d.name, 'e.g. City Grammar School', ' maxlength="60"') + F('sc-owner', 'Owner / principal name', d.owner, 'e.g. Sir Najam', ' maxlength="40"') + '</div>' +
+      '<div class="fields">' + F('sc-addr', 'Area and city', d.addr, 'e.g. Malir, Karachi', ' maxlength="60"') + F('sc-phone', 'Office phone or WhatsApp', d.phone, 'e.g. 021-34500000', ' maxlength="20" inputmode="tel"') + '</div>' +
+      '<div class="fields">' + F('sc-reg', 'Registration no. (optional)', d.reg, 'From the Directorate of Private Institutions', ' maxlength="30"') + F('sc-bank', 'Bank account for fee challans', d.bank, 'Bank, branch · account number', ' maxlength="80"') + '</div>' +
+      err(e) + '<p class="sub">In this demo the changes last until the page is reloaded. The teacher app takes the school name from its own link.</p>' +
+      '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" type="submit">Save school profile</button></div></form>'; }
   VIEWS.settings = function(){
-    return '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
+    return schoolFormHtml(S.schErr) + '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
       '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Students, Matric batch, Fees, Expenses, Finance and Staff pages, and in the concession list below, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
       '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
@@ -1064,7 +1073,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   };
 
   var TEMPLATES = [
-    ['Holiday', 'School closed', 'Assalam o Alaikum! ' + SCHOOL + ' will remain closed on [day, date] due to [reason]. Classes resume on [day]. Shukriya.'],
+    ['Holiday', 'School closed', 'Assalam o Alaikum! [School] will remain closed on [day, date] due to [reason]. Classes resume on [day]. Shukriya.'],
     ['Parent-teacher meeting', 'Parent-teacher meeting', 'Assalam o Alaikum! A parent-teacher meeting will be held on Saturday, [date], from 9 am to 12 pm. Please meet your child’s class teacher to discuss progress.'],
     ['Exam schedule', 'Final exams schedule', 'Assalam o Alaikum! Final exams start on [date]. The date sheet is attached. Please make sure your child prepares well and is on time.'],
     ['Fee reminder', 'Fee due date', 'Assalam o Alaikum! A reminder that this month’s fee is due by the 10th. You can pay at the school office, by bank transfer or JazzCash.'],
@@ -1490,7 +1499,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     document.getElementById('side').innerHTML = '<div class="brand"><i><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#04140b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg></i><span>SchoolDaftar</span></div>' +
       navFor().map(function(n){ return '<button class="navlink" data-a="go" data-v="' + n[0] + '"' + (S.view === n[0] ? ' aria-current="page"' : '') + '>' + ico(n[2]) + (isAdm() && n[0] === 'staff' ? 'Staff' : n[1]) + '</button>'; }).join('') +
       '<div class="foot">' + (S.user && S.user.role === 'accountant' ? 'Accounts office \u00b7 demo with sample data. Salaries and profit are visible to the owner only.' : isAdm() ? 'Admin office \u00b7 demo with sample data. Fees, salaries and profit are visible to the owner only.' : 'Owner / Principal dashboard \u00b7 demo with sample data. Teachers use the mobile app.') + '</div>';
-    var t = TITLES[S.view];
+    var t = TITLES[S.view]; if (S.view === 'dashboard') t = ['Dashboard', SCHOOL + ' · demo data as of Friday, 20 November 2026'];
     if (isAdm() && S.view === 'staff') t = ['Staff', 'Logins, roles and classes. Salaries are set by the owner.'];
     document.getElementById('top').innerHTML = '<div><h1>' + t[0] + '</h1><p class="sub">' + t[1] + '</p></div><div class="who"><span class="demo">Demo · data as of 20 Nov 2026 · resets on reload</span><span class="avatar">' + S.user.name.split(' ').map(function(w){ return w[0]; }).join('') + '</span><span><b>' + esc(S.user.name) + '</b><br>' + S.user.title + '</span>' + (hiding() && MASK_VIEWS.indexOf(S.view) >= 0 ? '<button class="btn btn-sm eye" data-a="go" data-v="settings" title="Amounts are hidden. Change this in Settings.">' + EYE_OFF + '<span>Amounts hidden</span></button>' : '') + '<button class="btn btn-sm" data-a="logout">Log out</button></div>';
     var ae = document.activeElement, fid = ae && ae.tagName === 'INPUT' && ae.type === 'search' ? ae.id : null;
@@ -1628,7 +1637,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
         '<p class="sub">Assign or change subjects in <b>Subject teachers</b>, by class or by teacher. The teacher then sees only these classes and subjects when entering marks.</p>' +
         '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="teachassign" data-v="' + tv.id + '">Assign subjects</button></div>'; }; openModal(esc(tv.name) + ' teaches', tvH(), false, tvH); }
     else if (a === 'teachgo'){ S.stClass = val; S.subBy = 'class'; closeModal(); go('subjectteachers'); }
-    else if (a === 'anntpl'){ var dt = annDraft(), tp = TEMPLATES[+val]; dt.title = tp[1]; dt.body = tp[2]; S.annErr = ''; render(); var ab = document.getElementById('an-body'); if (ab) ab.focus(); }
+    else if (a === 'anntpl'){ var dt = annDraft(), tp = TEMPLATES[+val]; dt.title = tp[1]; dt.body = tp[2].split('[School]').join(SCHOOL); S.annErr = ''; render(); var ab = document.getElementById('an-body'); if (ab) ab.focus(); }
     else if (a === 'anto'){ var dto = annDraft(); dto.to = val; render(); }
     else if (a === 'anwhen'){ var dw = annDraft(); dw.when = val; render(); }
     else if (a === 'annprev'){ var dp = annDraft(); openModal('Preview', chat(['<b>' + esc(dp.title || 'No title') + '</b><br>' + esc(dp.body || '').replace(/\n/g, '<br>') + '<br><br><span class="sub">' + SCHOOL + '</span>'], 'This is how it looks on a parent\u2019s WhatsApp.')); }
@@ -1728,6 +1737,20 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   document.addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target, id = f.id;
+    if (id === 'school-form'){
+      var clean = function(x, n){ return (x || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, n); };
+      var nd = { name: clean(v('sc-name'), 60), owner: clean(v('sc-owner'), 40), addr: clean(v('sc-addr'), 60), phone: clean(v('sc-phone'), 20), reg: clean(v('sc-reg'), 30), bank: clean(v('sc-bank'), 80) };
+      var se2 = !nd.name ? 'Enter the school name.' : !nd.owner ? 'Enter the owner or principal’s name.' : !nd.addr ? 'Enter the area and city.' : nd.phone && nd.phone.replace(/\D/g, '').length < 10 ? 'Enter a full phone number, or leave it blank.' : '';
+      if (se2){ S.schDraft = nd; S.schErr = se2; render(); return; }
+      var was = { name: SCHOOL, owner: OWNER, addr: SCHOOLINFO.addr, phone: SCHOOLINFO.phone, reg: SCHOOLINFO.reg, bank: SCHOOLINFO.bank };
+      var LBL = { name:'school name', owner:'owner / principal', addr:'area and city', phone:'office phone', reg:'registration no.', bank:'bank account' };
+      var chs = Object.keys(LBL).filter(function(k){ return was[k] !== nd[k]; }).map(function(k){ return LBL[k] + ' “' + (was[k] || '—') + '” → “' + (nd[k] || '—') + '”'; });
+      SCHOOL = nd.name; OWNER = nd.owner; SCHOOLINFO.addr = nd.addr; SCHOOLINFO.phone = nd.phone; SCHOOLINFO.reg = nd.reg; SCHOOLINFO.bank = nd.bank;
+      WEB_USERS.forEach(function(u){ if (u.role === 'owner') u.name = OWNER; }); if (S.user && S.user.role === 'owner') S.user.name = OWNER;
+      S.schDraft = null; S.schErr = '';
+      if (chs.length) log('settings', 'School profile changed: ' + chs.join(', '));
+      render(); toast(chs.length ? 'School profile saved.' : 'No changes.'); return;
+    }
     if (id === 'mres-form'){
       var ms = byId(f.dataset.id), mm = document.getElementById('mr-marks').value.trim(), mroll = document.getElementById('mr-roll').value.trim();
       var mn = +mm, merr = mm === '' || !/^\d+$/.test(mm) || mn > MATRIC_TOTAL ? 'Enter the marks as a whole number from 0 to ' + MATRIC_TOTAL + '.' : mroll && !/^\d{4,10}$/.test(mroll) ? 'The roll number should be digits only.' : '';
