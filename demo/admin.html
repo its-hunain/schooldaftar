@@ -1580,7 +1580,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       var prev = classes[classes.indexOf(qc) - 1]; if (prev) S.proFrom = prev; S.proHeld = {}; closeModal(); render(); window.scrollTo(0, 0); toast(qn ? mv + ' students are now in ' + cn(qn) + '.' : mv + ' students marked as passed out.'); }
     else if (a === 'actinfo') openLogDetails(val);
     else if (a === 'actgo'){ closeModal(); openLog(val); }
-    else if (a === 'actok'){ var lk = logById(val); if (!lk || !S.user || S.user.role !== 'owner') return; lk.checked = { by: S.user.name, at: nowStamp() }; render(); openLogDetails(val); toast('Marked as checked.'); }
+    else if (a === 'actok'){ var lk = logById(val); if (!lk || !S.user || S.user.role !== 'owner') return; lk.checked = { by: S.user.name, at: nowStamp() }; closeModal(); render(); toast('Marked as checked. It no longer needs a look.'); }
     else if (a === 'actundo'){ var lu = logById(val), da = lu && lu.d, ac = da && ACTS[da.act]; if (!ac || !ac.can(da) || lu.resolved || !S.user || S.user.role !== 'owner') return;
       var msg = ac.run(da); lu.resolved = { text: msg, by: S.user.name, at: nowStamp() }; if (!lu.checked) lu.checked = { by: S.user.name, at: nowStamp() };
       log(lu.kind, msg + ' (undone from the activity log)'); render(); openLogDetails(val); toast(esc(msg) + '.'); }
@@ -1733,7 +1733,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     if (el.dataset.a === 'q'){ S.q[el.dataset.k] = el.value; S.page[el.dataset.k] = 1; render(); }
   });
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.modal) closeModal();
-    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('clickrow')) openLogDetails(e.target.dataset.v); });
+    if (e.key === 'Enter' && !S.modal && e.target.classList && e.target.classList.contains('clickrow')) openLogDetails(e.target.dataset.v); });
   document.addEventListener('submit', function(e){
     e.preventDefault();
     var f = e.target, id = f.id;
