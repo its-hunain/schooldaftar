@@ -770,8 +770,8 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var last = BK.hist[0], okN = BK.hist.filter(function(h){ return h.ok; }).length;
     return '<div class="panel"><div class="row"><h2>Google Drive backup</h2>' + pill('Connected', 'p-ok') + '</div>' +
       '<p class="sub">A copy of all school data is saved as Excel files in the school’s own Google Drive. SchoolDaftar can only see the files it saves there, not the rest of your Drive.</p>' +
-      '<div class="kpis">' + kpi('Google account', '<span style="font-size:15px">' + esc(BK.account) + '</span>', 'Owner’s Drive') + kpi('Last backup', last ? dayLabel(last.date) + ', ' + last.time : 'None yet', last ? (last.ok ? 'Done · ' + last.size.toFixed(1) + ' MB' : 'Failed') : '', last && last.ok ? 'ok' : 'warn') +
-        kpi('Schedule', BK_WHEN.filter(function(x){ return x[0] === BK.when; })[0][1].replace('Only when I press Backup now', 'Manual only'), 'Changes below') + kpi('Backups kept', okN, 'Older ones stay in Drive') + '</div>' +
+      '<div class="kpis">' + kpi('Google account', '<span style="font-size:15px">' + esc(BK.account) + '</span>', 'Owner’s Drive') + kpi('Last backup', '<span style="font-size:15px">' + (last ? dayLabel(last.date) + ', ' + last.time : 'None yet') + '</span>', last ? (last.ok ? 'Done · ' + last.size.toFixed(1) + ' MB' : 'Failed') : '', last && last.ok ? 'ok' : 'warn') +
+        kpi('Schedule', '<span style="font-size:15px">' + BK_WHEN.filter(function(x){ return x[0] === BK.when; })[0][1].replace('Only when I press Backup now', 'Manual only') + '</span>', 'Changes below') + kpi('Backups kept', okN, 'Older ones stay in Drive') + '</div>' +
       '<div class="fields">' + sel('f-bkwhen', 'bkwhen', BK_WHEN, BK.when, 'Back up automatically') + '<div class="field">Saved to<span style="font-weight:400;color:var(--ink)">' + esc(bkFolder()) + '</span></div></div>' +
       '<p class="sub">Each backup has: ' + BK_FILES + '.</p>' +
       table('bk', [
