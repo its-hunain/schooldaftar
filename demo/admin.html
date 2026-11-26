@@ -756,6 +756,33 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   }
   function printNow(html){ document.getElementById('print-root').innerHTML = html; try { window.print(); } catch(e){} }
   function ordinal(n){ var t = n % 100; return n + (t >= 11 && t <= 13 ? 'th' : ['th','st','nd','rd'][n % 10] || 'th'); }
+  // ---- Google Drive backup (demo: nothing leaves the browser) ----
+  var BK = { account: 'office@xyzschool.pk', when: 'nightly', hist: [] };
+  (function(){ for (var d = 19; d >= 9; d--){ var dt = '2026-11-' + p2(d), wd = new Date(2026, 10, d).getDay();
+    BK.hist.push({ date: dt, time: '23:00', type: 'Automatic', size: 2.31 + (d - 9) * .012, ok: !(d === 12), note: d === 12 ? 'No internet at 11 pm. Done the next morning at 7:40 am.' : '' }); } })();
+  var BK_WHEN = [['nightly','Every night at 11 pm'],['weekly','Every Sunday night'],['manual','Only when I press Backup now']];
+  var BK_FILES = 'Students, Fees and receipts, Attendance, Exams and results, Staff and payroll, Expenses, Activity log';
+  function bkFolder(){ return 'My Drive › SchoolDaftar backups › ' + SCHOOL; }
+  function backupHtml(){
+    if (!BK.account) return '<div class="panel"><div class="row"><h2>Google Drive backup</h2>' + pill('Not connected', 'p-warn') + '</div>' +
+      '<p class="sub">Keep a copy of all school data in the school’s own Google Drive, as Excel files. SchoolDaftar can only see the files it saves there, not the rest of your Drive.</p>' +
+      '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" data-a="bkconnect">Connect Google Drive</button></div></div>';
+    var last = BK.hist[0], okN = BK.hist.filter(function(h){ return h.ok; }).length;
+    return '<div class="panel"><div class="row"><h2>Google Drive backup</h2>' + pill('Connected', 'p-ok') + '</div>' +
+      '<p class="sub">A copy of all school data is saved as Excel files in the school’s own Google Drive. SchoolDaftar can only see the files it saves there, not the rest of your Drive.</p>' +
+      '<div class="kpis">' + kpi('Google account', '<span style="font-size:15px">' + esc(BK.account) + '</span>', 'Owner’s Drive') + kpi('Last backup', last ? dayLabel(last.date) + ', ' + last.time : 'None yet', last ? (last.ok ? 'Done · ' + last.size.toFixed(1) + ' MB' : 'Failed') : '', last && last.ok ? 'ok' : 'warn') +
+        kpi('Schedule', BK_WHEN.filter(function(x){ return x[0] === BK.when; })[0][1].replace('Only when I press Backup now', 'Manual only'), 'Changes below') + kpi('Backups kept', okN, 'Older ones stay in Drive') + '</div>' +
+      '<div class="fields">' + sel('f-bkwhen', 'bkwhen', BK_WHEN, BK.when, 'Back up automatically') + '<div class="field">Saved to<span style="font-weight:400;color:var(--ink)">' + esc(bkFolder()) + '</span></div></div>' +
+      '<p class="sub">Each backup has: ' + BK_FILES + '.</p>' +
+      table('bk', [
+        {k:'d',label:'When',v:function(h){ return h.date + h.time; },h:function(h){ return dayLabel(h.date) + ', ' + h.time; },nosort:1},
+        {k:'t',label:'Type',v:function(h){ return h.type; },nosort:1},
+        {k:'s',label:'Size',r:1,v:function(h){ return h.size; },h:function(h){ return h.size.toFixed(1) + ' MB'; },nosort:1},
+        {k:'st',label:'Status',v:function(h){ return h.ok ? 1 : 0; },h:function(h){ return h.ok ? pill('Done', 'p-ok') : pill('Failed', 'p-bad') + '<div class="sub" style="white-space:normal;min-width:200px">' + esc(h.note) + '</div>'; },nosort:1},
+        {k:'x',label:'',act:1,h:function(h, i){ return h.ok ? '<button class="btn btn-sm" data-a="dl" data-v="backup of ' + esc(dayLabel(h.date)) + ' (Excel files)">Download</button><button class="btn btn-sm" data-a="bkrestore" data-v="' + esc(h.date + ' ' + h.time) + '">Restore</button>' : ''; }}
+      ], BK.hist, {}) +
+      '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="bkdisconnect">Disconnect</button><button class="btn btn-primary" data-a="bknow">Backup now</button></div></div>';
+  }
   function schoolFormHtml(e){ var d = S.schDraft || { name: SCHOOL, owner: OWNER, addr: SCHOOLINFO.addr, phone: SCHOOLINFO.phone, reg: SCHOOLINFO.reg, bank: SCHOOLINFO.bank };
     var F = function(id, label, val, ph, extra){ return '<label class="field" for="' + id + '">' + label + '<input id="' + id + '" value="' + esc(val || '') + '" placeholder="' + ph + '"' + (extra || '') + '></label>'; };
     return '<form class="panel form" id="school-form" novalidate><div class="row"><h2>School profile</h2><span class="sub">Shown on receipts, challans, certificates, result cards and WhatsApp messages</span></div>' +
@@ -765,7 +792,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
       err(e) + '<p class="sub">In this demo the changes last until the page is reloaded. The teacher app takes the school name from its own link.</p>' +
       '<div class="row" style="justify-content:flex-end"><button class="btn btn-primary" type="submit">Save school profile</button></div></form>'; }
   VIEWS.settings = function(){
-    return schoolFormHtml(S.schErr) + '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
+    return schoolFormHtml(S.schErr) + backupHtml() + '<div class="panel"><div class="row"><h2>Hide amounts</h2>' + (S.hideMoney ? pill('Hidden', 'p-warn') : pill('Showing', 'p-ok')) + '</div>' +
       '<p class="sub">Like a banking app: hides profit, income, expenses, fees and salaries on the Dashboard, Daily collection, Students, Matric batch, Fees, Expenses, Finance and Staff pages, and in the concession list below, for when a parent or staff member is sitting with you. Only for your login, on this device. The accountant still sees fees.</p>' +
       '<div class="seg" role="group" aria-label="Amounts">' + [['0', EYE + ' Show amounts'], ['1', EYE_OFF + ' Hide amounts']].map(function(x){ return '<button class="eye" data-a="eye" data-v="' + x[0] + '" aria-pressed="' + (S.hideMoney === (x[0] === '1')) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="panel"><div class="row"><h2>Fee rules and discounts</h2></div>' + feeSetHtml(S.fsErr, true) + '</div>';
@@ -1469,7 +1496,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
   function v(id){ var el = document.getElementById(id); return el ? el.value : ''; }
 
   // ================= render =================
-  var TITLES = { matric:['Matric batch','Board admit cards, results, marksheets, certificates and dues, before and after Class 10 passes out'], promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard', SCHOOL + ' · demo data as of Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','Fee rules, discounts and hiding amounts. Only the owner can change these.'] };
+  var TITLES = { matric:['Matric batch','Board admit cards, results, marksheets, certificates and dues, before and after Class 10 passes out'], promote:['Promotion','Move students up a class when the new session starts in April'], activity:['Activity log','Who changed what, and when. Nobody can edit or delete it, not even the owner.'], announce:['Announcements','Send a notice to parents and staff on WhatsApp'], classteachers:['Class teachers','One class teacher per class. They take the daily attendance in the mobile app.'], subjects:['Subjects','Which subjects each class studies'], subjectteachers:['Subject teachers','Who teaches which subject, by class or by teacher'], collection:['Daily collection','Fees received at the counter and online, receipt by receipt'], dashboard:['Dashboard', SCHOOL + ' · demo data as of Friday, 20 November 2026'], students:['Students','Profiles, concessions and leaving certificates. Every change reaches the staff app.'], staff:['Staff & payroll','Logins, salaries and increments'], attendance:['Attendance','Daily register, monthly summary and yearly view by class'], results:['Exams & results','Marks by exam and class, and result cards'], fees:['Fees','Every fee item, by student'], expenses:['Expenses','Bills, purchases and automatic salaries'], finance:['Finance','Profit and loss: monthly, yearly and by school session'], settings:['Settings','School profile, Google Drive backup, hiding amounts and fee rules. Only the owner can change these.'] };
   var WEB_USERS = [
     { email:'owner@xyzschool.pk', password:'demo1234', name:OWNER, role:'owner', title:'Owner / Principal' },
     { email:'admin@xyzschool.pk', password:'demo1234', name:'Saima Khan', role:'admin', title:'Admin', staffId:13 },
@@ -1525,6 +1552,16 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     else if (a === 'logout'){ S.authed = false; S.user = null; S.lgPass = ''; S.lgErr = ''; closeModal(); render(); window.scrollTo(0, 0); }
     else if (a === 'sort'){ var k = el.dataset.k, cur = S.sort[k]; S.sort[k] = cur && cur.k === val ? { k: val, dir: -cur.dir } : { k: val, dir: 1 }; render(); }
     else if (a === 'pg'){ S.page[el.dataset.k] = +val; if (S.modal && S.modal.regen && el.closest('.modal')){ S.modal.html = S.modal.regen(); renderModal(); } else render(); }
+    else if (a === 'bknow'){ var bt = nowTime(), bsz = 2.31 + 11 * .012 + students.length * .00002;
+      BK.hist.unshift({ date: DAYS[DAYS.length-1], time: bt, type: 'Manual', size: bsz, ok: true, note: '' }); S.page.bk = 0;
+      log('settings', 'Backed up all school data to Google Drive (' + bsz.toFixed(1) + ' MB)'); render(); toast('Backup saved to Google Drive: ' + bkFolder() + '.'); }
+    else if (a === 'bkconnect'){ BK.account = 'office@xyzschool.pk'; log('settings', 'Connected Google Drive for backups (' + BK.account + ')'); render();
+      toast('Demo: in the real app Google asks the owner to sign in and allow SchoolDaftar to save its own files in Drive.'); }
+    else if (a === 'bkdisconnect') openModal('Disconnect Google Drive', confirmBox('Stop backing up to <b>' + esc(BK.account) + '</b>? Backups already saved stay in that Drive. You can connect again at any time.', 'bkdisconnect2', '1', 'Disconnect'));
+    else if (a === 'bkdisconnect2'){ log('settings', 'Disconnected Google Drive backups (' + BK.account + ')', true); BK.account = ''; closeModal(); render(); toast('Google Drive disconnected. No more automatic backups.'); }
+    else if (a === 'bkrestore') openModal('Restore a backup', '<p>Restore the backup of <b>' + esc(val) + '</b>?</p><div class="banner p-warn" role="alert">Everything entered after that time (fees, attendance, marks, changes) is replaced by the backup. A fresh backup of today is saved first, so nothing is lost for good.</div><p class="sub">Only the owner can restore. It is saved in the activity log.</p>' +
+      '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="mclose">Cancel</button><button class="btn btn-primary" style="background:var(--bad);border-color:var(--bad);color:#fff" data-a="bkrestore2" data-v="' + esc(val) + '">Restore</button></div>');
+    else if (a === 'bkrestore2'){ closeModal(); toast('Demo: in the real app the school data goes back to ' + val + ', after saving a fresh backup of today.'); }
     else if (a === 'dl') toast('In the real app this downloads the ' + val + '.');
     else if (a === 'mclose') closeModal();
     // students
@@ -1703,6 +1740,7 @@ tfoot td{font-weight:700;background:var(--surface-2)}
     var a = el.dataset.a; if (!a) return;
     if (el.tagName === 'SELECT') el.blur();
     var map = { stucls:'stuClass', stufee:'stuFee', staffrole:'staffRole', attcls:'attClass', attday:'attDay', resexam:'resExam', rescls:'resClass', feetype:'feeType', feecls:'feeClass', feest:'feeStatus', stustatus:'stuStatus', actwho:'actWho', actkind:'actKind', matad:'matAd', matres:'matRes', matsh:'matSh', matdue:'matDue' };
+    if (a === 'bkwhen'){ var bw0 = BK.when; BK.when = el.value; if (bw0 !== BK.when) log('settings', 'Google Drive backup schedule changed to: ' + BK_WHEN.filter(function(x){ return x[0] === BK.when; })[0][1]); render(); toast('Backup schedule saved.'); return; }
     if (a === 'ctrow'){ var rc = el.dataset.c, ru = staffById(el.value); if (ru){ CT[rc] = ru.id; if (ru.classes.indexOf(gOf(rc)) < 0) ru.classes.push(gOf(rc)); } else delete CT[rc];
       render(); log('classes', ru ? ru.name + ' made class teacher of ' + uName(rc) : uName(rc) + ' left without a class teacher'); toast(ru ? ru.name + ' is now the class teacher of ' + uName(rc) + '.' : uName(rc) + ' has no class teacher now.'); return; }
     if (a === 'ctset'){ var cu = staffById(el.value), cc = S.subClass; if (cu){ CT[cc] = cu.id; if (cu.classes.indexOf(cc) < 0) cu.classes.push(cc); } else delete CT[cc];
